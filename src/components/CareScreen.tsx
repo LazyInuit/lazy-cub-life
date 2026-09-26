@@ -213,8 +213,11 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, startInGames = fals
             onPointerCancel={clearPressGlow}
             onClick={() => cub.care('feed')}
           >
-            <span className="wood-btn">
-              <img className={age === 'young' ? 'meat-mouth' : 'meat-mouth meat-old'} src={age === 'young' ? meatYoungUrl : meatOldUrl} alt="" />
+            <span className="wood-btn-wrap">
+              {save.hunger < 30 ? <span className="need-alert" aria-label="Feed needs attention">!</span> : null}
+              <span className="wood-btn">
+                <img className={age === 'young' ? 'meat-mouth' : 'meat-mouth meat-old'} src={age === 'young' ? meatYoungUrl : meatOldUrl} alt="" />
+              </span>
             </span>
             <WoodLabel value={save.hunger} color="#e08a3c">
               Feed
@@ -229,8 +232,11 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, startInGames = fals
             onPointerCancel={clearPressGlow}
             onClick={() => setGamesOpen(true)}
           >
-            <span className="wood-btn">
-              <PlayIcon />
+            <span className="wood-btn-wrap">
+              {save.happiness < 30 ? <span className="need-alert" aria-label="Play needs attention">!</span> : null}
+              <span className="wood-btn">
+                <PlayIcon />
+              </span>
             </span>
             <WoodLabel value={save.happiness} color="#d45d78">
               Play
@@ -245,8 +251,11 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, startInGames = fals
             onPointerCancel={clearPressGlow}
             onClick={cub.toggleSleep}
           >
-            <span className="wood-btn">
-              <MoonIcon />
+            <span className="wood-btn-wrap">
+              {save.energy < 30 ? <span className="need-alert" aria-label="Sleep needs attention">!</span> : null}
+              <span className="wood-btn">
+                <MoonIcon />
+              </span>
             </span>
             <WoodLabel value={save.energy} color="#3d8fba">
               {asleep ? 'Wake' : 'Sleep'}
@@ -261,8 +270,11 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, startInGames = fals
             onPointerCancel={clearPressGlow}
             onClick={() => cub.care('clean')}
           >
-            <span className="wood-btn">
-              <DropIcon />
+            <span className="wood-btn-wrap">
+              {save.cleanliness < 30 ? <span className="need-alert" aria-label="Wash needs attention">!</span> : null}
+              <span className="wood-btn">
+                <DropIcon />
+              </span>
             </span>
             <WoodLabel value={save.cleanliness} color="#3f9a78">
               Wash

@@ -1537,6 +1537,44 @@ h1 {
   opacity: 0.48;
 }
 
+.wood-btn-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.need-alert {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 2px);
+  transform: translateX(-50%);
+  z-index: 2;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #fff6e8;
+  background: radial-gradient(circle at 35% 30%, #f06a5a, #c4473a 70%);
+  color: #fffaf2;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 0 rgba(60, 20, 10, 0.35);
+  pointer-events: none;
+  animation: need-alert-pulse 1.15s ease-in-out infinite;
+}
+
+@keyframes need-alert-pulse {
+  0%,
+  100% {
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.12);
+  }
+}
+
 .wood-btn {
   width: 62px;
   height: 62px;
