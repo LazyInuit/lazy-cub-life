@@ -8,7 +8,10 @@ import { startLullaby, stopLullaby } from './sleepAudio'
 import { startSnore, stopSnore } from './snoreAudio'
 import { applyAbsence, applyCare, applyPet, applyReward, clampNeed, decaySave, isNeedy, levelFromXp, rewardMultiplier } from './progress'
 import { readSave, writeSave } from './storage'
+import { isTraitUnlocked, sanitizeOwnedOutfits, traitKey, traitPrice } from './traitShop'
 import type { CareAction, CubOutfits, CubPose, CubSave, NeedKey } from './types'
+import type { TraitCategory } from './cubTraits'
+import type { CharacterAge } from './homeScene'
 
 const POSE_MS: Record<Exclude<CareAction, 'sleep'>, number> = {
   feed: 1700,
@@ -207,20 +210,52 @@ export function useCub() {
   const setOutfits = useCallback((outfits: CubOutfits) => {
     const current = saveRef.current
     if (!current) return
+    const safe = sanitizeOwnedOutfits(current, {
+      old: { ...outfits.old },
+      young: { ...outfits.young },
+    })
     commit({
       ...current,
-      outfits: {
-        old: { ...outfits.old },
-        young: { ...outfits.young },
-      },
+      outfits: safe,
     })
   }, [commit])
 
+  const addCubCash = useCallback((amount: number) => {
+    const current = saveRef.current
+    if (!current) return
+    const gain = Math.floor(amount)
+    if (gain === 0) return
+    commit({ ...current, cubCash: Math.max(0, current.cubCash + gain) })
+  }, [commit])
+
+  const purchaseTrait = useCallback((age: CharacterAge, category: TraitCategory, name: string) => {
+    const current = saveRef.current
+    if (!current) return { ok: false as const, reason: 'missing' as const }
+    if (isTraitUnlocked(current, age, category, name)) {
+      return { ok: true as const, alreadyOwned: true as const }
+    }
+    const price = traitPrice(age, category, name)
+    if (price === null) {
+      return { ok: true as const, alreadyOwned: true as const }
+    }
+    if (current.cubCash < price) {
+      return { ok: false as const, reason: 'broke' as const }
+    }
+    const key = traitKey(age, category, name)
+    commit({
+      ...current,
+      cubCash: current.cubCash - price,
+      unlockedTraits: [...new Set([...current.unlockedTraits, key])],
+    })
+    return { ok: true as const, alreadyOwned: false as const }
+  }, [commit])
+
   const reward = useCallback(
-    (baseXp: number, needs: Partial<Record<NeedKey, number>>) => {
+    (baseXp: number, needs: Partial<Record<NeedKey, number>>, options?: { flat?: boolean }) => {
       const current = saveRef.current
       if (!current) return { xpGained: 0 }
-      const xpGained = Math.round(baseXp * rewardMultiplier(levelFromXp(current.xp)))
+      const scaled = options?.flat ? baseXp : baseXp * rewardMultiplier(levelFromXp(current.xp))
+      const xpGained = Math.round(scaled)
       const next = applyReward(current, xpGained, needs)
       noteLevel(current.xp, next.xp)
       commit(next)
@@ -250,6 +285,8 @@ export function useCub() {
     recordMatchBest,
     recordDojoBest,
     setOutfits,
+    addCubCash,
+    purchaseTrait,
   }
 }
 

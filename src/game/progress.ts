@@ -11,6 +11,7 @@ import {
   type OutfitTraits,
   type TraitSlot,
 } from './types'
+import { sanitizeOwnedOutfits, starterUnlockedKeys } from './traitShop'
 
 const DECAY_PER_MIN: Record<Exclude<NeedKey, 'energy'>, number> = {
   hunger: 1.35,
@@ -121,19 +122,26 @@ export function applyAbsence(save: CubSave, now = Date.now()): { save: CubSave; 
   return { save: { ...caught, lastVisit: now }, awayMs }
 }
 
-/** XP follows how much of the bar the action actually fills. A full bar pays nothing. */
+/** Pet XP still follows how much of the happiness bar the tap fills. */
 export function xpForFilled(points: number): number {
   if (points <= 0) return 0
   return Math.round(points * 0.25)
+}
+
+/** Flat care XP. No player-level multiplier. Sleep pays nothing. */
+const CARE_XP: Record<CareAction, number> = {
+  feed: 1,
+  sleep: 0,
+  clean: 1,
 }
 
 const CARE_SPECS: Record<
   CareAction,
   { stat: NeedKey; amount: number; needs: Partial<Record<NeedKey, number>>; blockWhenFull: boolean }
 > = {
-  feed: { stat: 'hunger', amount: 20, blockWhenFull: true, needs: { hunger: 20, happiness: 6, cleanliness: -4 } },
-  sleep: { stat: 'energy', amount: 36, blockWhenFull: false, needs: { energy: 36, hunger: -8, happiness: 4 } },
-  clean: { stat: 'cleanliness', amount: 100, blockWhenFull: true, needs: { cleanliness: 100, happiness: 8 } },
+  feed: { stat: 'hunger', amount: 20, blockWhenFull: true, needs: { hunger: 20, cleanliness: -4 } },
+  sleep: { stat: 'energy', amount: 36, blockWhenFull: false, needs: { energy: 36, hunger: -8 } },
+  clean: { stat: 'cleanliness', amount: 100, blockWhenFull: true, needs: { cleanliness: 100 } },
 }
 
 export function barIsFull(value: number): boolean {
@@ -150,7 +158,7 @@ export function applyCare(save: CubSave, action: CareAction, now = Date.now()): 
   const spec = CARE_SPECS[action]
   const filled = filledBy(save, action)
   if (filled <= 0) return spec.blockWhenFull ? null : save
-  const next: CubSave = { ...save, xp: save.xp + xpForFilled(filled), lastVisit: now }
+  const next: CubSave = { ...save, xp: save.xp + CARE_XP[action], lastVisit: now }
   for (const key of NEED_KEYS) {
     const delta = spec.needs[key] ?? 0
     next[key] = clampNeed(save[key] + delta)
@@ -158,14 +166,21 @@ export function applyCare(save: CubSave, action: CareAction, now = Date.now()): 
   return withLevel(next)
 }
 
+export const PET_MOOD_GAIN = 10
+
+/** Mood from a finished mini-game. A score of 0 pays nothing. */
+export function moodFromScore(score: number): Partial<Record<NeedKey, number>> {
+  return score >= 1 ? { happiness: PET_MOOD_GAIN } : {}
+}
+
 export function applyPet(save: CubSave, now = Date.now()): CubSave | null {
   if (barIsFull(save.happiness)) return null
-  const filled = Math.min(1, 100 - save.happiness)
-  if (filled <= 0) return null
+  const room = 100 - save.happiness
+  if (room <= 0) return null
   return withLevel({
     ...save,
-    happiness: clampNeed(save.happiness + filled),
-    xp: save.xp + Math.max(1, xpForFilled(filled)),
+    happiness: clampNeed(save.happiness + PET_MOOD_GAIN),
+    xp: save.xp + Math.max(1, xpForFilled(Math.min(1, room))),
     lastVisit: now,
   })
 }
@@ -211,6 +226,13 @@ function sanitizeOutfits(value: unknown): CubOutfits {
   }
 }
 
+function sanitizeUnlockedTraits(value: unknown): string[] {
+  const base = starterUnlockedKeys()
+  if (!Array.isArray(value)) return base
+  const extra = value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+  return [...new Set([...base, ...extra])]
+}
+
 function sanitizeAppearance(value: unknown): CubAppearance {
   if (!value || typeof value !== 'object') return GUEST_APPEARANCE
   const raw = value as Partial<CubAppearance>
@@ -238,6 +260,9 @@ export function defaultSave(now = Date.now()): CubSave {
       old: { ...DEFAULT_OUTFIT },
       young: { ...DEFAULT_OUTFIT },
     },
+    /** Starter balance for testing wardrobe unlocks before earn loops exist. */
+    cubCash: 800,
+    unlockedTraits: starterUnlockedKeys(),
     hunger: 72,
     happiness: 68,
     energy: 70,
@@ -257,10 +282,19 @@ export function sanitizeSave(value: unknown, now = Date.now()): CubSave {
   if (raw.version !== 1) return defaultSave(now)
   const base = defaultSave(now)
   const xp = Math.max(0, Math.floor(num(raw.xp, 0)))
-  return withLevel({
+  const hasCash = typeof raw.cubCash === 'number' && Number.isFinite(raw.cubCash)
+  const unlockedTraits = sanitizeUnlockedTraits(raw.unlockedTraits)
+  // Move earlier test seeds, including leftover 10,000,000 after purchases, onto the starter balance.
+  const rawCash = hasCash ? Math.floor(raw.cubCash as number) : base.cubCash
+  const starterSeeds = new Set([150, 10_000, 100_000, 10_000_000])
+  const fromTestFortune = rawCash >= 1_000_000
+  const cubCash = Math.max(0, starterSeeds.has(rawCash) || fromTestFortune ? base.cubCash : rawCash)
+  const draft: CubSave = withLevel({
     version: 1,
     appearance: sanitizeAppearance(raw.appearance),
     outfits: sanitizeOutfits(raw.outfits),
+    cubCash,
+    unlockedTraits,
     hunger: clampNeed(num(raw.hunger, base.hunger)),
     happiness: clampNeed(num(raw.happiness, base.happiness)),
     energy: clampNeed(num(raw.energy, base.energy)),
@@ -272,4 +306,5 @@ export function sanitizeSave(value: unknown, now = Date.now()): CubSave {
     matchBest: Math.max(0, Math.floor(num(raw.matchBest, 0))),
     dojoBest: Math.max(0, Math.floor(num(raw.dojoBest, 0))),
   })
+  return { ...draft, outfits: sanitizeOwnedOutfits(draft, draft.outfits) }
 }

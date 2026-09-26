@@ -110,4 +110,4 @@ export const DIFFICULTY = {
   bonusPerScore: 0.00025,
 }
 
-export const XP_PER_SCORE = 0.08
+export const XP_PER_SCORE = 0.005

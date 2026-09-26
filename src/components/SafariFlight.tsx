@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import lionPawUrl from '../assets/lion-paw-ui.png'
 import { drawFlightLion } from '../game/drawCub'
-import { PLAY_NEED_COST } from '../game/progress'
+import { PLAY_NEED_COST, moodFromScore } from '../game/progress'
 import { playCrash, playEnd, playFlap, playIgnite, resumeFlightAudio, startSpaceAmbience, stopSpaceAmbience } from '../game/flightAudio'
 import type { NeedKey } from '../game/types'
 import { HomeButton, GamesButton } from './HomeButton'
@@ -29,7 +29,11 @@ const KINDS: Gate['kind'][] = ['tree', 'rock', 'grass', 'green', 'orange', 'blue
 type Props = {
   best: number
   onBest: (score: number) => void
-  onReward: (baseXp: number, needs: Partial<Record<NeedKey, number>>) => { xpGained: number }
+  onReward: (
+    baseXp: number,
+    needs: Partial<Record<NeedKey, number>>,
+    options?: { flat?: boolean },
+  ) => { xpGained: number }
   onExit: () => void
   onGames: () => void
 }
@@ -71,10 +75,14 @@ export function SafariFlight({ best, onBest, onReward, onExit, onGames }: Props)
       bestRef.current = passed
       onBestRef.current(passed)
     }
-    const result = onRewardRef.current(passed * 8, {
-      happiness: 10,
-      ...PLAY_NEED_COST,
-    })
+    const result = onRewardRef.current(
+      passed,
+      {
+        ...moodFromScore(passed),
+        ...PLAY_NEED_COST,
+      },
+      { flat: true },
+    )
     setSummary({ score: passed, xpGained: result.xpGained })
     setHudScore(passed)
   }
@@ -249,7 +257,7 @@ export function SafariFlight({ best, onBest, onReward, onExit, onGames }: Props)
               }
               if (!rewarded.current) {
                 rewarded.current = true
-                onReward(0, { happiness: 10, ...PLAY_NEED_COST })
+                onReward(0, { ...moodFromScore(score.current), ...PLAY_NEED_COST })
               }
               onGames()
             }}

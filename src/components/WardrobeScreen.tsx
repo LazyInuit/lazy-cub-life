@@ -8,6 +8,8 @@ import {
 import { playDiceRattle } from '../game/diceAudio'
 import type { CharacterAge } from '../game/homeScene'
 import { levelProgress } from '../game/progress'
+import { formatCubCash } from '../game/formatCubCash'
+import { isTraitUnlocked, traitPrice } from '../game/traitShop'
 import type { CubController } from '../game/useCub'
 import type { OutfitTraits } from '../game/types'
 import { CubStage } from './CubStage'
@@ -21,10 +23,10 @@ import headgearIconUrl from '../assets/headgear-crown.png'
 import maneIconUrl from '../assets/mane-top-knot-fire.png'
 import mouthIconUrl from '../assets/mouth-big-smile.png'
 import diceIconUrl from '../assets/dice-ui.png'
+import coinUrl from '../assets/lazy-dojo/sprites/bonuses/lazy-coin.png'
 
 type Manifest = Record<TraitCategory, Record<CharacterAge, string[]>>
 type Outfit = Record<TraitCategory, string>
-type Flags = Record<TraitCategory, boolean>
 
 type Props = {
   cub: CubController
@@ -32,12 +34,6 @@ type Props = {
   onAge: (age: CharacterAge) => void
   onBack: () => void
 }
-
-const blankFlags = (): Flags =>
-  TRAIT_CATEGORIES.reduce((flags, category) => {
-    flags[category] = true
-    return flags
-  }, {} as Flags)
 
 function cloneOutfit(outfit: OutfitTraits | Outfit): Outfit {
   return {
@@ -60,15 +56,13 @@ function outfitsFromSave(cub: CubController): Record<CharacterAge, Outfit> {
 }
 
 export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
-  const [category, setCategory] = useState<TraitCategory>('Eyes')
+  const [category, setCategory] = useState<TraitCategory>('Body')
   const [worn, setWorn] = useState<Record<CharacterAge, Outfit>>(() => outfitsFromSave(cub))
   const [shown, setShown] = useState<Record<CharacterAge, Outfit>>(() => outfitsFromSave(cub))
-  const [equipped, setEquipped] = useState<Record<CharacterAge, Flags>>({
-    old: blankFlags(),
-    young: blankFlags(),
-  })
   const [manifest, setManifest] = useState<Manifest | null>(null)
   const [diceShake, setDiceShake] = useState(false)
+  const [diceLook, setDiceLook] = useState<Outfit | null>(null)
+  const [buyHint, setBuyHint] = useState<string | null>(null)
   const traitBoxRef = useRef<HTMLDivElement>(null)
   const skipPersist = useRef(true)
   const setOutfits = cub.setOutfits
@@ -109,13 +103,15 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
       const probe = box.cloneNode(true) as HTMLDivElement
       probe.style.cssText = `position:absolute;visibility:hidden;pointer-events:none;left:-9999px;top:0;width:${width}px;min-height:0;height:auto;`
       document.body.appendChild(probe)
-      const probeName = probe.querySelector('strong')
+      const probeName = probe.querySelector('strong span') ?? probe.querySelector('strong')
       const probeGroup = probe.querySelector('.wardrobe-group')
+      const probeCost = probe.querySelector('.wardrobe-cost')
       if (!probeName) {
         probe.remove()
         return
       }
       if (probeGroup) probeGroup.textContent = 'Bodygear'
+      if (probeCost) probeCost.textContent = '100'
       let tallest = 0
       for (const traitCategory of TRAIT_CATEGORIES) {
         for (const traitAge of ['old', 'young'] as const) {
@@ -126,8 +122,11 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
         }
       }
       probe.remove()
-      const next = `${Math.ceil(tallest)}px`
-      if (tallest > 0 && box.style.minHeight !== next) box.style.minHeight = next
+      const next = `${Math.ceil(tallest * 0.8)}px`
+      if (tallest > 0 && box.style.height !== next) {
+        box.style.height = next
+        box.style.minHeight = next
+      }
     }
 
     measure()
@@ -144,17 +143,23 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
   const ringC = 2 * Math.PI * ringR
   const styles = manifest?.[category]?.[age] ?? []
   const label = shown[age][category]
-  const isOn = equipped[age][category]
+  const price = traitPrice(age, category, label)
+  const cost = price ?? 0
+  const owned = isTraitUnlocked(save, age, category, label)
+  const isStarter = STARTER_OUTFIT[category] === label
+  const isOn = isStarter || (owned && worn[age][category] === label)
 
   const step = (dir: number) => {
     if (styles.length === 0) return
     const current = styles.indexOf(shown[age][category])
     const next = styles[(current < 0 ? 0 : current + dir + styles.length) % styles.length]
+    setBuyHint(null)
+    setDiceLook(null)
     setShown((currentShown) => ({
       ...currentShown,
       [age]: { ...currentShown[age], [category]: next },
     }))
-    if (equipped[age][category]) {
+    if (isTraitUnlocked(save, age, category, next)) {
       setWorn((currentWorn) => ({
         ...currentWorn,
         [age]: { ...currentWorn[age], [category]: next },
@@ -163,16 +168,34 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
   }
 
   const setPower = (nextOn: boolean) => {
-    setEquipped((current) => ({
-      ...current,
-      [age]: { ...current[age], [category]: nextOn },
-    }))
+    if (isStarter) return
+    if (!owned) return
+    if (nextOn) {
+      setWorn((currentWorn) => ({
+        ...currentWorn,
+        [age]: { ...currentWorn[age], [category]: label },
+      }))
+      return
+    }
+    // OFF returns only this category to the starter. The screen stays on this trait.
     setWorn((currentWorn) => ({
       ...currentWorn,
-      [age]: {
-        ...currentWorn[age],
-        [category]: nextOn ? shown[age][category] : STARTER_OUTFIT[category],
-      },
+      [age]: { ...currentWorn[age], [category]: STARTER_OUTFIT[category] },
+    }))
+  }
+
+  const buyTrait = () => {
+    if (owned || price === null) return
+    const result = cub.purchaseTrait(age, category, label)
+    if (!result.ok) {
+      setBuyHint(result.reason === 'broke' ? 'Not enough Cub Cash' : 'Could not buy')
+      return
+    }
+    setBuyHint(null)
+    setDiceLook(null)
+    setWorn((currentWorn) => ({
+      ...currentWorn,
+      [age]: { ...currentWorn[age], [category]: label },
     }))
   }
 
@@ -193,28 +216,32 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
     setDiceShake(false)
     requestAnimationFrame(() => setDiceShake(true))
     const nextOutfit = { ...STARTER_OUTFIT }
-    const nextFlags = blankFlags()
     for (const traitCategory of TRAIT_CATEGORIES) {
       const list = manifest[traitCategory]?.[age] ?? []
       if (list.length === 0) continue
       nextOutfit[traitCategory] = list[Math.floor(Math.random() * list.length)]
-      nextFlags[traitCategory] = true
     }
-    setShown((current) => ({ ...current, [age]: nextOutfit }))
-    setWorn((current) => ({ ...current, [age]: nextOutfit }))
-    setEquipped((current) => ({ ...current, [age]: nextFlags }))
+    setDiceLook(nextOutfit)
+    setBuyHint(null)
   }
 
   const resetOutfit = () => {
-    const starter = { ...STARTER_OUTFIT }
-    setShown((current) => ({ ...current, [age]: starter }))
-    setWorn((current) => ({ ...current, [age]: starter }))
-    setEquipped((current) => ({ ...current, [age]: blankFlags() }))
+    const home = outfitsFromSave(cub)
+    setShown(home)
+    setDiceLook(null)
+    setBuyHint(null)
   }
 
   return (
     <section className="home-room wardrobe-room">
-      <CubStage appearance={save.appearance} pose="idle" mode="wardrobe" tryOn={tryOnFromPicks(worn[age])} />
+      <CubStage
+        appearance={save.appearance}
+        pose="idle"
+        mode="wardrobe"
+        tryOn={tryOnFromPicks(
+          diceLook ?? (owned && !isStarter && !isOn ? { ...shown[age], [category]: worn[age][category] } : shown[age]),
+        )}
+      />
       <div className="room-ui">
         <div className="age-switch" role="group" aria-label="Character age">
           <button type="button" className={age === 'old' ? 'on' : ''} aria-pressed={age === 'old'} onClick={() => onAge('old')}>
@@ -229,23 +256,31 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
             Young
           </button>
         </div>
-        <div className="level-badge" aria-label={`Level ${progress.level}`}>
-          <svg className="xp-ring" viewBox="0 0 84 84" aria-hidden="true">
-            <circle className="xp-ring-track" cx="42" cy="42" r={ringR} />
-            {xpPct > 0 ? (
-              <circle
-                className="xp-ring-fill"
-                cx="42"
-                cy="42"
-                r={ringR}
-                strokeDasharray={`${(xpPct / 100) * ringC} ${ringC}`}
-              />
-            ) : null}
-          </svg>
-          <span className="lvl-face">
-            <span className="lvl-kicker">LVL</span>
-            <strong>{progress.level}</strong>
-          </span>
+        <div className="top-stats">
+          <div className="level-badge" aria-label={`Level ${progress.level}`}>
+            <svg className="xp-ring" viewBox="0 0 84 84" aria-hidden="true">
+              <circle className="xp-ring-track" cx="42" cy="42" r={ringR} />
+              {xpPct > 0 ? (
+                <circle
+                  className="xp-ring-fill"
+                  cx="42"
+                  cy="42"
+                  r={ringR}
+                  strokeDasharray={`${(xpPct / 100) * ringC} ${ringC}`}
+                />
+              ) : null}
+            </svg>
+            <span className="lvl-face">
+              <span className="lvl-kicker">LVL</span>
+              <strong>{progress.level}</strong>
+            </span>
+          </div>
+          <div className="cub-cash" aria-label={`${formatCubCash(save.cubCash)} Cub Cash`}>
+            <span className="cub-cash-inner">
+              <img src={coinUrl} alt="" />
+              <strong>{formatCubCash(save.cubCash)}</strong>
+            </span>
+          </div>
         </div>
         <button
           type="button"
@@ -288,7 +323,11 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
               aria-label={item}
               aria-selected={category === item}
               className={category === item ? 'on' : ''}
-              onClick={() => setCategory(item)}
+              onClick={() => {
+                setCategory(item)
+                setBuyHint(null)
+                setDiceLook(null)
+              }}
             >
               <CategoryIcon category={item} age={age} />
             </button>
@@ -318,7 +357,18 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
               </button>
               <div className="wardrobe-trait" ref={traitBoxRef}>
                 <span className="wardrobe-group">{category}</span>
-                <strong>{label}</strong>
+                <strong className="wardrobe-trait-name">
+                  <span>{label}</span>
+                </strong>
+                <span className="wardrobe-cost" aria-label={owned ? 'Owned' : `${formatCubCash(cost)} Cub Cash`}>
+                  {owned ? null : (
+                    <>
+                      <img src={coinUrl} alt="" />
+                      <span>{formatCubCash(cost)}</span>
+                    </>
+                  )}
+                </span>
+                {!owned ? <LockIcon /> : null}
               </div>
               <button
                 type="button"
@@ -330,14 +380,31 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
                 ›
               </button>
             </div>
-            <div className="wardrobe-power" role="group" aria-label="Wear this style">
-              <button type="button" className={isOn ? 'on' : ''} aria-pressed={isOn} onClick={() => setPower(true)}>
-                ON
-              </button>
-              <button type="button" className={!isOn ? 'on' : ''} aria-pressed={!isOn} onClick={() => setPower(false)}>
-                OFF
-              </button>
-            </div>
+            {owned ? (
+              <div className="wardrobe-power" role="group" aria-label="Wear this style">
+                <button type="button" className={isOn ? 'on' : ''} aria-pressed={isOn} onClick={() => setPower(true)}>
+                  ON
+                </button>
+                <button type="button" className={!isOn ? 'on' : ''} aria-pressed={!isOn} onClick={() => setPower(false)}>
+                  OFF
+                </button>
+              </div>
+            ) : (
+              <div className="wardrobe-buy-wrap">
+                <button
+                  type="button"
+                  className="wardrobe-buy"
+                  disabled={save.cubCash < cost}
+                  onPointerDown={flashPress}
+                  onAnimationEnd={clearPressGlow}
+                  onClick={buyTrait}
+                >
+                  <img src={coinUrl} alt="" />
+                  Buy · {formatCubCash(cost)}
+                </button>
+                {buyHint ? <span className="wardrobe-buy-hint">{buyHint}</span> : null}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -426,3 +493,43 @@ function CategoryIcon({ category, age }: { category: TraitCategory; age: Charact
   )
 }
 
+/** Wood-style padlock (option 5 look) as a clean SVG cutout — no background plate. */
+function LockIcon() {
+  return (
+    <svg className="wardrobe-lock" viewBox="0 0 24 24" aria-hidden="true">
+      <defs>
+        <linearGradient id="lock-body" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#c98448" />
+          <stop offset="55%" stopColor="#8d5224" />
+          <stop offset="100%" stopColor="#5c3416" />
+        </linearGradient>
+        <linearGradient id="lock-key" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ffe7a8" />
+          <stop offset="100%" stopColor="#d4a017" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M8 10.2V7.1a4 4 0 0 1 8 0v3.1"
+        fill="none"
+        stroke="#4a2a12"
+        strokeWidth="3.2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M8 10.2V7.1a4 4 0 0 1 8 0v3.1"
+        fill="none"
+        stroke="#c98448"
+        strokeWidth="2.1"
+        strokeLinecap="round"
+      />
+      <rect x="5" y="10" width="14" height="11.5" rx="2.6" fill="url(#lock-body)" stroke="#4a2a12" strokeWidth="1.15" />
+      <rect x="6.3" y="11.15" width="11.4" height="1.9" rx="0.9" fill="#f0c98a" opacity="0.32" />
+      <path
+        d="M12 13.15c-1.15 0-2 .88-2 2 0 .74.4 1.38.98 1.72v1.5c0 .48.42.85 1.02.85s1.02-.37 1.02-.85v-1.5c.58-.34.98-.98.98-1.72 0-1.12-.85-2-2-2z"
+        fill="url(#lock-key)"
+        stroke="#5a3010"
+        strokeWidth="0.55"
+      />
+    </svg>
+  )
+}

@@ -43,6 +43,10 @@ export type CubSave = {
   version: 1
   appearance: CubAppearance
   outfits: CubOutfits
+  /** In-game currency: Cub Cash. */
+  cubCash: number
+  /** Purchased wardrobe styles as `age:Category:Name` keys. */
+  unlockedTraits: string[]
   hunger: number
   happiness: number
   energy: number

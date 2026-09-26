@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { PLAY_NEED_COST } from '../game/progress'
+import { PLAY_NEED_COST, moodFromScore } from '../game/progress'
 import { DOJO_ASSETS, loadDojoSprites, type DojoSprites } from '../game/lazyDojo/assets'
 import { XP_PER_SCORE } from '../game/lazyDojo/config'
 import {
@@ -21,7 +21,11 @@ type Mode = 'start' | 'howto' | 'play' | 'pause' | 'over'
 type Props = {
   best: number
   onBest: (score: number) => void
-  onReward: (baseXp: number, needs: Partial<Record<NeedKey, number>>) => { xpGained: number }
+  onReward: (
+    baseXp: number,
+    needs: Partial<Record<NeedKey, number>>,
+    options?: { flat?: boolean },
+  ) => { xpGained: number }
   onExit: () => void
   onGames: () => void
 }
@@ -75,10 +79,10 @@ export function LazyDojo({ best, onBest, onReward, onExit, onGames }: Props) {
       bestRef.current = score
       onBestRef.current(score)
     }
-    const result = onRewardRef.current(Math.round(score * XP_PER_SCORE), {
-      happiness: 10,
-      ...PLAY_NEED_COST,
-    })
+    const result = onRewardRef.current(
+      Math.round(score * XP_PER_SCORE),
+      {
+        ...moodFromScore(score),
     setSummary({ score, best: bestRef.current, neuBest, xp: result.xpGained })
     setMode('over')
   }

@@ -9,9 +9,12 @@ import meatOldUrl from '../assets/feed-carton-centered.png'
 import meatYoungUrl from '../assets/feed-bottle-ui.png'
 import shirtUrl from '../assets/shirt-ui.png'
 import lionPawUrl from '../assets/lion-paw-clear.png'
+import coinUrl from '../assets/lazy-dojo/sprites/bonuses/lazy-coin.png'
 import { traitSlug, tryOnFromPicks } from '../game/cubTraits'
+import { sanitizeOwnedOutfit } from '../game/traitShop'
 import { setHomeCharacter, type CharacterAge } from '../game/homeScene'
 import { barIsFull, levelProgress } from '../game/progress'
+import { formatCubCash } from '../game/formatCubCash'
 import type { CubController } from '../game/useCub'
 import { CubStage } from './CubStage'
 import { HomeButton } from './HomeButton'
@@ -167,27 +170,35 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, startInGames = fals
             Young
           </button>
         </div>
-        <div
-          className={cub.levelUp ? 'level-badge level-up' : 'level-badge'}
-          key={cub.levelUp ?? 'level'}
-          aria-label={`Level ${progress.level}, ${progress.into} of ${progress.next} experience`}
-        >
-          <svg className="xp-ring" viewBox="0 0 84 84" aria-hidden="true">
-            <circle className="xp-ring-track" cx="42" cy="42" r={ringR} />
-            {xpPct > 0 ? (
-              <circle
-                className="xp-ring-fill"
-                cx="42"
-                cy="42"
-                r={ringR}
-                strokeDasharray={`${(xpPct / 100) * ringC} ${ringC}`}
-              />
-            ) : null}
-          </svg>
-          <span className="lvl-face">
-            <span className="lvl-kicker">LVL</span>
-            <strong>{progress.level}</strong>
-          </span>
+        <div className="top-stats">
+          <div
+            className={cub.levelUp ? 'level-badge level-up' : 'level-badge'}
+            key={cub.levelUp ?? 'level'}
+            aria-label={`Level ${progress.level}, ${progress.into} of ${progress.next} experience`}
+          >
+            <svg className="xp-ring" viewBox="0 0 84 84" aria-hidden="true">
+              <circle className="xp-ring-track" cx="42" cy="42" r={ringR} />
+              {xpPct > 0 ? (
+                <circle
+                  className="xp-ring-fill"
+                  cx="42"
+                  cy="42"
+                  r={ringR}
+                  strokeDasharray={`${(xpPct / 100) * ringC} ${ringC}`}
+                />
+              ) : null}
+            </svg>
+            <span className="lvl-face">
+              <span className="lvl-kicker">LVL</span>
+              <strong>{progress.level}</strong>
+            </span>
+          </div>
+          <div className="cub-cash" aria-label={`${formatCubCash(save.cubCash)} Cub Cash`}>
+            <span className="cub-cash-inner">
+              <img src={coinUrl} alt="" />
+              <strong>{formatCubCash(save.cubCash)}</strong>
+            </span>
+          </div>
         </div>
         {cub.toast ? <p className="home-toast">{cub.toast}</p> : null}
         <button
@@ -233,13 +244,13 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, startInGames = fals
             onClick={() => setGamesOpen(true)}
           >
             <span className="wood-btn-wrap">
-              {save.happiness < 30 ? <span className="need-alert" aria-label="Play needs attention">!</span> : null}
+              {save.happiness < 30 ? <span className="need-alert" aria-label="Mood needs attention">!</span> : null}
               <span className="wood-btn">
                 <PlayIcon />
               </span>
             </span>
             <WoodLabel value={save.happiness} color="#d45d78">
-              Play
+              Mood
             </WoodLabel>
           </button>
           <button

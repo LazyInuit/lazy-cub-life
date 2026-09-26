@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import lionPawUrl from '../assets/lion-paw-clear.png'
-import { PLAY_NEED_COST } from '../game/progress'
+import { PLAY_NEED_COST, moodFromScore } from '../game/progress'
 import { traitSlug } from '../game/cubTraits'
 import { playPrideFail, resumePrideAudio, setPrideUrgency, startPrideAmbience, stopPrideAmbience } from '../game/prideAudio'
 import type { NeedKey } from '../game/types'
@@ -42,10 +42,22 @@ const FIXED_LAYERS = [
 
 const MAX_PAIRS = Math.min(8, BODY_TRAITS.length)
 
+/** XP for boards cleared. Index is the board count. No level multiplier. */
+const PRIDE_BOARD_XP = [0, 1, 5, 10, 15, 20, 25, 35, 50]
+
+function prideBoardXp(boards: number) {
+  const count = Math.max(0, Math.floor(boards))
+  return PRIDE_BOARD_XP[Math.min(count, PRIDE_BOARD_XP.length - 1)] ?? 0
+}
+
 type Props = {
   best: number
   onBest: (score: number) => void
-  onReward: (baseXp: number, needs: Partial<Record<NeedKey, number>>) => { xpGained: number }
+  onReward: (
+    baseXp: number,
+    needs: Partial<Record<NeedKey, number>>,
+    options?: { flat?: boolean },
+  ) => { xpGained: number }
   onExit: () => void
   onGames: () => void
 }
@@ -137,10 +149,10 @@ export function TraitMatch({ best, onBest, onReward, onExit, onGames }: Props) {
     stopPrideAmbience()
     const won = reason === 'You cleared every board.'
     if (!won) void playPrideFail()
-    const result = onRewardRef.current(done * 14, {
-      happiness: 10,
-      ...PLAY_NEED_COST,
-    })
+    const result = onRewardRef.current(
+      prideBoardXp(done),
+      {
+        ...moodFromScore(scoreRef.current),
     setSummary({
       cleared: done,
       xpGained: result.xpGained,
@@ -283,6 +295,10 @@ export function TraitMatch({ best, onBest, onReward, onExit, onGames }: Props) {
     }
     onExit()
   }
+      onRewardRef.current(0, { ...moodFromScore(scoreRef.current), ...PLAY_NEED_COST }, { flat: true })
+    }
+    onExit()
+  }
 
   const toGames = () => {
     if (summary) {
@@ -296,25 +312,21 @@ export function TraitMatch({ best, onBest, onReward, onExit, onGames }: Props) {
         setPrideUrgency(0)
         stopPrideAmbience()
         void playPrideFail()
-        onRewardRef.current(clearedRef.current * 14, {
-          happiness: 10,
-          ...PLAY_NEED_COST,
-        })
+        onRewardRef.current(
+          prideBoardXp(clearedRef.current),
+          {
+            ...moodFromScore(scoreRef.current),
+            ...PLAY_NEED_COST,
+          },
+          { flat: true },
+        )
       }
       onGames()
       return
     }
     if (!rewarded.current) {
       rewarded.current = true
-      onRewardRef.current(0, { happiness: 10, ...PLAY_NEED_COST })
-    }
-    stopPrideAmbience()
-    onGames()
-  }
-
-  return (
-    <section className="game-screen match-screen">
-      <header className="match-top">
+      onRewardRef.current(0, { ...moodFromScore(scoreRef.current), ...PLAY_NEED_COST }, { flat: true })
         <div className="match-nav">
           <HomeButton className="game-home" onClick={back} />
           <GamesButton className="game-home game-games" onClick={toGames} />
