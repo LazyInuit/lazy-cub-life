@@ -151,26 +151,31 @@ export function showWashGear(ms = 1700) {
   washUntil = performance.now() + ms
 }
 
-export function characterLayers(now = performance.now(), tryOn?: TryOn | null): HTMLImageElement[] {
+export function characterLayers(
+  now = performance.now(),
+  tryOn?: TryOn | null,
+  opts?: { preview?: boolean },
+): HTMLImageElement[] {
   const age = homeScene.character.includes('young') ? 'young' : 'old'
-  const meat = now < meatMouthUntil
-  const yelling = now < yellMouthUntil
-  const washing = now < washUntil
+  const preview = Boolean(opts?.preview)
+  const meat = !preview && now < meatMouthUntil
+  const yelling = !preview && now < yellMouthUntil
+  const washing = !preview && now < washUntil
   return ORDER.map((part) => {
     if (meat && part === 'mouth') return images.get(`${age}-mouth-meat`)
     if (yelling && part === 'mouth') return images.get(`${age}-mouth-yell`)
-    if (needHunger < 30 && part === 'mouth') {
+    if (!preview && needHunger < 30 && part === 'mouth') {
       const sad = images.get(`${age}-mouth-sad`)
       if (sad?.complete && sad.naturalWidth > 0) return sad
     }
     if (washing && part === 'bodygear') return images.get(`${age}-bodygear-floaties`)
-    if (eyesClosed && part === 'eyes') return images.get(`${age}-eyes-closed`)
-    if (now < angryEyesUntil && part === 'eyes') {
+    if (!preview && eyesClosed && part === 'eyes') return images.get(`${age}-eyes-closed`)
+    if (!preview && now < angryEyesUntil && part === 'eyes') {
       const angry = images.get(`${age}-eyes-angry`)
       if (angry?.complete && angry.naturalWidth > 0) return angry
     }
     if (washing && part === 'eyes') return images.get(`${age}-eyes-goggles`)
-    if (needEnergy < 30 && part === 'eyes') {
+    if (!preview && needEnergy < 30 && part === 'eyes') {
       const sleepy = images.get(`${age}-eyes-sleepy`)
       if (sleepy?.complete && sleepy.naturalWidth > 0) return sleepy
     }

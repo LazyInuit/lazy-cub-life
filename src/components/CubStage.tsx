@@ -116,7 +116,7 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
       if (viewCtx && rect.width > 0 && rect.height > 0) {
         viewCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
         viewCtx.clearRect(0, 0, rect.width, rect.height)
-        const layers = characterLayers(now, tryOnRef.current)
+        const layers = characterLayers(now, tryOnRef.current, { preview: wardrobe })
         const box = homeCharacterBox(rect.width, rect.height)
         if (layers.length && box) {
           const motion = poseMotion(poseRef.current, time)
