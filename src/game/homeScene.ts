@@ -1,11 +1,11 @@
-import background1 from '../../Version 2 Home Screen/Backgrounds/Background 1.png'
-import backgroundNight from '../../Version 2 Home Screen/Backgrounds/Background 2 Night.png'
-import bedroom2 from '../../Version 2 Home Screen/Backgrounds/Bedroom 2.png'
+import background1 from '../assets/home/background-1.png'
+import backgroundNight from '../assets/home/background-2-night.png'
+import bedroom2 from '../assets/home/bedroom-2.png'
 import kovuUrl from '../assets/kovu-old.png'
 import kovuYoungUrl from '../assets/kovu-young.png'
-import chair1 from '../../Version 2 Home Screen/Furnature/Chairs/Chair 1.png'
-import table1 from '../../Version 2 Home Screen/Furnature/Tables/Table 1.png'
-import chest1 from '../../Version 2 Home Screen/Furnature/Tables/Chest Draws 1.png'
+import chair1 from '../assets/home/chair-1.png'
+import table1 from '../assets/home/table-1.png'
+import chest1 from '../assets/home/chest-draws-1.png'
 
 export type HomeSlot = 'background' | 'chair' | 'character' | 'table'
 

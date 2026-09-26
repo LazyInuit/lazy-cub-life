@@ -411,7 +411,7 @@ h1 {
 .action-clean { background: #d7f3e8; }
 
 .game-picks-screen {
-  background: url("../Version 2 Home Screen/Backgrounds/Gaming Background 1.png") center 62% / cover no-repeat;
+  background: url("./assets/home/gaming-background-1.png") center 62% / cover no-repeat;
   color: #fffaf2;
 }
 
