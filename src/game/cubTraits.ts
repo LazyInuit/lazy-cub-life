@@ -146,7 +146,7 @@ export function setClosedEyes(closed: boolean) {
   eyesClosed = closed
 }
 
-/** Water goggles and floaties for the wash, then the usual eyes and bodygear. */
+/** Water goggles, floaties, no headgear, and a surprised mouth for the wash. */
 export function showWashGear(ms = 1700) {
   washUntil = performance.now() + ms
 }
@@ -162,6 +162,19 @@ export function characterLayers(
   const yelling = !preview && now < yellMouthUntil
   const washing = !preview && now < washUntil
   return ORDER.map((part) => {
+    if (washing && part === 'headgear') {
+      const bare = tryLayer(age, 'headgear', 'Nothing')
+      if (bare) return bare
+      return null
+    }
+    if (washing && part === 'mouth') {
+      const surprised = tryLayer(age, 'mouth', 'Surprised')
+      if (surprised) return surprised
+    }
+    if (!preview && eyesClosed && part === 'mouth') {
+      const standard = tryLayer(age, 'mouth', 'Standard')
+      if (standard) return standard
+    }
     if (meat && part === 'mouth') return images.get(`${age}-mouth-meat`)
     if (yelling && part === 'mouth') return images.get(`${age}-mouth-yell`)
     if (!preview && needHunger < 30 && part === 'mouth') {
