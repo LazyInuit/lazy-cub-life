@@ -1,0 +1,14 @@
+﻿node_modules
+dist
+.DS_Store
+*.local
+.env
+.env.*
+.vercel
+Cub Games
+UI Items
+home-screen-options
+sound-options
+Version 2 Home Screen
+tmp
+*.glb
