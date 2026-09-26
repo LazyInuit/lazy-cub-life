@@ -83,6 +83,10 @@ export function LazyDojo({ best, onBest, onReward, onExit, onGames }: Props) {
       Math.round(score * XP_PER_SCORE),
       {
         ...moodFromScore(score),
+        ...PLAY_NEED_COST,
+      },
+      { flat: true },
+    )
     setSummary({ score, best: bestRef.current, neuBest, xp: result.xpGained })
     setMode('over')
   }

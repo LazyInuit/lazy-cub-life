@@ -153,6 +153,10 @@ export function TraitMatch({ best, onBest, onReward, onExit, onGames }: Props) {
       prideBoardXp(done),
       {
         ...moodFromScore(scoreRef.current),
+        ...PLAY_NEED_COST,
+      },
+      { flat: true },
+    )
     setSummary({
       cleared: done,
       xpGained: result.xpGained,
@@ -291,10 +295,6 @@ export function TraitMatch({ best, onBest, onReward, onExit, onGames }: Props) {
     }
     if (!rewarded.current) {
       rewarded.current = true
-      onRewardRef.current(0, { happiness: 10, ...PLAY_NEED_COST })
-    }
-    onExit()
-  }
       onRewardRef.current(0, { ...moodFromScore(scoreRef.current), ...PLAY_NEED_COST }, { flat: true })
     }
     onExit()
@@ -327,6 +327,14 @@ export function TraitMatch({ best, onBest, onReward, onExit, onGames }: Props) {
     if (!rewarded.current) {
       rewarded.current = true
       onRewardRef.current(0, { ...moodFromScore(scoreRef.current), ...PLAY_NEED_COST }, { flat: true })
+    }
+    stopPrideAmbience()
+    onGames()
+  }
+
+  return (
+    <section className="game-screen match-screen">
+      <header className="match-top">
         <div className="match-nav">
           <HomeButton className="game-home" onClick={back} />
           <GamesButton className="game-home game-games" onClick={toGames} />

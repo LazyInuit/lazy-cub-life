@@ -143,7 +143,7 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, startInGames = fals
         pose={cub.pose}
         dim={asleep}
         onPet={cub.pet}
-        tryOn={tryOnFromPicks(save.outfits[age])}
+        tryOn={tryOnFromPicks(sanitizeOwnedOutfit(save, age, save.outfits[age]))}
       />
       <div className="room-ui">
         <div className="age-switch" role="group" aria-label="Character age">
