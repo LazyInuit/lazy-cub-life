@@ -9,7 +9,7 @@ import meatOldUrl from '../assets/feed-carton-centered.png'
 import meatYoungUrl from '../assets/feed-bottle-ui.png'
 import shirtUrl from '../assets/shirt-ui.png'
 import lionPawUrl from '../assets/lion-paw-clear.png'
-import { traitSlug } from '../game/cubTraits'
+import { traitSlug, tryOnFromPicks } from '../game/cubTraits'
 import { setHomeCharacter, type CharacterAge } from '../game/homeScene'
 import { barIsFull, levelProgress } from '../game/progress'
 import type { CubController } from '../game/useCub'
@@ -135,7 +135,13 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, startInGames = fals
 
   return (
     <section className="home-room">
-      <CubStage appearance={save.appearance} pose={cub.pose} dim={asleep} onPet={cub.pet} />
+      <CubStage
+        appearance={save.appearance}
+        pose={cub.pose}
+        dim={asleep}
+        onPet={cub.pet}
+        tryOn={tryOnFromPicks(save.outfits[age])}
+      />
       <div className="room-ui">
         <div className="age-switch" role="group" aria-label="Character age">
           <button

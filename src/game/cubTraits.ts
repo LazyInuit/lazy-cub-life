@@ -23,6 +23,7 @@ import youngMane from '../assets/cub-layers/young/mane.png'
 import youngEarring from '../assets/cub-layers/young/earring.png'
 import youngHeadgear from '../assets/cub-layers/young/headgear.png'
 import { homeScene } from './homeScene'
+import { DEFAULT_OUTFIT } from './types'
 
 /**
  * Back to front, matching the current bust: fur, clothes, face, hair, then
@@ -58,15 +59,7 @@ export function traitThumb(age: 'old' | 'young', category: TraitCategory, name: 
   return `/traits/thumbs/${age}/${SLOT_FOR[category]}/${traitSlug(name)}.png`
 }
 
-export const STARTER_OUTFIT: Record<TraitCategory, string> = {
-  Body: 'Standard',
-  Bodygear: 'Nothing',
-  Earring: 'Nothing',
-  Eyes: 'Surprised',
-  Headgear: 'Nothing',
-  Mane: 'Brown',
-  Mouth: 'Standard',
-}
+export const STARTER_OUTFIT: Record<TraitCategory, string> = { ...DEFAULT_OUTFIT }
 
 export function tryOnFromPicks(picks: Record<TraitCategory, string>): TryOn {
   return {
@@ -164,29 +157,29 @@ export function characterLayers(now = performance.now(), tryOn?: TryOn | null): 
   const yelling = now < yellMouthUntil
   const washing = now < washUntil
   return ORDER.map((part) => {
+    if (meat && part === 'mouth') return images.get(`${age}-mouth-meat`)
+    if (yelling && part === 'mouth') return images.get(`${age}-mouth-yell`)
+    if (needHunger < 30 && part === 'mouth') {
+      const sad = images.get(`${age}-mouth-sad`)
+      if (sad?.complete && sad.naturalWidth > 0) return sad
+    }
+    if (washing && part === 'bodygear') return images.get(`${age}-bodygear-floaties`)
+    if (eyesClosed && part === 'eyes') return images.get(`${age}-eyes-closed`)
+    if (now < angryEyesUntil && part === 'eyes') {
+      const angry = images.get(`${age}-eyes-angry`)
+      if (angry?.complete && angry.naturalWidth > 0) return angry
+    }
+    if (washing && part === 'eyes') return images.get(`${age}-eyes-goggles`)
+    if (needEnergy < 30 && part === 'eyes') {
+      const sleepy = images.get(`${age}-eyes-sleepy`)
+      if (sleepy?.complete && sleepy.naturalWidth > 0) return sleepy
+    }
     if (tryOn) {
       const picked = tryOn[part]
       if (picked) {
         const worn = tryLayer(age, part, picked)
         if (worn) return worn
       }
-    }
-    if (!tryOn && meat && part === 'mouth') return images.get(`${age}-mouth-meat`)
-    if (!tryOn && yelling && part === 'mouth') return images.get(`${age}-mouth-yell`)
-    if (!tryOn && needHunger < 30 && part === 'mouth') {
-      const sad = images.get(`${age}-mouth-sad`)
-      if (sad?.complete && sad.naturalWidth > 0) return sad
-    }
-    if (!tryOn && washing && part === 'bodygear') return images.get(`${age}-bodygear-floaties`)
-    if (!tryOn && eyesClosed && part === 'eyes') return images.get(`${age}-eyes-closed`)
-    if (!tryOn && now < angryEyesUntil && part === 'eyes') {
-      const angry = images.get(`${age}-eyes-angry`)
-      if (angry?.complete && angry.naturalWidth > 0) return angry
-    }
-    if (!tryOn && washing && part === 'eyes') return images.get(`${age}-eyes-goggles`)
-    if (!tryOn && needEnergy < 30 && part === 'eyes') {
-      const sleepy = images.get(`${age}-eyes-sleepy`)
-      if (sleepy?.complete && sleepy.naturalWidth > 0) return sleepy
     }
     return images.get(`${age}-${part}`)
   }).filter((image): image is HTMLImageElement => Boolean(image?.complete && image.naturalWidth > 0))

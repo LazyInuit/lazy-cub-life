@@ -8,7 +8,7 @@ import { startLullaby, stopLullaby } from './sleepAudio'
 import { startSnore, stopSnore } from './snoreAudio'
 import { applyAbsence, applyCare, applyPet, applyReward, clampNeed, decaySave, isNeedy, levelFromXp, rewardMultiplier } from './progress'
 import { readSave, writeSave } from './storage'
-import type { CareAction, CubPose, CubSave, NeedKey } from './types'
+import type { CareAction, CubOutfits, CubPose, CubSave, NeedKey } from './types'
 
 const POSE_MS: Record<Exclude<CareAction, 'sleep'>, number> = {
   feed: 1700,
@@ -204,6 +204,18 @@ export function useCub() {
     commit({ ...current, dojoBest: nextBest })
   }, [commit])
 
+  const setOutfits = useCallback((outfits: CubOutfits) => {
+    const current = saveRef.current
+    if (!current) return
+    commit({
+      ...current,
+      outfits: {
+        old: { ...outfits.old },
+        young: { ...outfits.young },
+      },
+    })
+  }, [commit])
+
   const reward = useCallback(
     (baseXp: number, needs: Partial<Record<NeedKey, number>>) => {
       const current = saveRef.current
@@ -237,6 +249,7 @@ export function useCub() {
     recordFlightBest,
     recordMatchBest,
     recordDojoBest,
+    setOutfits,
   }
 }
 

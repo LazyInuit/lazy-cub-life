@@ -9,6 +9,7 @@ import { playDiceRattle } from '../game/diceAudio'
 import type { CharacterAge } from '../game/homeScene'
 import { levelProgress } from '../game/progress'
 import type { CubController } from '../game/useCub'
+import type { OutfitTraits } from '../game/types'
 import { CubStage } from './CubStage'
 import { HouseIcon } from './HomeButton'
 import bodyIconUrl from '../assets/body-category.png'
@@ -38,16 +39,30 @@ const blankFlags = (): Flags =>
     return flags
   }, {} as Flags)
 
+function cloneOutfit(outfit: OutfitTraits | Outfit): Outfit {
+  return {
+    Body: outfit.Body,
+    Bodygear: outfit.Bodygear,
+    Earring: outfit.Earring,
+    Eyes: outfit.Eyes,
+    Headgear: outfit.Headgear,
+    Mane: outfit.Mane,
+    Mouth: outfit.Mouth,
+  }
+}
+
+function outfitsFromSave(cub: CubController): Record<CharacterAge, Outfit> {
+  const saved = cub.save?.outfits
+  return {
+    old: cloneOutfit(saved?.old ?? STARTER_OUTFIT),
+    young: cloneOutfit(saved?.young ?? STARTER_OUTFIT),
+  }
+}
+
 export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
   const [category, setCategory] = useState<TraitCategory>('Eyes')
-  const [worn, setWorn] = useState<Record<CharacterAge, Outfit>>({
-    old: { ...STARTER_OUTFIT },
-    young: { ...STARTER_OUTFIT },
-  })
-  const [shown, setShown] = useState<Record<CharacterAge, Outfit>>({
-    old: { ...STARTER_OUTFIT },
-    young: { ...STARTER_OUTFIT },
-  })
+  const [worn, setWorn] = useState<Record<CharacterAge, Outfit>>(() => outfitsFromSave(cub))
+  const [shown, setShown] = useState<Record<CharacterAge, Outfit>>(() => outfitsFromSave(cub))
   const [equipped, setEquipped] = useState<Record<CharacterAge, Flags>>({
     old: blankFlags(),
     young: blankFlags(),
@@ -55,6 +70,19 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
   const [manifest, setManifest] = useState<Manifest | null>(null)
   const [diceShake, setDiceShake] = useState(false)
   const traitBoxRef = useRef<HTMLDivElement>(null)
+  const skipPersist = useRef(true)
+  const setOutfits = cub.setOutfits
+
+  useEffect(() => {
+    if (skipPersist.current) {
+      skipPersist.current = false
+      return
+    }
+    setOutfits({
+      old: cloneOutfit(worn.old),
+      young: cloneOutfit(worn.young),
+    })
+  }, [worn, setOutfits])
 
   useEffect(() => {
     let alive = true
@@ -177,6 +205,13 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
     setEquipped((current) => ({ ...current, [age]: nextFlags }))
   }
 
+  const resetOutfit = () => {
+    const starter = { ...STARTER_OUTFIT }
+    setShown((current) => ({ ...current, [age]: starter }))
+    setWorn((current) => ({ ...current, [age]: starter }))
+    setEquipped((current) => ({ ...current, [age]: blankFlags() }))
+  }
+
   return (
     <section className="home-room wardrobe-room">
       <CubStage appearance={save.appearance} pose="idle" mode="wardrobe" tryOn={tryOnFromPicks(worn[age])} />
@@ -259,38 +294,50 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
             </button>
           ))}
         </div>
-        <div className="wardrobe-pager">
-          <div className="wardrobe-name">
-            <button
-              type="button"
-              aria-label="Previous style"
-              onPointerDown={flashPress}
-              onAnimationEnd={clearPressGlow}
-              onClick={() => step(-1)}
-            >
-              ‹
-            </button>
-            <div className="wardrobe-trait" ref={traitBoxRef}>
-              <span className="wardrobe-group">{category}</span>
-              <strong>{label}</strong>
+        <div className="wardrobe-bottom">
+          <button
+            type="button"
+            className="wardrobe-reset"
+            aria-label="Reset to original look"
+            onPointerDown={flashPress}
+            onAnimationEnd={clearPressGlow}
+            onClick={resetOutfit}
+          >
+            Reset
+          </button>
+          <div className="wardrobe-pager">
+            <div className="wardrobe-name">
+              <button
+                type="button"
+                aria-label="Previous style"
+                onPointerDown={flashPress}
+                onAnimationEnd={clearPressGlow}
+                onClick={() => step(-1)}
+              >
+                ‹
+              </button>
+              <div className="wardrobe-trait" ref={traitBoxRef}>
+                <span className="wardrobe-group">{category}</span>
+                <strong>{label}</strong>
+              </div>
+              <button
+                type="button"
+                aria-label="Next style"
+                onPointerDown={flashPress}
+                onAnimationEnd={clearPressGlow}
+                onClick={() => step(1)}
+              >
+                ›
+              </button>
             </div>
-            <button
-              type="button"
-              aria-label="Next style"
-              onPointerDown={flashPress}
-              onAnimationEnd={clearPressGlow}
-              onClick={() => step(1)}
-            >
-              ›
-            </button>
-          </div>
-          <div className="wardrobe-power" role="group" aria-label="Wear this style">
-            <button type="button" className={isOn ? 'on' : ''} aria-pressed={isOn} onClick={() => setPower(true)}>
-              ON
-            </button>
-            <button type="button" className={!isOn ? 'on' : ''} aria-pressed={!isOn} onClick={() => setPower(false)}>
-              OFF
-            </button>
+            <div className="wardrobe-power" role="group" aria-label="Wear this style">
+              <button type="button" className={isOn ? 'on' : ''} aria-pressed={isOn} onClick={() => setPower(true)}>
+                ON
+              </button>
+              <button type="button" className={!isOn ? 'on' : ''} aria-pressed={!isOn} onClick={() => setPower(false)}>
+                OFF
+              </button>
+            </div>
           </div>
         </div>
       </div>

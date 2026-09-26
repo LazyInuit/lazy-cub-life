@@ -1,11 +1,14 @@
 import {
+  DEFAULT_OUTFIT,
   GUEST_APPEARANCE,
   NEED_KEYS,
   type CareAction,
   type CubAppearance,
+  type CubOutfits,
   type CubSave,
   type CubTraits,
   type NeedKey,
+  type OutfitTraits,
   type TraitSlot,
 } from './types'
 
@@ -35,6 +38,16 @@ const MAX_AWAY_DROP: Record<NeedKey, number> = {
 
 const TRAIT_SLOTS: TraitSlot[] = [
   'Age',
+  'Body',
+  'Bodygear',
+  'Earring',
+  'Eyes',
+  'Headgear',
+  'Mane',
+  'Mouth',
+]
+
+const OUTFIT_SLOTS: (keyof OutfitTraits)[] = [
   'Body',
   'Bodygear',
   'Earring',
@@ -178,6 +191,26 @@ function num(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback
 }
 
+function sanitizeOutfit(value: unknown): OutfitTraits {
+  const next = { ...DEFAULT_OUTFIT }
+  if (!value || typeof value !== 'object') return next
+  const raw = value as Partial<Record<string, unknown>>
+  for (const slot of OUTFIT_SLOTS) {
+    const trait = raw[slot]
+    if (typeof trait === 'string' && trait.trim()) next[slot] = trait.trim()
+  }
+  return next
+}
+
+function sanitizeOutfits(value: unknown): CubOutfits {
+  if (!value || typeof value !== 'object') return { old: { ...DEFAULT_OUTFIT }, young: { ...DEFAULT_OUTFIT } }
+  const raw = value as Partial<CubOutfits>
+  return {
+    old: sanitizeOutfit(raw.old),
+    young: sanitizeOutfit(raw.young),
+  }
+}
+
 function sanitizeAppearance(value: unknown): CubAppearance {
   if (!value || typeof value !== 'object') return GUEST_APPEARANCE
   const raw = value as Partial<CubAppearance>
@@ -201,6 +234,10 @@ export function defaultSave(now = Date.now()): CubSave {
   return {
     version: 1,
     appearance: GUEST_APPEARANCE,
+    outfits: {
+      old: { ...DEFAULT_OUTFIT },
+      young: { ...DEFAULT_OUTFIT },
+    },
     hunger: 72,
     happiness: 68,
     energy: 70,
@@ -223,6 +260,7 @@ export function sanitizeSave(value: unknown, now = Date.now()): CubSave {
   return withLevel({
     version: 1,
     appearance: sanitizeAppearance(raw.appearance),
+    outfits: sanitizeOutfits(raw.outfits),
     hunger: clampNeed(num(raw.hunger, base.hunger)),
     happiness: clampNeed(num(raw.happiness, base.happiness)),
     energy: clampNeed(num(raw.energy, base.energy)),
