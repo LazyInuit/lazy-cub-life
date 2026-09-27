@@ -10,6 +10,7 @@ import oldFloaties from '../assets/cub-layers/old/bodygear-floaties.png'
 import oldMane from '../assets/cub-layers/old/mane.png'
 import oldEarring from '../assets/cub-layers/old/earring.png'
 import oldHeadgear from '../assets/cub-layers/old/headgear.png'
+import oldDirty from '../assets/cub-layers/old/mud2.png'
 import youngBody from '../assets/cub-layers/young/body.png'
 import youngBodygear from '../assets/cub-layers/young/bodygear.png'
 import youngMouth from '../assets/cub-layers/young/mouth.png'
@@ -22,6 +23,7 @@ import youngFloaties from '../assets/cub-layers/young/bodygear-floaties.png'
 import youngMane from '../assets/cub-layers/young/mane.png'
 import youngEarring from '../assets/cub-layers/young/earring.png'
 import youngHeadgear from '../assets/cub-layers/young/headgear.png'
+import youngDirty from '../assets/cub-layers/young/mud2.png'
 import { homeScene } from './homeScene'
 import { DEFAULT_OUTFIT } from './types'
 
@@ -83,6 +85,7 @@ const YELL = { old: oldMouthYell, young: youngMouthYell }
 const CLOSED = { old: oldEyesClosed, young: youngEyesClosed }
 const GOGGLES = { old: oldEyesGoggles, young: youngEyesGoggles }
 const FLOATIES = { old: oldFloaties, young: youngFloaties }
+const DIRTY = { old: oldDirty, young: youngDirty }
 
 const images = new Map<string, HTMLImageElement>()
 
@@ -99,6 +102,7 @@ for (const age of ['old', 'young'] as const) {
   load(`${age}-eyes-closed`, CLOSED[age])
   load(`${age}-eyes-goggles`, GOGGLES[age])
   load(`${age}-bodygear-floaties`, FLOATIES[age])
+  load(`${age}-dirty`, DIRTY[age])
 }
 
 let meatMouthUntil = 0
@@ -119,11 +123,13 @@ for (const age of ['old', 'young'] as const) {
 
 let needEnergy = 100
 let needHunger = 100
+let needCleanliness = 100
 
-/** Home cub face follows the sleep and food bars. Temporary care poses still win. */
-export function setNeedLooks(energy: number, hunger: number) {
+/** Home cub face/dirt follow need meters. Temporary care poses still win. */
+export function setNeedLooks(energy: number, hunger: number, cleanliness = 100) {
   needEnergy = energy
   needHunger = hunger
+  needCleanliness = cleanliness
 }
 
 /** Swap the mouth to Meat, then back to the cub's usual mouth. */
@@ -161,46 +167,50 @@ export function characterLayers(
   const meat = !preview && now < meatMouthUntil
   const yelling = !preview && now < yellMouthUntil
   const washing = !preview && now < washUntil
-  return ORDER.map((part) => {
+  const layers: HTMLImageElement[] = []
+  for (const part of ORDER) {
+    // Dirt after face layers, under mane so hair/crown stay clean.
+    if (part === 'mane' && !preview && !washing && needCleanliness < 30) {
+      const dirty = images.get(`${age}-dirty`)
+      if (dirty?.complete && dirty.naturalWidth > 0) layers.push(dirty)
+    }
+
     if (washing && part === 'headgear') {
       const bare = tryLayer(age, 'headgear', 'Nothing')
-      if (bare) return bare
-      return null
+      if (bare) layers.push(bare)
+      continue
     }
+
+    let image: HTMLImageElement | null | undefined
     if (washing && part === 'mouth') {
-      const surprised = tryLayer(age, 'mouth', 'Surprised')
-      if (surprised) return surprised
+      image = tryLayer(age, 'mouth', 'Surprised')
     }
-    if (!preview && eyesClosed && part === 'mouth') {
-      const standard = tryLayer(age, 'mouth', 'Standard')
-      if (standard) return standard
+    if (!image && !preview && eyesClosed && part === 'mouth') {
+      image = tryLayer(age, 'mouth', 'Standard')
     }
-    if (meat && part === 'mouth') return images.get(`${age}-mouth-meat`)
-    if (yelling && part === 'mouth') return images.get(`${age}-mouth-yell`)
-    if (!preview && needHunger < 30 && part === 'mouth') {
+    if (!image && meat && part === 'mouth') image = images.get(`${age}-mouth-meat`)
+    if (!image && yelling && part === 'mouth') image = images.get(`${age}-mouth-yell`)
+    if (!image && !preview && needHunger < 30 && part === 'mouth') {
       const sad = images.get(`${age}-mouth-sad`)
-      if (sad?.complete && sad.naturalWidth > 0) return sad
+      if (sad?.complete && sad.naturalWidth > 0) image = sad
     }
-    if (washing && part === 'bodygear') return images.get(`${age}-bodygear-floaties`)
-    if (!preview && eyesClosed && part === 'eyes') return images.get(`${age}-eyes-closed`)
-    if (!preview && now < angryEyesUntil && part === 'eyes') {
+    if (!image && washing && part === 'bodygear') image = images.get(`${age}-bodygear-floaties`)
+    if (!image && !preview && eyesClosed && part === 'eyes') image = images.get(`${age}-eyes-closed`)
+    if (!image && !preview && now < angryEyesUntil && part === 'eyes') {
       const angry = images.get(`${age}-eyes-angry`)
-      if (angry?.complete && angry.naturalWidth > 0) return angry
+      if (angry?.complete && angry.naturalWidth > 0) image = angry
     }
-    if (washing && part === 'eyes') return images.get(`${age}-eyes-goggles`)
-    if (!preview && needEnergy < 30 && part === 'eyes') {
+    if (!image && washing && part === 'eyes') image = images.get(`${age}-eyes-goggles`)
+    if (!image && !preview && needEnergy < 30 && part === 'eyes') {
       const sleepy = images.get(`${age}-eyes-sleepy`)
-      if (sleepy?.complete && sleepy.naturalWidth > 0) return sleepy
+      if (sleepy?.complete && sleepy.naturalWidth > 0) image = sleepy
     }
-    if (tryOn) {
-      const picked = tryOn[part]
-      if (picked) {
-        const worn = tryLayer(age, part, picked)
-        if (worn) return worn
-      }
-    }
-    return images.get(`${age}-${part}`)
-  }).filter((image): image is HTMLImageElement => Boolean(image?.complete && image.naturalWidth > 0))
+    if (!image && tryOn?.[part]) image = tryLayer(age, part, tryOn[part]!)
+    if (!image) image = images.get(`${age}-${part}`)
+    if (image?.complete && image.naturalWidth > 0) layers.push(image)
+  }
+
+  return layers
 }
 
 function tryLayer(age: 'old' | 'young', part: TraitSlot, name: string) {

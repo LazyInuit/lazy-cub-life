@@ -58,7 +58,7 @@ export function useCub() {
 
   const commit = useCallback((next: CubSave) => {
     saveRef.current = next
-    setNeedLooks(next.energy, next.hunger)
+    setNeedLooks(next.energy, next.hunger, next.cleanliness)
     setSave(next)
     writeSave(next)
   }, [])
