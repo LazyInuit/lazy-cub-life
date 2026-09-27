@@ -2501,6 +2501,47 @@ h1 {
   font-size: 1.05rem;
 }
 
+.archer-home {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  z-index: 4;
+  margin: 0 auto;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.archer-home-cub-wrap {
+  width: min(78%, 280px);
+  aspect-ratio: 1210 / 1233;
+  overflow: hidden;
+  margin: 0;
+  line-height: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 12px rgba(40, 22, 8, 0.35));
+}
+
+.archer-home-cub {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 12%;
+  display: block;
+}
+
+.archer-home .archer-panel {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  margin: 0;
+  max-width: none;
+  width: 100%;
+}
+
 .archer-panel {
   position: absolute;
   left: 12px;

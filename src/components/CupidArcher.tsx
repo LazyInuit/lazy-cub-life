@@ -345,13 +345,18 @@ export function CupidArcher({ best, onBest, onReward, onExit, onGames }: Props) 
           </div>
         ) : null}
         {mode === 'start' ? (
-          <div className="archer-panel">
-            <h2>Cupid Archer</h2>
-            <p>Drag back from the cub, then let go to shoot. 3 Lives - 60 second timer. Hit the bullseye to add time and lives.</p>
-            <p className="archer-best">High Score {bestRef.current}</p>
-            <button type="button" className="archer-btn" onClick={startRound}>
-              Play
-            </button>
+          <div className="archer-home">
+            <div className="archer-home-cub-wrap" aria-hidden>
+              <img className="archer-home-cub" src={cubUrl} alt="" />
+            </div>
+            <div className="archer-panel">
+              <h2>Cupid Archer</h2>
+              <p>Drag back from the cub, then let go to shoot. 3 Lives - 60 second timer. Hit the bullseye to add time and lives.</p>
+              <p className="archer-best">High Score {bestRef.current}</p>
+              <button type="button" className="archer-btn" onClick={startRound}>
+                Play
+              </button>
+            </div>
           </div>
         ) : null}
         {mode === 'over' && summary ? (
