@@ -120,6 +120,10 @@ export const homeScene: Record<HomeSlot, string> = {
 
 export type CharacterAge = 'old' | 'young'
 
+export function getHomeCharacterAge(): CharacterAge {
+  return homeScene.character.includes('young') ? 'young' : 'old'
+}
+
 export function setHomeCharacter(age: CharacterAge) {
   homeScene.character = age === 'young' ? 'kovu-young' : 'kovu-old'
 }

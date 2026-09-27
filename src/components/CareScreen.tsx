@@ -13,7 +13,7 @@ import lionPawUrl from '../assets/lion-paw-clear.png'
 import coinUrl from '../assets/lazy-dojo/sprites/bonuses/lazy-coin.png'
 import { traitSlug, tryOnFromPicks } from '../game/cubTraits'
 import { sanitizeOwnedOutfit } from '../game/traitShop'
-import { setHomeCharacter, type CharacterAge } from '../game/homeScene'
+import { getHomeCharacterAge, setHomeCharacter, type CharacterAge } from '../game/homeScene'
 import { barIsFull, levelProgress } from '../game/progress'
 import { formatCubCash } from '../game/formatCubCash'
 import type { CubController } from '../game/useCub'
@@ -33,7 +33,7 @@ type Props = {
 export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, startInGames = false }: Props) {
   const [gamesOpen, setGamesOpen] = useState(startInGames)
   const [wardrobeOpen, setWardrobeOpen] = useState(false)
-  const [age, setAge] = useState<CharacterAge>('young')
+  const [age, setAge] = useState<CharacterAge>(() => getHomeCharacterAge())
   const save = cub.save
 
   useEffect(() => {
