@@ -494,7 +494,12 @@ export function stepRound(round: ArcherRound, dt: number): Shot {
           })
         }
         if (hitBase === RING_RED) {
-          round.bursts.push({ x: tipX, y: tipY, life: 0.85, maxLife: 0.85 })
+          round.bursts.push({
+            x: round.target.x,
+            y: round.target.y,
+            life: 1.05,
+            maxLife: 1.05,
+          })
           round.flash = 0.2
           round.bullFlash = 0.55
         } else {

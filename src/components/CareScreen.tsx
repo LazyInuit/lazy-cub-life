@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import dashThumb from '../assets/galactic-dash-cover.jpg'
 import archerThumb from '../assets/cupid-archer/cover.jpg'
 import dojoBg from '../assets/lazy-dojo/backgrounds/dojo-1.png'
@@ -33,8 +33,18 @@ type Props = {
 export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, startInGames = false }: Props) {
   const [gamesOpen, setGamesOpen] = useState(startInGames)
   const [wardrobeOpen, setWardrobeOpen] = useState(false)
-  const [age, setAge] = useState<CharacterAge>('old')
+  const [age, setAge] = useState<CharacterAge>('young')
   const save = cub.save
+
+  useEffect(() => {
+    setHomeCharacter(age)
+  }, [age])
+
+  useEffect(() => {
+    // Home room and wardrobe both show the LVL badge; the games picker does not.
+    cub.setLevelUiVisible(!gamesOpen)
+    return () => cub.setLevelUiVisible(false)
+  }, [cub.setLevelUiVisible, gamesOpen])
 
   const flashPress = (event: { currentTarget: HTMLElement }) => {
     const button = event.currentTarget
@@ -145,7 +155,7 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, startInGa
 
   const feedFull = barIsFull(save.hunger)
   const cleanFull = barIsFull(save.cleanliness)
-  const progress = levelProgress(save.xp)
+  const progress = levelProgress(cub.presentedXp)
   const asleep = cub.asleep
   const xpPct = (progress.into / Math.max(1, progress.next)) * 100
   const ringR = 36
@@ -164,17 +174,6 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, startInGa
         <div className="age-switch" role="group" aria-label="Character age">
           <button
             type="button"
-            className={age === 'old' ? 'on' : ''}
-            aria-pressed={age === 'old'}
-            onClick={() => {
-              setAge('old')
-              setHomeCharacter('old')
-            }}
-          >
-            Old
-          </button>
-          <button
-            type="button"
             className={age === 'young' ? 'on' : ''}
             aria-pressed={age === 'young'}
             onClick={() => {
@@ -183,6 +182,17 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, startInGa
             }}
           >
             Young
+          </button>
+          <button
+            type="button"
+            className={age === 'old' ? 'on' : ''}
+            aria-pressed={age === 'old'}
+            onClick={() => {
+              setAge('old')
+              setHomeCharacter('old')
+            }}
+          >
+            Old
           </button>
         </div>
         <div className="top-stats">

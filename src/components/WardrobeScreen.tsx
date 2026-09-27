@@ -137,7 +137,7 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
 
   const save = cub.save
   if (!save) return null
-  const progress = levelProgress(save.xp)
+  const progress = levelProgress(cub.presentedXp)
   const xpPct = (progress.into / Math.max(1, progress.next)) * 100
   const ringR = 36
   const ringC = 2 * Math.PI * ringR
@@ -244,9 +244,6 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
       />
       <div className="room-ui">
         <div className="age-switch" role="group" aria-label="Character age">
-          <button type="button" className={age === 'old' ? 'on' : ''} aria-pressed={age === 'old'} onClick={() => onAge('old')}>
-            Old
-          </button>
           <button
             type="button"
             className={age === 'young' ? 'on' : ''}
@@ -255,9 +252,16 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
           >
             Young
           </button>
+          <button type="button" className={age === 'old' ? 'on' : ''} aria-pressed={age === 'old'} onClick={() => onAge('old')}>
+            Old
+          </button>
         </div>
         <div className="top-stats">
-          <div className="level-badge" aria-label={`Level ${progress.level}`}>
+          <div
+            className={cub.levelUp ? 'level-badge level-up' : 'level-badge'}
+            key={cub.levelUp ?? 'level'}
+            aria-label={`Level ${progress.level}, ${progress.into} of ${progress.next} experience`}
+          >
             <svg className="xp-ring" viewBox="0 0 84 84" aria-hidden="true">
               <circle className="xp-ring-track" cx="42" cy="42" r={ringR} />
               {xpPct > 0 ? (

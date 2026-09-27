@@ -6,7 +6,18 @@ import { playLevelSound } from './levelAudio'
 import { playSplash } from './splashAudio'
 import { startLullaby, stopLullaby } from './sleepAudio'
 import { startSnore, stopSnore } from './snoreAudio'
-import { applyAbsence, applyCare, applyPet, applyReward, clampNeed, decaySave, isNeedy, levelFromXp, rewardMultiplier } from './progress'
+import {
+  applyAbsence,
+  applyCare,
+  applyPet,
+  applyReward,
+  clampNeed,
+  decaySave,
+  isNeedy,
+  levelFromXp,
+  levelProgress,
+  rewardMultiplier,
+} from './progress'
 import { readSave, writeSave } from './storage'
 import { isTraitUnlocked, sanitizeOwnedOutfits, traitKey, traitPrice } from './traitShop'
 import type { CareAction, CubOutfits, CubPose, CubSave, NeedKey } from './types'
@@ -23,18 +34,25 @@ const POSE_FOR: Record<Exclude<CareAction, 'sleep'>, CubPose> = {
   clean: 'wash',
 }
 
+const LEVEL_UP_MS = 1500
+const XP_FILL_MS = 450
+
 export function useCub() {
   const [save, setSave] = useState<CubSave | null>(null)
   const saveRef = useRef<CubSave | null>(null)
   const [pose, setPose] = useState<CubPose>('idle')
   const [toast, setToast] = useState<string | null>(null)
   const [levelUp, setLevelUp] = useState<number | null>(null)
+  const [presentedXp, setPresentedXp] = useState(0)
   const [busy, setBusy] = useState(false)
   const [asleep, setAsleep] = useState(false)
   const busyRef = useRef(false)
   const asleepRef = useRef(false)
   const poseTimer = useRef<number | null>(null)
-  const levelTimer = useRef<number | null>(null)
+  const presentedXpRef = useRef(0)
+  const levelUiVisibleRef = useRef(false)
+  const revealBusyRef = useRef(false)
+  const revealGenRef = useRef(0)
   const energyClock = useRef(0)
   const sleepEnergyClock = useRef(0)
 
@@ -45,24 +63,110 @@ export function useCub() {
     writeSave(next)
   }, [])
 
-  const noteLevel = useCallback((beforeXp: number, afterXp: number) => {
-    const before = levelFromXp(beforeXp)
-    const after = levelFromXp(afterXp)
-    if (after <= before) return
-    playLevelSound()
-    setLevelUp(after)
-    if (levelTimer.current !== null) window.clearTimeout(levelTimer.current)
-    levelTimer.current = window.setTimeout(() => {
-      levelTimer.current = null
-      setLevelUp(null)
-    }, 1500)
+  const setPresented = useCallback((xp: number) => {
+    presentedXpRef.current = xp
+    setPresentedXp(xp)
   }, [])
 
-  useEffect(() => {
-    const loaded = readSave()
-    commit(applyAbsence(loaded).save)
-  }, [commit])
+  const runReveal = useCallback(async () => {
+    if (revealBusyRef.current) return
+    if (!levelUiVisibleRef.current) return
+    const target = saveRef.current?.xp ?? 0
+    if (presentedXpRef.current >= target) return
 
+    revealBusyRef.current = true
+    const gen = ++revealGenRef.current
+
+    const cancelled = () => gen !== revealGenRef.current || !levelUiVisibleRef.current
+
+    const sleep = (ms: number) =>
+      new Promise<void>((resolve) => {
+        window.setTimeout(resolve, ms)
+      })
+
+    const animateTo = (to: number, ms: number) =>
+      new Promise<void>((resolve) => {
+        const from = presentedXpRef.current
+        if (from === to || ms <= 0) {
+          setPresented(to)
+          resolve()
+          return
+        }
+        const t0 = performance.now()
+        const step = (now: number) => {
+          if (cancelled()) {
+            resolve()
+            return
+          }
+          const t = Math.min(1, (now - t0) / ms)
+          const eased = t * (2 - t)
+          setPresented(Math.round(from + (to - from) * eased))
+          if (t < 1) {
+            requestAnimationFrame(step)
+            return
+          }
+          setPresented(to)
+          resolve()
+        }
+        requestAnimationFrame(step)
+      })
+
+    try {
+      while (!cancelled()) {
+        const goal = saveRef.current?.xp ?? 0
+        const cur = presentedXpRef.current
+        if (cur >= goal) break
+
+        const { level, into, next } = levelProgress(cur)
+        const toLevelUp = next - into
+        const room = goal - cur
+
+        if (room >= toLevelUp && level < 99) {
+          await animateTo(cur + toLevelUp, XP_FILL_MS)
+          if (cancelled()) break
+          playLevelSound()
+          setLevelUp(level + 1)
+          await sleep(LEVEL_UP_MS)
+          if (gen !== revealGenRef.current) break
+          setLevelUp(null)
+        } else {
+          await animateTo(goal, XP_FILL_MS)
+        }
+      }
+    } finally {
+      if (gen === revealGenRef.current) revealBusyRef.current = false
+    }
+  }, [setPresented])
+
+  const noteLevel = useCallback(() => {
+    if (!levelUiVisibleRef.current) return
+    void runReveal()
+  }, [runReveal])
+
+  const setLevelUiVisible = useCallback(
+    (visible: boolean) => {
+      levelUiVisibleRef.current = visible
+      if (!visible) {
+        revealGenRef.current += 1
+        revealBusyRef.current = false
+        setLevelUp(null)
+        return
+      }
+      void runReveal()
+    },
+    [runReveal],
+  )
+
+  useEffect(() => {
+    const loaded = applyAbsence(readSave()).save
+    // Open with ?lvl1 to force level 1 (xp 0) for device testing.
+    if (new URLSearchParams(window.location.search).has('lvl1')) {
+      loaded.xp = 0
+    }
+    commit(loaded)
+    presentedXpRef.current = loaded.xp
+    setPresentedXp(loaded.xp)
+  }, [commit])
   useEffect(() => {
     const id = window.setInterval(() => {
       const current = saveRef.current
@@ -92,7 +196,7 @@ export function useCub() {
   useEffect(() => {
     return () => {
       if (poseTimer.current !== null) window.clearTimeout(poseTimer.current)
-      if (levelTimer.current !== null) window.clearTimeout(levelTimer.current)
+      revealGenRef.current += 1
       stopLullaby()
       stopSnore()
       setClosedEyes(false)
@@ -124,8 +228,8 @@ export function useCub() {
       if (!next) return
       busyRef.current = true
       setBusy(true)
-      noteLevel(current.xp, next.xp)
       commit(next)
+      noteLevel()
       if (action === 'feed') {
         playSlurp()
         showMeatMouth(2000)
@@ -155,8 +259,8 @@ export function useCub() {
     }
     const next = applyCare(current, 'sleep')
     if (next) {
-      noteLevel(current.xp, next.xp)
       commit(next)
+      noteLevel()
     }
     sleepEnergyClock.current = 0
     asleepRef.current = true
@@ -175,8 +279,8 @@ export function useCub() {
     showAngryEyes(700)
     const next = applyPet(current)
     if (next) {
-      noteLevel(current.xp, next.xp)
       commit(next)
+      noteLevel()
     }
     busyRef.current = true
     setBusy(true)
@@ -265,8 +369,8 @@ export function useCub() {
       const scaled = options?.flat ? baseXp : baseXp * rewardMultiplier(levelFromXp(current.xp))
       const xpGained = Math.round(scaled)
       const next = applyReward(current, xpGained, needs)
-      noteLevel(current.xp, next.xp)
       commit(next)
+      noteLevel()
       return { xpGained }
     },
     [commit, noteLevel],
@@ -283,6 +387,7 @@ export function useCub() {
     pose: displayPose,
     toast,
     levelUp,
+    presentedXp,
     busy,
     asleep,
     care,
@@ -296,6 +401,7 @@ export function useCub() {
     setOutfits,
     addCubCash,
     purchaseTrait,
+    setLevelUiVisible,
   }
 }
 

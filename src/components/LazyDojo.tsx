@@ -355,24 +355,49 @@ export function LazyDojo({ best, onBest, onReward, onExit, onGames }: Props) {
             <h2>HOW TO PLAY</h2>
             <ul>
               <li>
-                <strong>SLICE THE FRUIT</strong>
-                <span>Swipe across fruit to score points.</span>
+                <span className="dojo-howto-icons" aria-hidden="true">
+                  <img src={DOJO_ASSETS.fruit.strawberry} alt="" />
+                </span>
+                <div className="dojo-howto-copy">
+                  <strong>SLICE THE FRUIT</strong>
+                  <span>Swipe across fruit to score points.</span>
+                </div>
               </li>
               <li>
-                <strong>BUILD COMBOS</strong>
-                <span>Slice multiple fruit in one swipe for bonus points.</span>
+                <span className="dojo-howto-icons" aria-hidden="true">
+                  <img src={DOJO_ASSETS.fruit.orange} alt="" />
+                </span>
+                <div className="dojo-howto-copy">
+                  <strong>BUILD COMBOS</strong>
+                  <span>Slice multiple fruit in one swipe for bonus points.</span>
+                </div>
               </li>
               <li>
-                <strong>DON'T MISS</strong>
-                <span>Miss three fruit and your training is over.</span>
+                <span className="dojo-howto-icons" aria-hidden="true">
+                  <img src={DOJO_ASSETS.fruit.watermelon} alt="" />
+                </span>
+                <div className="dojo-howto-copy">
+                  <strong>DON'T MISS</strong>
+                  <span>Miss three fruit and your training is over.</span>
+                </div>
               </li>
               <li>
-                <strong>AVOID BOMBS</strong>
-                <span>Slice a bomb and you lose one life.</span>
+                <span className="dojo-howto-icons" aria-hidden="true">
+                  <img src={DOJO_ASSETS.hazards.bomb} alt="" />
+                </span>
+                <div className="dojo-howto-copy">
+                  <strong>AVOID BOMBS</strong>
+                  <span>Slice a bomb and you lose one life.</span>
+                </div>
               </li>
               <li>
-                <strong>GOLDEN FRUIT</strong>
-                <span>Slice a golden fruit to restore one life.</span>
+                <span className="dojo-howto-icons" aria-hidden="true">
+                  <img src={DOJO_ASSETS.bonuses.golden} alt="" />
+                </span>
+                <div className="dojo-howto-copy">
+                  <strong>GOLDEN FRUIT</strong>
+                  <span>Slice a golden fruit to restore one life.</span>
+                </div>
               </li>
             </ul>
             <button

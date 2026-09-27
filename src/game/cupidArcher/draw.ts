@@ -134,6 +134,40 @@ function drawArrow(ctx: CanvasRenderingContext2D, x: number, y: number, rot: num
   ctx.restore()
 }
 
+function drawPinkHeart(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  size: number,
+  alpha: number,
+) {
+  // size ≈ half-width; viewBox is 32×30 centered at (16, 15)
+  const s = (size * 2) / 30
+  ctx.save()
+  ctx.translate(x, y)
+  ctx.scale(s, s)
+  ctx.translate(-16, -15)
+  ctx.globalAlpha = Math.max(0, Math.min(1, alpha))
+
+  const body = new Path2D(LIFE_HEART)
+  const fill = ctx.createRadialGradient(16, 12, 2, 16, 15, 16)
+  fill.addColorStop(0, 'rgba(255, 190, 220, 0.55)')
+  fill.addColorStop(0.55, 'rgba(255, 110, 170, 0.28)')
+  fill.addColorStop(1, 'rgba(255, 80, 150, 0.06)')
+  ctx.fillStyle = fill
+  ctx.fill(body)
+
+  ctx.strokeStyle = 'rgba(255, 120, 180, 0.95)'
+  ctx.lineWidth = Math.max(1.2, 2.4 / Math.max(0.35, s))
+  ctx.lineJoin = 'round'
+  ctx.stroke(body)
+
+  ctx.strokeStyle = 'rgba(255, 210, 230, 0.75)'
+  ctx.lineWidth = Math.max(0.8, 1.4 / Math.max(0.35, s))
+  ctx.stroke(body)
+  ctx.restore()
+}
+
 function drawBullBurst(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -141,42 +175,31 @@ function drawBullBurst(
   t: number,
   scale: number,
 ) {
-  const alpha = Math.max(0, 1 - t)
+  // t: 0 at spawn → 1 at end. Big pink heart pulses outward around the target.
+  const ease = 1 - (1 - t) * (1 - t)
   ctx.save()
-  // Expanding gold + red rings
-  for (let i = 0; i < 3; i++) {
-    const r = (18 + t * (70 + i * 28) + i * 10) * scale
-    ctx.beginPath()
-    ctx.arc(x, y, r, 0, Math.PI * 2)
-    ctx.strokeStyle =
-      i % 2 === 0
-        ? `rgba(255, 215, 90, ${alpha * (0.95 - i * 0.2)})`
-        : `rgba(255, 70, 90, ${alpha * (0.85 - i * 0.18)})`
-    ctx.lineWidth = Math.max(2, (4 - i) * scale)
-    ctx.stroke()
-  }
-  // Spark rays
-  const rays = 10
-  for (let i = 0; i < rays; i++) {
-    const ang = (i / rays) * Math.PI * 2 + t * 1.2
-    const inner = (8 + t * 12) * scale
-    const outer = (28 + t * 90) * scale
-    ctx.beginPath()
-    ctx.moveTo(x + Math.cos(ang) * inner, y + Math.sin(ang) * inner)
-    ctx.lineTo(x + Math.cos(ang) * outer, y + Math.sin(ang) * outer)
-    ctx.strokeStyle = i % 2 === 0 ? `rgba(255, 230, 120, ${alpha * 0.9})` : `rgba(255, 90, 110, ${alpha * 0.75})`
-    ctx.lineWidth = Math.max(1.5, 2.4 * scale)
-    ctx.stroke()
-  }
-  // Soft core bloom
-  const bloom = ctx.createRadialGradient(x, y, 0, x, y, 36 * scale * (1 + t))
-  bloom.addColorStop(0, `rgba(255, 250, 200, ${alpha * 0.85})`)
-  bloom.addColorStop(0.45, `rgba(255, 80, 100, ${alpha * 0.35})`)
-  bloom.addColorStop(1, 'rgba(255, 80, 100, 0)')
+
+  const bloomR = (40 + ease * 140) * scale
+  const bloom = ctx.createRadialGradient(x, y, 0, x, y, bloomR)
+  bloom.addColorStop(0, `rgba(255, 160, 200, ${(1 - t) * 0.45})`)
+  bloom.addColorStop(0.5, `rgba(255, 100, 170, ${(1 - t) * 0.18})`)
+  bloom.addColorStop(1, 'rgba(255, 80, 150, 0)')
   ctx.fillStyle = bloom
   ctx.beginPath()
-  ctx.arc(x, y, 36 * scale * (1 + t), 0, Math.PI * 2)
+  ctx.arc(x, y, bloomR, 0, Math.PI * 2)
   ctx.fill()
+
+  // Two staggered hearts so it reads as a pulse, not a single pop.
+  for (let i = 0; i < 2; i++) {
+    const delay = i * 0.18
+    const local = Math.max(0, Math.min(1, (t - delay) / Math.max(0.001, 1 - delay)))
+    if (local <= 0) continue
+    const localEase = 1 - (1 - local) * (1 - local)
+    const alpha = (1 - local) * (i === 0 ? 0.95 : 0.7)
+    const size = (22 + localEase * (95 + i * 18)) * scale
+    drawPinkHeart(ctx, x, y, size, alpha)
+  }
+
   ctx.restore()
 }
 

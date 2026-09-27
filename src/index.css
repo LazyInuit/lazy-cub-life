@@ -2221,6 +2221,12 @@ h1 {
   box-shadow: 0 3px 0 #1a2a14, inset 0 1px 0 rgba(220, 255, 180, 0.22);
 }
 
+.dojo-howto {
+  max-height: min(78vh, 560px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .dojo-howto ul {
   list-style: none;
   padding: 0;
@@ -2232,15 +2238,45 @@ h1 {
 
 .dojo-howto li {
   display: grid;
-  gap: 2px;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.18);
 }
 
-.dojo-howto li strong {
+.dojo-howto-icons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 44px;
+}
+
+.dojo-howto-icons img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+}
+
+.dojo-howto-icons img + img {
+  margin-left: -8px;
+}
+
+.dojo-howto-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dojo-howto-copy strong {
   font-size: 0.78rem;
   letter-spacing: 0.06em;
 }
 
-.dojo-howto li span {
+.dojo-howto-copy span {
   font-size: 0.88rem;
   opacity: 0.92;
 }

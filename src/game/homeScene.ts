@@ -114,7 +114,7 @@ export const homeCatalog: HomeItem[] = [
 export const homeScene: Record<HomeSlot, string> = {
   background: 'background-1',
   chair: 'chair-1',
-  character: 'kovu-old',
+  character: 'kovu-young',
   table: 'table-1',
 }
 
