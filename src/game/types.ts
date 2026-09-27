@@ -57,6 +57,7 @@ export type CubSave = {
   flightBest: number
   matchBest: number
   dojoBest: number
+  archerBest: number
 }
 
 export const NEED_KEYS: NeedKey[] = ['hunger', 'happiness', 'energy', 'cleanliness']

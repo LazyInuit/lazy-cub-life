@@ -273,6 +273,7 @@ export function defaultSave(now = Date.now()): CubSave {
     flightBest: 0,
     matchBest: 0,
     dojoBest: 0,
+    archerBest: 0,
   }
 }
 
@@ -305,6 +306,7 @@ export function sanitizeSave(value: unknown, now = Date.now()): CubSave {
     flightBest: Math.max(0, Math.floor(num(raw.flightBest, 0))),
     matchBest: Math.max(0, Math.floor(num(raw.matchBest, 0))),
     dojoBest: Math.max(0, Math.floor(num(raw.dojoBest, 0))),
+    archerBest: Math.max(0, Math.floor(num(raw.archerBest, 0))),
   })
   return { ...draft, outfits: sanitizeOwnedOutfits(draft, draft.outfits) }
 }

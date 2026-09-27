@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { CareScreen } from './components/CareScreen'
+import { CupidArcher } from './components/CupidArcher'
 import { LazyDojo } from './components/LazyDojo'
 import { SafariFlight } from './components/SafariFlight'
 import { TraitMatch } from './components/TraitMatch'
 import { useCub } from './game/useCub'
 
-type Screen = 'home' | 'flight' | 'match' | 'dojo'
+type Screen = 'home' | 'flight' | 'match' | 'dojo' | 'archer'
 
 export default function App() {
   const cub = useCub()
@@ -48,6 +49,10 @@ export default function App() {
             setOpenGames(false)
             setScreen('dojo')
           }}
+          onArcher={() => {
+            setOpenGames(false)
+            setScreen('archer')
+          }}
         />
       ) : null}
       {screen === 'flight' ? (
@@ -72,6 +77,15 @@ export default function App() {
         <LazyDojo
           best={cub.save.dojoBest}
           onBest={cub.recordDojoBest}
+          onReward={cub.reward}
+          onExit={goHome}
+          onGames={goGames}
+        />
+      ) : null}
+      {screen === 'archer' ? (
+        <CupidArcher
+          best={cub.save.archerBest}
+          onBest={cub.recordArcherBest}
           onReward={cub.reward}
           onExit={goHome}
           onGames={goGames}

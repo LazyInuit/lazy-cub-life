@@ -207,6 +207,14 @@ export function useCub() {
     commit({ ...current, dojoBest: nextBest })
   }, [commit])
 
+  const recordArcherBest = useCallback((score: number) => {
+    const current = saveRef.current
+    if (!current) return
+    const nextBest = Math.max(0, Math.floor(score))
+    if (nextBest <= current.archerBest) return
+    commit({ ...current, archerBest: nextBest })
+  }, [commit])
+
   const setOutfits = useCallback((outfits: CubOutfits) => {
     const current = saveRef.current
     if (!current) return
@@ -284,6 +292,7 @@ export function useCub() {
     recordFlightBest,
     recordMatchBest,
     recordDojoBest,
+    recordArcherBest,
     setOutfits,
     addCubCash,
     purchaseTrait,

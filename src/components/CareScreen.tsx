@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import dashThumb from '../assets/galactic-dash-cover.jpg'
+import archerThumb from '../assets/cupid-archer/cover.jpg'
 import dojoBg from '../assets/lazy-dojo/backgrounds/dojo-1.png'
 import dojoCover from '../assets/lazy-dojo/ui/ninja-cub-cover.png'
 import controllerUrl from '../assets/controller-icon.png'
@@ -25,10 +26,11 @@ type Props = {
   onFlight: () => void
   onMatch: () => void
   onDojo: () => void
+  onArcher: () => void
   startInGames?: boolean
 }
 
-export function CareScreen({ cub, onFlight, onMatch, onDojo, startInGames = false }: Props) {
+export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, startInGames = false }: Props) {
   const [gamesOpen, setGamesOpen] = useState(startInGames)
   const [wardrobeOpen, setWardrobeOpen] = useState(false)
   const [age, setAge] = useState<CharacterAge>('old')
@@ -108,6 +110,19 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, startInGames = fals
               <img className="thumb-dojo-cover" src={dojoCover} alt="" />
             </span>
             <span>Ninja Cub Dojo</span>
+          </button>
+          <button
+            type="button"
+            className="game-pick"
+            onPointerDown={flashSilverPress}
+            onPointerUp={clearSilverPressGlow}
+            onPointerCancel={clearSilverPressGlow}
+            onClick={onArcher}
+          >
+            <span className="game-thumb thumb-archer" aria-hidden="true">
+              <img src={archerThumb} alt="" />
+            </span>
+            <span>Cupid Archer</span>
           </button>
         </div>
       </section>
