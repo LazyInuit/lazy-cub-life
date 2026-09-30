@@ -2197,9 +2197,16 @@ h1 {
 }
 
 .dojo-sub {
-  margin: 0 0 8px;
+  margin: 0;
   opacity: 0.92;
   font-weight: 700;
+}
+
+.dojo-best {
+  margin: 0 0 8px;
+  font-weight: 800;
+  color: #ffe066;
+  letter-spacing: 0.04em;
 }
 
 .dojo-btn {

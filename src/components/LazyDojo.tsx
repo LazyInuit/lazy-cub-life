@@ -334,6 +334,7 @@ export function LazyDojo({ best, onBest, onReward, onExit, onGames }: Props) {
             <img className="dojo-hero" src={DOJO_ASSETS.ui.ninjaCubCover} alt="" />
             <h2>NINJA CUB DOJO</h2>
             <p className="dojo-sub">Train your Cub. Master the blade.</p>
+            <p className="dojo-best">Best Score {bestRef.current}</p>
             <button type="button" className="dojo-btn" onClick={startTraining}>
               START TRAINING
             </button>

@@ -59,6 +59,13 @@ function loadImage(src: string) {
   return image
 }
 
+function formatClock(seconds: number) {
+  const whole = Math.max(0, Math.ceil(seconds))
+  const mins = Math.floor(whole / 60)
+  const secs = whole % 60
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
 function LivesHud({ lives }: { lives: number }) {
   return (
     <div className="dojo-lives" aria-label={`${lives} lives`}>
@@ -310,7 +317,7 @@ export function CupidArcher({ best, onBest, onReward, onExit, onGames }: Props) 
               <span>Score</span>
               <strong>{hud.score}</strong>
             </p>
-            <p className={hud.time <= 10 ? 'archer-time urgent' : 'archer-time'}>{hud.time}s</p>
+            <p className={hud.time <= 10 ? 'archer-time urgent' : 'archer-time'}>{formatClock(hud.time)}</p>
           </div>
         ) : (
           <h1>Cupid Archer</h1>
@@ -352,7 +359,7 @@ export function CupidArcher({ best, onBest, onReward, onExit, onGames }: Props) 
             <div className="archer-panel">
               <h2>Cupid Archer</h2>
               <p>Drag back from the cub, then let go to shoot. 3 Lives - 60 second timer. Hit the bullseye to add time and lives.</p>
-              <p className="archer-best">High Score {bestRef.current}</p>
+              <p className="archer-best">Best Score {bestRef.current}</p>
               <button type="button" className="archer-btn" onClick={startRound}>
                 Play
               </button>

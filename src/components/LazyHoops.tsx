@@ -586,7 +586,7 @@ export function LazyHoops({ best, onBest, onReward, onExit, onGames }: Props) {
               <strong key={hud.timePulse}>{formatClock(hud.time)}</strong>
             </p>
             <p className="hoops-stat">
-              <span>Best</span>
+              <span>Best Score</span>
               <strong>{shownBest}</strong>
             </p>
             <LivesHud lives={hud.lives} pop={hud.pop} />
@@ -600,7 +600,7 @@ export function LazyHoops({ best, onBest, onReward, onExit, onGames }: Props) {
             <img className="hoops-home-cub hoops-home-cub-left" src={homeCubUrl} alt="" />
             <img className="hoops-home-cub hoops-home-cub-right" src={homeCubRightUrl} alt="" />
             <p className="hoops-lead">Ready to shoot some hoops? You have 60 seconds. Swipe up on the ball and aim for the basket!</p>
-            <p className="hoops-best">Best {bestRef.current}</p>
+            <p className="hoops-best">Best Score {bestRef.current}</p>
             <button type="button" className="hoops-btn" onClick={playAgain}>
               Play
             </button>
