@@ -70,7 +70,7 @@ export function levelProgress(xp: number): { level: number; into: number; next: 
   let level = 1
   let spent = 0
   let next = xpForNextLevel(level)
-  const safeXp = Math.max(0, Math.floor(xp))
+  const safeXp = Math.max(0, Math.round(xp * 2) / 2)
   while (safeXp >= spent + next && level < 99) {
     spent += next
     level += 1
@@ -191,7 +191,8 @@ export function applyReward(
   needs: Partial<Record<NeedKey, number>>,
   now = Date.now(),
 ): CubSave {
-  const next: CubSave = { ...save, xp: save.xp + Math.max(0, Math.round(xpGained)), lastVisit: now }
+  const gained = Math.max(0, Math.round(xpGained * 2) / 2)
+  const next: CubSave = { ...save, xp: save.xp + gained, lastVisit: now }
   for (const key of NEED_KEYS) {
     next[key] = clampNeed(save[key] + (needs[key] ?? 0))
   }
@@ -274,6 +275,7 @@ export function defaultSave(now = Date.now()): CubSave {
     matchBest: 0,
     dojoBest: 0,
     archerBest: 0,
+    hoopsBest: 0,
   }
 }
 
@@ -282,7 +284,7 @@ export function sanitizeSave(value: unknown, now = Date.now()): CubSave {
   const raw = value as Partial<CubSave>
   if (raw.version !== 1) return defaultSave(now)
   const base = defaultSave(now)
-  const xp = Math.max(0, Math.floor(num(raw.xp, 0)))
+  const xp = Math.max(0, Math.round(num(raw.xp, 0) * 2) / 2)
   const hasCash = typeof raw.cubCash === 'number' && Number.isFinite(raw.cubCash)
   const unlockedTraits = sanitizeUnlockedTraits(raw.unlockedTraits)
   // Move earlier test seeds, including leftover 800 or 10,000,000 after purchases, onto the starter balance.
@@ -307,6 +309,7 @@ export function sanitizeSave(value: unknown, now = Date.now()): CubSave {
     matchBest: Math.max(0, Math.floor(num(raw.matchBest, 0))),
     dojoBest: Math.max(0, Math.floor(num(raw.dojoBest, 0))),
     archerBest: Math.max(0, Math.floor(num(raw.archerBest, 0))),
+    hoopsBest: Math.max(0, Math.floor(num(raw.hoopsBest, 0))),
   })
   return { ...draft, outfits: sanitizeOwnedOutfits(draft, draft.outfits) }
 }

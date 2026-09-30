@@ -319,6 +319,14 @@ export function useCub() {
     commit({ ...current, archerBest: nextBest })
   }, [commit])
 
+  const recordHoopsBest = useCallback((score: number) => {
+    const current = saveRef.current
+    if (!current) return
+    const nextBest = Math.max(0, Math.floor(score))
+    if (nextBest <= current.hoopsBest) return
+    commit({ ...current, hoopsBest: nextBest })
+  }, [commit])
+
   const setOutfits = useCallback((outfits: CubOutfits) => {
     const current = saveRef.current
     if (!current) return
@@ -367,7 +375,7 @@ export function useCub() {
       const current = saveRef.current
       if (!current) return { xpGained: 0 }
       const scaled = options?.flat ? baseXp : baseXp * rewardMultiplier(levelFromXp(current.xp))
-      const xpGained = Math.round(scaled)
+      const xpGained = options?.flat ? Math.max(0, scaled) : Math.max(0, Math.round(scaled))
       const next = applyReward(current, xpGained, needs)
       commit(next)
       noteLevel()
@@ -398,6 +406,7 @@ export function useCub() {
     recordMatchBest,
     recordDojoBest,
     recordArcherBest,
+    recordHoopsBest,
     setOutfits,
     addCubCash,
     purchaseTrait,
