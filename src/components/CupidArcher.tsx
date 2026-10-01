@@ -320,7 +320,7 @@ export function CupidArcher({ best, onBest, onReward, onExit, onGames }: Props) 
             <p className={hud.time <= 10 ? 'archer-time urgent' : 'archer-time'}>{formatClock(hud.time)}</p>
           </div>
         ) : (
-          <h1>Cupid Archer</h1>
+          <h1>Cupid Archery</h1>
         )}
       </header>
       <div className="archer-stage" ref={wrapRef} style={{ backgroundImage: `url(${backgroundUrl})` }}>
@@ -357,7 +357,7 @@ export function CupidArcher({ best, onBest, onReward, onExit, onGames }: Props) 
               <img className="archer-home-cub" src={cubUrl} alt="" />
             </div>
             <div className="archer-panel">
-              <h2>Cupid Archer</h2>
+              <h2>Cupid Archery</h2>
               <p>Drag back from the cub, then let go to shoot. 3 Lives - 60 second timer. Hit the bullseye to add time and lives.</p>
               <p className="archer-best">Best Score {bestRef.current}</p>
               <button type="button" className="archer-btn" onClick={startRound}>

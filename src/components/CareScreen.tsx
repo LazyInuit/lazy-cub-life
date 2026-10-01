@@ -134,7 +134,7 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
             <span className="game-thumb thumb-archer" aria-hidden="true">
               <img src={archerThumb} alt="" />
             </span>
-            <span>Cupid Archer</span>
+            <span>Cupid Archery</span>
           </button>
           <button
             type="button"
