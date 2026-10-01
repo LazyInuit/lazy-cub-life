@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import dashThumb from '../assets/galactic-dash-cover.jpg'
 import archerThumb from '../assets/cupid-archer/cover.jpg'
-import hoopsThumb from '../assets/lazy-hoops/cover.jpg'
+import hoopsThumb from '../assets/lazy-hoops/cover-select.jpg'
 import dojoBg from '../assets/lazy-dojo/backgrounds/dojo-1.png'
 import dojoCover from '../assets/lazy-dojo/ui/ninja-cub-cover.png'
 import controllerUrl from '../assets/controller-icon.png'
