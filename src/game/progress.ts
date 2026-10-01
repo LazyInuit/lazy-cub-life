@@ -140,7 +140,7 @@ const CARE_SPECS: Record<
   { stat: NeedKey; amount: number; needs: Partial<Record<NeedKey, number>>; blockWhenFull: boolean }
 > = {
   feed: { stat: 'hunger', amount: 20, blockWhenFull: true, needs: { hunger: 20, cleanliness: -4 } },
-  sleep: { stat: 'energy', amount: 36, blockWhenFull: true, needs: { energy: 36, hunger: -8 } },
+  sleep: { stat: 'energy', amount: 36, blockWhenFull: false, needs: { energy: 36, hunger: -8 } },
   clean: { stat: 'cleanliness', amount: 100, blockWhenFull: true, needs: { cleanliness: 100 } },
 }
 

@@ -266,13 +266,13 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
             onClick={() => cub.care('feed')}
           >
             <span className="wood-btn-wrap">
-              {save.hunger < 30 ? <span className="need-alert" aria-label="Feed needs attention">!</span> : null}
+              {save.hunger < 30 ? <span className="need-alert" aria-label="Energy needs attention">!</span> : null}
               <span className="wood-btn">
                 <img className={age === 'young' ? 'meat-mouth' : 'meat-mouth meat-old'} src={age === 'young' ? meatYoungUrl : meatOldUrl} alt="" />
               </span>
             </span>
             <WoodLabel value={save.hunger} color="#e08a3c">
-              Feed
+              Energy
             </WoodLabel>
           </button>
           <button
