@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { setClosedEyes, setNeedLooks, showAngryEyes, showMeatMouth, showWashGear, showYellMouth } from './cubTraits'
+import { setClosedEyes, setNeedLooks, showMeatMouth, showWashGear, showYellMouth } from './cubTraits'
 import { playSlurp } from './crunchAudio'
 import { playRoar } from './roarAudio'
 import { playLevelSound } from './levelAudio'
@@ -11,6 +11,7 @@ import {
   applyCare,
   applyPet,
   applyReward,
+  barIsFull,
   clampNeed,
   decaySave,
   isNeedy,
@@ -257,6 +258,7 @@ export function useCub() {
       sleepEnergyClock.current = 0
       return
     }
+    if (barIsFull(current.energy)) return
     const next = applyCare(current, 'sleep')
     if (next) {
       commit(next)
@@ -276,7 +278,6 @@ export function useCub() {
     if (!current || busyRef.current || asleepRef.current) return
     playRoar()
     showYellMouth(700)
-    showAngryEyes(700)
     const next = applyPet(current)
     if (next) {
       commit(next)

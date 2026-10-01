@@ -170,6 +170,7 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
 
   const feedFull = barIsFull(save.hunger)
   const cleanFull = barIsFull(save.cleanliness)
+  const energyFull = barIsFull(save.energy)
   const progress = levelProgress(cub.presentedXp)
   const asleep = cub.asleep
   const xpPct = (progress.into / Math.max(1, progress.next)) * 100
@@ -296,7 +297,7 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
           <button
             type="button"
             className="room-action"
-            disabled={cub.busy}
+            disabled={cub.busy || (!asleep && energyFull)}
             onPointerDown={flashPress}
             onPointerUp={clearPressGlow}
             onPointerCancel={clearPressGlow}
