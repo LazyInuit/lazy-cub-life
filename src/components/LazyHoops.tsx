@@ -59,10 +59,14 @@ type Live = {
   timePulse: number
   baskets: number
   perfects: number
+  /** Made baskets in a row. A miss clears it. */
+  streak: number
   hint: boolean
   pop: number
   toastKey: number
-  toast: 'ten' | 'perfect' | 'life' | null
+  toast: 'ten' | 'perfect' | 'life' | 'hot' | null
+  toastPoints: number
+  toastLife: boolean
   toastUntil: number
   spotId: string
   cam: Vec3
@@ -85,6 +89,8 @@ type Hud = {
   pop: number
   toastKey: number
   toast: Live['toast']
+  toastPoints: number
+  toastLife: boolean
   paused: boolean
 }
 
@@ -120,6 +126,8 @@ type Drag = {
 }
 
 const CLOSE = SPOTS[0]
+const STREAK_BONUS = 100
+const MAKE_MOVE_SECONDS = MOVE_SECONDS * 0.5
 
 /** Optional `?spot=far-left` for reviewing stadium from shot angles. */
 function reviewSpot() {
@@ -145,10 +153,13 @@ function createMatch(): Live {
     timePulse: 0,
     baskets: 0,
     perfects: 0,
+    streak: 0,
     hint: true,
     pop: -1,
     toastKey: 0,
     toast: null,
+    toastPoints: 0,
+    toastLife: false,
     toastUntil: 0,
     spotId: start.id,
     cam,
@@ -173,6 +184,8 @@ function hudFrom(live: Live): Hud {
     pop: live.pop,
     toastKey: live.toastKey,
     toast: live.toast,
+    toastPoints: live.toastPoints,
+    toastLife: live.toastLife,
     paused: live.paused,
   }
 }
@@ -216,6 +229,8 @@ export function LazyHoops({ best, onBest, onReward, onExit, onGames }: Props) {
         prev.pop === next.pop &&
         prev.toastKey === next.toastKey &&
         prev.toast === next.toast &&
+        prev.toastPoints === next.toastPoints &&
+        prev.toastLife === next.toastLife &&
         prev.paused === next.paused
       ) {
         return prev
@@ -302,10 +317,6 @@ export function LazyHoops({ best, onBest, onReward, onExit, onGames }: Props) {
       const moving = live.phase === 'move'
       const vel = { x: live.shot.vx, y: live.shot.vy, z: live.shot.vz }
       court.setBall(live.shot, vel, !moving)
-      if (live.flash > 0) {
-        live.flash -= 1
-        if (live.flash <= 0) court.setFlash(null)
-      }
     }
 
     const beginMove = (seconds: number) => {
@@ -340,9 +351,15 @@ export function LazyHoops({ best, onBest, onReward, onExit, onGames }: Props) {
         if (tick.made) {
           if (tick.made === 'perfect') playHoopsPerfect()
           else playHoopsNet()
+          live.streak += 1
+          const hot = live.streak >= 3
+          const bonus = hot ? STREAK_BONUS : 0
+          const awarded = (tick.made === 'perfect' ? PERFECT_POINTS : NORMAL_POINTS) + bonus
+          live.toastPoints = awarded
+          live.toastLife = false
           live.toastKey += 1
           if (tick.made === 'perfect') {
-            live.score += PERFECT_POINTS
+            live.score += awarded
             live.timeLeft += PERFECT_TIME
             live.clock = Math.ceil(live.timeLeft)
             live.timePulse += 1
@@ -351,17 +368,19 @@ export function LazyHoops({ best, onBest, onReward, onExit, onGames }: Props) {
             if (live.lives < LIVES) {
               live.lives += 1
               live.pop = live.lives - 1
-              live.toast = 'life'
+              live.toastLife = true
+              live.toast = hot ? 'hot' : 'life'
             } else {
-              live.toast = 'perfect'
+              live.toast = hot ? 'hot' : 'perfect'
             }
             court.setFlash('perfect')
           } else {
-            live.score += NORMAL_POINTS
+            live.score += awarded
             live.baskets += 1
-            live.toast = 'ten'
+            live.toast = hot ? 'hot' : 'ten'
             court.setFlash('normal')
           }
+          court.setHeat(live.streak >= 2)
           live.flash = 28
           live.toastUntil = performance.now() + 1100
           publish(live)
@@ -373,13 +392,15 @@ export function LazyHoops({ best, onBest, onReward, onExit, onGames }: Props) {
         if (tick.finished) {
           if (!live.shot.scored) {
             live.lives = Math.max(0, live.lives - 1)
+            live.streak = 0
+            court.setHeat(false)
             publish(live)
           }
           if (live.lives <= 0) {
             endRef.current(live)
             return
           }
-          beginMove(live.shot.scored ? MOVE_SECONDS : MOVE_SECONDS / 2)
+          beginMove(live.shot.scored ? MAKE_MOVE_SECONDS : MOVE_SECONDS)
         }
         return
       }
@@ -550,6 +571,7 @@ export function LazyHoops({ best, onBest, onReward, onExit, onGames }: Props) {
     if (court) {
       court.setCamera(live.cam)
       court.setFlash(null)
+      court.setHeat(false)
       court.setBall(live.shot, { x: 0, y: 0, z: 0 }, true)
       court.render()
     }
@@ -654,7 +676,9 @@ export function LazyHoops({ best, onBest, onReward, onExit, onGames }: Props) {
             <img className="hoops-shoot-paw" src={lionPawUrl} alt="" />
           </div>
         ) : null}
-        {mode === 'play' && hud.toast ? <ShotToast key={hud.toastKey} kind={hud.toast} /> : null}
+        {mode === 'play' && hud.toast ? (
+          <ShotToast key={hud.toastKey} kind={hud.toast} points={hud.toastPoints} life={hud.toastLife} />
+        ) : null}
         {mode === 'over' && summary ? (
           <div className="hoops-panel">
             <h2>Game Over</h2>
@@ -702,7 +726,25 @@ function swipeFrom(drag: Drag): Swipe | null {
   return { dx, dy, speed }
 }
 
-function ShotToast({ kind }: { kind: NonNullable<Live['toast']> }) {
+function ShotToast({
+  kind,
+  points,
+  life,
+}: {
+  kind: NonNullable<Live['toast']>
+  points: number
+  life: boolean
+}) {
+  if (kind === 'hot') {
+    return (
+      <p className="hoops-toast perfect">
+        HOT!
+        <span>+{points}</span>
+        {points >= PERFECT_POINTS + STREAK_BONUS ? <span>+{PERFECT_TIME}s</span> : null}
+        {life ? <span>+1 LIFE</span> : null}
+      </p>
+    )
+  }
   if (kind === 'ten') return <p className="hoops-toast">+{NORMAL_POINTS}</p>
   return (
     <p className="hoops-toast perfect">

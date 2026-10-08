@@ -20,6 +20,7 @@ export type Court = {
   setCamera: (pos: Vec3, lookAt?: Vec3) => void
   setBall: (pos: Vec3, vel: Vec3, visible: boolean) => void
   setFlash: (kind: 'normal' | 'perfect' | null) => void
+  setHeat: (on: boolean) => void
   project: (pos: Vec3, width: number, height: number) => { x: number; y: number }
   render: () => void
   dispose: () => void
@@ -93,6 +94,7 @@ export function createCourt(canvas: HTMLCanvasElement): Court {
 
   const stadium = buildStadium(scene, track, redraw, { x: floorX, z: floorZ, w: floorW, d: floorD })
   const { rimMat } = buildHoop(scene, track, artTexture(boardUrl, track, redraw), artTexture(postUrl, track, redraw))
+  const burst = buildScoreBurst(scene, track)
 
   const ballTex = artTexture(ballUrl, track, redraw)
   ballTex.wrapS = THREE.RepeatWrapping
@@ -115,7 +117,7 @@ export function createCourt(canvas: HTMLCanvasElement): Court {
   scene.add(ball)
 
   const projectVec = new THREE.Vector3()
-  let flash = 0
+  let heated = false
 
   const court: Court = {
     resize(width, height) {
@@ -141,10 +143,13 @@ export function createCourt(canvas: HTMLCanvasElement): Court {
       ball.rotation.z -= vel.x * spin * 0.016
     },
     setFlash(kind) {
-      flash = kind ? 1 : 0
-      if (kind === 'perfect') rimMat.emissive.set(0xffc44d)
-      else if (kind === 'normal') rimMat.emissive.set(0xfff2cc)
-      else rimMat.emissive.set(0x000000)
+      if (!kind) burst.stop(rimMat)
+      else burst.play(kind, rimMat)
+      if (!kind || burst.idle()) paintHeat(rimMat)
+    },
+    setHeat(on) {
+      heated = on
+      if (burst.idle()) paintHeat(rimMat)
     },
     project(pos, width, height) {
       projectVec.set(pos.x, pos.y, pos.z).project(camera)
@@ -154,12 +159,10 @@ export function createCourt(canvas: HTMLCanvasElement): Court {
       }
     },
     render() {
-      stadium.update(performance.now())
-      if (flash > 0) {
-        flash = Math.max(0, flash - 0.04)
-        rimMat.emissiveIntensity = flash * 0.85
-        if (flash === 0) rimMat.emissive.set(0x000000)
-      }
+      const now = performance.now()
+      stadium.update(now)
+      burst.update(now, rimMat)
+      if (burst.idle()) paintHeat(rimMat)
       renderer.render(scene, camera)
     },
     dispose() {
@@ -168,6 +171,16 @@ export function createCourt(canvas: HTMLCanvasElement): Court {
     },
   }
   return court
+
+  function paintHeat(rimMat: THREE.MeshStandardMaterial) {
+    if (heated) {
+      rimMat.emissive.set(0xff8a2a)
+      rimMat.emissiveIntensity = 0.65
+      return
+    }
+    rimMat.emissive.set(0x000000)
+    rimMat.emissiveIntensity = 0
+  }
 }
 
 function buildHoop(
@@ -196,6 +209,8 @@ function buildHoop(
   board.position.set(0, boardY, BACKBOARD_Z + 0.05)
   board.castShadow = true
   scene.add(board)
+  addLitFrame(scene, track, 88, 40, 936, 512, boardW, boardH, boardY, BACKBOARD_Z + 0.09, 0.045, 0xfff3d4)
+  addLitFrame(scene, track, 363, 256, 656, 490, boardW, boardH, boardY, BACKBOARD_Z + 0.1, 0.032, 0xffffff)
   const edge = new THREE.Mesh(track(new THREE.BoxGeometry(boardW * 0.78, boardH * 0.7, 0.07)), metal)
   edge.position.set(0, boardY + 0.06, BACKBOARD_Z - 0.02)
   scene.add(edge)
@@ -242,6 +257,148 @@ function buildHoop(
   )
   scene.add(netLines)
   return { rimMat }
+}
+
+function addLitFrame(
+  scene: THREE.Scene,
+  track: <T extends { dispose: () => void }>(item: T) => T,
+  px0: number,
+  py0: number,
+  px1: number,
+  py1: number,
+  boardW: number,
+  boardH: number,
+  boardY: number,
+  z: number,
+  thickness: number,
+  color: number,
+) {
+  const x0 = (px0 / 1024 - 0.5) * boardW
+  const x1 = (px1 / 1024 - 0.5) * boardW
+  const y0 = boardY + (0.5 - py0 / 576) * boardH
+  const y1 = boardY + (0.5 - py1 / 576) * boardH
+  const left = Math.min(x0, x1)
+  const right = Math.max(x0, x1)
+  const top = Math.max(y0, y1)
+  const bottom = Math.min(y0, y1)
+  const width = right - left
+  const height = top - bottom
+  const core = track(new THREE.MeshBasicMaterial({ color, toneMapped: false }))
+  const halo = track(new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity: 0.22,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    toneMapped: false,
+  }))
+  const bar = (mat: THREE.Material, bw: number, bh: number, x: number, y: number, depth: number) => {
+    const mesh = new THREE.Mesh(track(new THREE.BoxGeometry(bw, bh, depth)), mat)
+    mesh.position.set(x, y, z)
+    scene.add(mesh)
+  }
+  const midX = (left + right) / 2
+  const midY = (top + bottom) / 2
+  bar(halo, width, thickness * 1.6, midX, top, 0.01)
+  bar(halo, width, thickness * 1.6, midX, bottom, 0.01)
+  bar(halo, thickness * 1.6, height, left, midY, 0.01)
+  bar(halo, thickness * 1.6, height, right, midY, 0.01)
+  bar(core, width, thickness, midX, top, 0.016)
+  bar(core, width, thickness, midX, bottom, 0.016)
+  bar(core, thickness, height, left, midY, 0.016)
+  bar(core, thickness, height, right, midY, 0.016)
+}
+
+function buildScoreBurst(
+  scene: THREE.Scene,
+  track: <T extends { dispose: () => void }>(item: T) => T,
+) {
+  const root = new THREE.Group()
+  root.position.set(0, RIM_Y + 0.02, RIM_Z)
+  root.visible = false
+  scene.add(root)
+
+  const streakGeo = track(new THREE.PlaneGeometry(0.04, 0.78))
+  streakGeo.translate(0, RIM_RADIUS * 0.35 + 0.28, 0)
+  const streakMat = track(new THREE.MeshBasicMaterial({
+    color: 0xfff4c8,
+    transparent: true,
+    opacity: 0,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  }))
+  const count = 16
+  for (let i = 0; i < count; i += 1) {
+    const ang = (i / count) * Math.PI * 2
+    const streak = new THREE.Mesh(streakGeo, streakMat)
+    streak.rotation.order = 'YXZ'
+    streak.rotation.y = ang
+    streak.rotation.x = -Math.PI / 2 + 0.22 + (i % 4) * 0.1
+    streak.scale.y = i % 2 === 0 ? 1 : 0.62
+    root.add(streak)
+  }
+
+  const halo = new THREE.Mesh(
+    track(new THREE.TorusGeometry(RIM_RADIUS * 1.08, 0.025, 8, 48)),
+    streakMat,
+  )
+  halo.rotation.x = Math.PI / 2
+  root.add(halo)
+
+  const glow = new THREE.PointLight(0xffe2a0, 0, 7, 1.6)
+  glow.position.copy(root.position)
+  scene.add(glow)
+
+  let left = 0
+  let duration = 0.75
+  let perfect = false
+  let spin = 0
+  let last = performance.now()
+
+  return {
+    play(kind: 'normal' | 'perfect', rimMat: THREE.MeshStandardMaterial) {
+      perfect = kind === 'perfect'
+      duration = perfect ? 1.05 : 0.72
+      left = duration
+      spin = 0
+      last = performance.now()
+      const rimColor = perfect ? 0xffd56a : 0xfff6d8
+      const streakColor = perfect ? 0xffe08a : 0xfff4c8
+      rimMat.emissive.set(rimColor)
+      streakMat.color.set(streakColor)
+      glow.color.set(perfect ? 0xffc14a : 0xffe2a0)
+      root.visible = true
+    },
+    update(now: number, rimMat: THREE.MeshStandardMaterial) {
+      const dt = Math.min(0.05, (now - last) / 1000)
+      last = now
+      if (left <= 0) return
+      left = Math.max(0, left - dt)
+      const u = 1 - left / duration
+      const kick = u < 0.1 ? u / 0.1 : Math.sin(u * Math.PI)
+      rimMat.emissiveIntensity = kick * (perfect ? 2.6 : 1.55)
+      streakMat.opacity = kick * (perfect ? 0.95 : 0.72)
+      const spread = 1 + u * (perfect ? 0.9 : 0.5)
+      root.scale.setScalar(spread)
+      spin += dt * (perfect ? 1.6 : 0.7)
+      root.rotation.y = spin
+      glow.intensity = kick * (perfect ? 8 : 3.6)
+      if (left === 0) this.stop(rimMat)
+    },
+    idle() {
+      return left <= 0
+    },
+    stop(rimMat: THREE.MeshStandardMaterial) {
+      left = 0
+      rimMat.emissive.set(0x000000)
+      rimMat.emissiveIntensity = 0
+      streakMat.opacity = 0
+      glow.intensity = 0
+      root.visible = false
+      root.scale.setScalar(1)
+    },
+  }
 }
 
 function netGeometry() {
