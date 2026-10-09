@@ -53,6 +53,8 @@ function prideBoardXp(boards: number) {
 type Props = {
   best: number
   onBest: (score: number) => void
+  onDailyStart: () => void
+  onDaily: (score: number) => void
   onReward: (
     baseXp: number,
     needs: Partial<Record<NeedKey, number>>,
@@ -107,7 +109,7 @@ function MatchBust({ body }: { body: string }) {
   )
 }
 
-export function TraitMatch({ best, onBest, onReward, onExit, onGames }: Props) {
+export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onExit, onGames }: Props) {
   const [pairs, setPairs] = useState(2)
   const [cards, setCards] = useState<Card[]>(() => deal(2))
   const [left, setLeft] = useState(() => secondsForPairs(2))
@@ -130,10 +132,15 @@ export function TraitMatch({ best, onBest, onReward, onExit, onGames }: Props) {
   const resolving = useRef(false)
   const onRewardRef = useRef(onReward)
   const onBestRef = useRef(onBest)
+  const onDailyStartRef = useRef(onDailyStart)
+  const onDailyRef = useRef(onDaily)
   const lockTimer = useRef<number | null>(null)
   const musicStarted = useRef(false)
+  const startedRef = useRef(false)
   onRewardRef.current = onReward
   onBestRef.current = onBest
+  onDailyStartRef.current = onDailyStart
+  onDailyRef.current = onDaily
   bestRef.current = Math.max(bestRef.current, best)
 
   useEffect(() => {
@@ -143,6 +150,7 @@ export function TraitMatch({ best, onBest, onReward, onExit, onGames }: Props) {
   const finish = (done: number, reason: string) => {
     if (rewarded.current) return
     rewarded.current = true
+    onDailyRef.current(scoreRef.current)
     if (lockTimer.current !== null) window.clearTimeout(lockTimer.current)
     setLocked(false)
     setPrideUrgency(0)
@@ -228,7 +236,11 @@ export function TraitMatch({ best, onBest, onReward, onExit, onGames }: Props) {
     } else {
       resumePrideAudio()
     }
-    if (!timerStarted) setTimerStarted(true)
+    if (!timerStarted) {
+      startedRef.current = true
+      setTimerStarted(true)
+      onDailyStartRef.current()
+    }
     setCards((current) => current.map((item) => (item.key === key ? { ...item, up: true } : item)))
   }
 
@@ -284,51 +296,44 @@ export function TraitMatch({ best, onBest, onReward, onExit, onGames }: Props) {
     }, 900)
   }, [cards, pairs, summary])
 
+  const bankMatch = () => {
+    if (rewarded.current) return
+    rewarded.current = true
+    if (lockTimer.current !== null) window.clearTimeout(lockTimer.current)
+    setPrideUrgency(0)
+    stopPrideAmbience()
+    const score = scoreRef.current
+    if (score > bestRef.current) {
+      bestRef.current = score
+      onBestRef.current(score)
+    }
+    onDailyRef.current(score)
+    onRewardRef.current(
+      prideBoardXp(clearedRef.current),
+      {
+        ...moodFromScore(score),
+        ...PLAY_NEED_COST,
+      },
+      { flat: true },
+    )
+  }
+  const bankMatchRef = useRef(bankMatch)
+  bankMatchRef.current = bankMatch
+
+  useEffect(() => {
+    return () => {
+      if (!startedRef.current) return
+      bankMatchRef.current()
+    }
+  }, [])
+
   const back = () => {
-    if (summary) {
-      onExit()
-      return
-    }
-    if (clearedRef.current > 0) {
-      finish(clearedRef.current, 'Round stopped.')
-      return
-    }
-    if (!rewarded.current) {
-      rewarded.current = true
-      onRewardRef.current(0, { ...moodFromScore(scoreRef.current), ...PLAY_NEED_COST }, { flat: true })
-    }
+    if (!summary) bankMatch()
     onExit()
   }
 
   const toGames = () => {
-    if (summary) {
-      onGames()
-      return
-    }
-    if (clearedRef.current > 0) {
-      if (!rewarded.current) {
-        rewarded.current = true
-        if (lockTimer.current !== null) window.clearTimeout(lockTimer.current)
-        setPrideUrgency(0)
-        stopPrideAmbience()
-        void playPrideFail()
-        onRewardRef.current(
-          prideBoardXp(clearedRef.current),
-          {
-            ...moodFromScore(scoreRef.current),
-            ...PLAY_NEED_COST,
-          },
-          { flat: true },
-        )
-      }
-      onGames()
-      return
-    }
-    if (!rewarded.current) {
-      rewarded.current = true
-      onRewardRef.current(0, { ...moodFromScore(scoreRef.current), ...PLAY_NEED_COST }, { flat: true })
-    }
-    stopPrideAmbience()
+    if (!summary) bankMatch()
     onGames()
   }
 

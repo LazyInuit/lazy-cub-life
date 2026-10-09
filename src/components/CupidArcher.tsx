@@ -35,6 +35,8 @@ type Mode = 'start' | 'play' | 'over'
 type Props = {
   best: number
   onBest: (score: number) => void
+  onDailyStart: () => void
+  onDaily: (score: number) => void
   onReward: (
     baseXp: number,
     needs: Partial<Record<NeedKey, number>>,
@@ -108,7 +110,7 @@ function LivesHud({ lives }: { lives: number }) {
   )
 }
 
-export function CupidArcher({ best, onBest, onReward, onExit, onGames }: Props) {
+export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onExit, onGames }: Props) {
   const [mode, setMode] = useState<Mode>('start')
   const [hud, setHud] = useState({ lives: LIVES, score: 0, time: ROUND_SECONDS, shots: 0, aiming: false })
   const [pullHint, setPullHint] = useState({ x: 0, y: 0 })
@@ -122,6 +124,8 @@ export function CupidArcher({ best, onBest, onReward, onExit, onGames }: Props) 
   const rewarded = useRef(false)
   const bestRef = useRef(best)
   const onBestRef = useRef(onBest)
+  const onDailyStartRef = useRef(onDailyStart)
+  const onDailyRef = useRef(onDaily)
   const onRewardRef = useRef(onReward)
   const hudLivesRef = useRef(LIVES)
   const hudTimeRef = useRef(ROUND_SECONDS)
@@ -130,6 +134,8 @@ export function CupidArcher({ best, onBest, onReward, onExit, onGames }: Props) 
   modeRef.current = mode
   bestRef.current = Math.max(bestRef.current, best)
   onBestRef.current = onBest
+  onDailyStartRef.current = onDailyStart
+  onDailyRef.current = onDaily
   onRewardRef.current = onReward
 
   useEffect(() => {
@@ -149,6 +155,7 @@ export function CupidArcher({ best, onBest, onReward, onExit, onGames }: Props) 
       bestRef.current = score
       onBestRef.current(score)
     }
+    onDailyRef.current(score)
     const result = onRewardRef.current(
       Math.round(score * ARCHER_XP_PER_SCORE),
       { ...moodFromScore(score), ...PLAY_NEED_COST },
@@ -168,6 +175,20 @@ export function CupidArcher({ best, onBest, onReward, onExit, onGames }: Props) 
 
   const finishRef = useRef(finish)
   finishRef.current = finish
+
+  const awardArcher = () => {
+    const round = roundRef.current
+    if (!round || rewarded.current || modeRef.current !== 'play') return
+    finishRef.current(round)
+  }
+  const awardArcherRef = useRef(awardArcher)
+  awardArcherRef.current = awardArcher
+
+  useEffect(() => {
+    return () => {
+      awardArcherRef.current()
+    }
+  }, [])
 
   const paint = () => {
     const canvas = canvasRef.current
@@ -277,6 +298,7 @@ export function CupidArcher({ best, onBest, onReward, onExit, onGames }: Props) 
   }
 
   const startRound = () => {
+    onDailyStartRef.current()
     resumeArcherAudio()
     startArcherBgm()
     const wrap = wrapRef.current

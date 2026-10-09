@@ -11,10 +11,21 @@ import meatOldUrl from '../assets/feed-carton-centered.png'
 import meatYoungUrl from '../assets/feed-bottle-ui.png'
 import shirtUrl from '../assets/shirt-ui.png'
 import lionPawUrl from '../assets/lion-paw-clear.png'
-import coinUrl from '../assets/lazy-dojo/sprites/bonuses/lazy-coin.png'
+import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
+import chestUrl from '../assets/daily-chest.png'
 import { traitSlug, tryOnFromPicks } from '../game/cubTraits'
 import { sanitizeOwnedOutfit } from '../game/traitShop'
 import { getHomeCharacterAge, setHomeCharacter, type CharacterAge } from '../game/homeScene'
+import {
+  DAILY_TASKS,
+  DAILY_WINDOW_MS,
+  claimableCount,
+  dailyView,
+  formatResetCountdown,
+  msUntilDailyReset,
+  taskReady,
+  taskScore,
+} from '../game/dailyTasks'
 import { barIsFull, levelProgress } from '../game/progress'
 import { formatCubCash } from '../game/formatCubCash'
 import type { CubController } from '../game/useCub'
@@ -32,8 +43,26 @@ type Props = {
   startInGames?: boolean
 }
 
+function DailyResetClock({ startedAt, now }: { startedAt: number | null; now: number }) {
+  const remain = msUntilDailyReset(startedAt, new Date(now))
+  const label = formatResetCountdown(remain ?? DAILY_WINDOW_MS)
+  const waiting = startedAt == null
+  return (
+    <p
+      className="daily-reset"
+      aria-label={waiting ? `Tasks reset in ${label} once you play a challenge` : `Tasks reset in ${label}`}
+    >
+      <span>Tasks reset in</span>
+      <strong>{label}</strong>
+    </p>
+  )
+}
+
 export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, startInGames = false }: Props) {
   const [gamesOpen, setGamesOpen] = useState(startInGames)
+  const [dailyOpen, setDailyOpen] = useState(false)
+  const [now, setNow] = useState(() => Date.now())
+  const [coinBurst, setCoinBurst] = useState<{ id: string; key: number } | null>(null)
   const [wardrobeOpen, setWardrobeOpen] = useState(false)
   const [age, setAge] = useState<CharacterAge>(() => getHomeCharacterAge())
   const save = cub.save
@@ -43,10 +72,18 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
   }, [age])
 
   useEffect(() => {
+    if (!dailyOpen) return
+    const tick = () => setNow(Date.now())
+    tick()
+    const id = window.setInterval(tick, 1000)
+    return () => window.clearInterval(id)
+  }, [dailyOpen])
+
+  useEffect(() => {
     // Home room and wardrobe both show the LVL badge; the games picker does not.
-    cub.setLevelUiVisible(!gamesOpen)
+    cub.setLevelUiVisible(!gamesOpen && !dailyOpen)
     return () => cub.setLevelUiVisible(false)
-  }, [cub.setLevelUiVisible, gamesOpen])
+  }, [cub.setLevelUiVisible, dailyOpen, gamesOpen])
 
   const flashPress = (event: { currentTarget: HTMLElement }) => {
     const button = event.currentTarget
@@ -154,6 +191,83 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
     )
   }
 
+  if (dailyOpen) {
+    const daily = dailyView(save.daily, new Date(now))
+    const done = DAILY_TASKS.filter((task) => daily.claimed.includes(task.id)).length
+    return (
+      <section className="game-screen game-picks-screen daily-screen">
+        <header className="top">
+          <HomeButton className="game-home" onClick={() => setDailyOpen(false)} />
+          <h1>Daily Tasks</h1>
+          <DailyResetClock startedAt={daily.startedAt} now={now} />
+        </header>
+        <div className="daily-list">
+          {DAILY_TASKS.map((task) => {
+            const score = taskScore(daily, task)
+            const claimed = daily.claimed.includes(task.id)
+            const ready = taskReady(daily, task)
+            const play =
+              task.game === 'flight'
+                ? onFlight
+                : task.game === 'hoops'
+                  ? onHoops
+                  : task.game === 'archer'
+                    ? onArcher
+                    : task.game === 'dojo'
+                      ? onDojo
+                      : onMatch
+            return (
+              <article key={task.id} className="daily-task">
+                <h2>{task.gameLabel}</h2>
+                <p>{task.detail}</p>
+                <p className="daily-count">
+                  {score} / {task.goal}
+                </p>
+                <div className="daily-meter" aria-hidden="true">
+                  <span style={{ width: `${(score / task.goal) * 100}%` }} />
+                </div>
+                <div className="daily-row">
+                  <span className="daily-reward">
+                    <img src={coinUrl} alt="" />
+                    {task.reward}
+                  </span>
+                  {claimed ? (
+                    <button type="button" className="daily-claim" disabled>
+                      Claimed
+                    </button>
+                  ) : ready ? (
+                    <button
+                      type="button"
+                      className="daily-claim"
+                      onClick={() => {
+                        if (!cub.claimDaily(task.id)) return
+                        setCoinBurst((current) => ({ id: task.id, key: (current?.key ?? 0) + 1 }))
+                      }}
+                    >
+                      Claim
+                    </button>
+                  ) : (
+                    <button type="button" className="daily-play" onClick={play}>
+                      Play
+                    </button>
+                  )}
+                  {coinBurst?.id === task.id ? <CoinBurst key={coinBurst.key} /> : null}
+                </div>
+              </article>
+            )
+          })}
+          <p className="daily-note">
+            {daily.startedAt == null
+              ? 'Play a challenge to start the 24 hour timer.'
+              : done === DAILY_TASKS.length
+                ? 'All claimed for this round.'
+                : 'Same challenges until the timer ends.'}
+          </p>
+        </div>
+      </section>
+    )
+  }
+
   if (wardrobeOpen) {
     return (
       <WardrobeScreen
@@ -242,6 +356,20 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
           </div>
         </div>
         {cub.toast ? <p className="home-toast">{cub.toast}</p> : null}
+        <button
+          type="button"
+          className="daily-open"
+          aria-label={claimableCount(dailyView(save.daily)) > 0 ? 'Daily Bonus, reward ready' : 'Daily Bonus'}
+          onPointerDown={flashPress}
+          onPointerUp={clearPressGlow}
+          onPointerCancel={clearPressGlow}
+          onClick={() => setDailyOpen(true)}
+        >
+          <span className="wood-btn-wrap">
+            {claimableCount(dailyView(save.daily)) > 0 ? <span className="daily-alert">!</span> : null}
+            <img className="daily-chest" src={chestUrl} alt="" />
+          </span>
+        </button>
         <button
           type="button"
           className="wardrobe-open"
@@ -335,6 +463,18 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
         </div>
       </div>
     </section>
+  )
+}
+
+function CoinBurst() {
+  return (
+    <span className="daily-coins" aria-hidden="true">
+      <img src={coinUrl} alt="" />
+      <img src={coinUrl} alt="" />
+      <img src={coinUrl} alt="" />
+      <img src={coinUrl} alt="" />
+      <img src={coinUrl} alt="" />
+    </span>
   )
 }
 

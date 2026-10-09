@@ -29,6 +29,8 @@ const KINDS: Gate['kind'][] = ['tree', 'rock', 'grass', 'green', 'orange', 'blue
 type Props = {
   best: number
   onBest: (score: number) => void
+  onDailyStart: () => void
+  onDaily: (score: number) => void
   onReward: (
     baseXp: number,
     needs: Partial<Record<NeedKey, number>>,
@@ -38,13 +40,17 @@ type Props = {
   onGames: () => void
 }
 
-export function SafariFlight({ best, onBest, onReward, onExit, onGames }: Props) {
+export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, onExit, onGames }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const onRewardRef = useRef(onReward)
   const onBestRef = useRef(onBest)
+  const onDailyStartRef = useRef(onDailyStart)
+  const onDailyRef = useRef(onDaily)
   const bestRef = useRef(best)
   onRewardRef.current = onReward
   onBestRef.current = onBest
+  onDailyStartRef.current = onDailyStart
+  onDailyRef.current = onDaily
   bestRef.current = Math.max(bestRef.current, best)
 
   const phase = useRef<'ready' | 'play' | 'done'>('ready')
@@ -60,21 +66,16 @@ export function SafariFlight({ best, onBest, onReward, onExit, onGames }: Props)
   const [summary, setSummary] = useState<Summary | null>(null)
   const [started, setStarted] = useState(false)
 
-  const settle = (ending: 'pillar' | 'bounds' | 'leave' = 'leave') => {
-    if (rewarded.current) return
+  const awardFlight = () => {
+    if (rewarded.current || phase.current !== 'play') return null
     rewarded.current = true
     phase.current = 'done'
-    if (ending === 'pillar') {
-      playCrash()
-      playEnd(0.16)
-    } else if (ending === 'bounds') {
-      playEnd()
-    }
     const passed = score.current
     if (passed > bestRef.current) {
       bestRef.current = passed
       onBestRef.current(passed)
     }
+    onDailyRef.current(passed)
     const result = onRewardRef.current(
       passed,
       {
@@ -83,9 +84,29 @@ export function SafariFlight({ best, onBest, onReward, onExit, onGames }: Props)
       },
       { flat: true },
     )
-    setSummary({ score: passed, xpGained: result.xpGained })
-    setHudScore(passed)
+    return { passed, xpGained: result.xpGained }
   }
+  const awardFlightRef = useRef(awardFlight)
+  awardFlightRef.current = awardFlight
+
+  const settle = (ending: 'pillar' | 'bounds' | 'leave' = 'leave') => {
+    const awarded = awardFlight()
+    if (!awarded) return
+    if (ending === 'pillar') {
+      playCrash()
+      playEnd(0.16)
+    } else if (ending === 'bounds') {
+      playEnd()
+    }
+    setSummary({ score: awarded.passed, xpGained: awarded.xpGained })
+    setHudScore(awarded.passed)
+  }
+
+  useEffect(() => {
+    return () => {
+      awardFlightRef.current()
+    }
+  }, [])
 
   const retry = () => {
     phase.current = 'ready'
@@ -197,6 +218,7 @@ export function SafariFlight({ best, onBest, onReward, onExit, onGames }: Props)
     playFlap()
     if (phase.current === 'ready') {
       phase.current = 'play'
+      onDailyStartRef.current()
       ready.current = false
       gates.current = []
       spawned.current = 0
@@ -237,7 +259,8 @@ export function SafariFlight({ best, onBest, onReward, onExit, onGames }: Props)
                 return
               }
               if (phase.current === 'play') {
-                settle()
+                settle('leave')
+                onExit()
                 return
               }
               onExit()

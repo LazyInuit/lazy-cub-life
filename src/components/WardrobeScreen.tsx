@@ -23,7 +23,7 @@ import headgearIconUrl from '../assets/headgear-crown.png'
 import maneIconUrl from '../assets/mane-top-knot-fire.png'
 import mouthIconUrl from '../assets/mouth-big-smile.png'
 import diceIconUrl from '../assets/dice-ui.png'
-import coinUrl from '../assets/lazy-dojo/sprites/bonuses/lazy-coin.png'
+import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 
 type Manifest = Record<TraitCategory, Record<CharacterAge, string[]>>
 type Outfit = Record<TraitCategory, string>

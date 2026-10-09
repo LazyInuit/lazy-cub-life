@@ -64,6 +64,8 @@ export default function App() {
         <SafariFlight
           best={cub.save.flightBest}
           onBest={cub.recordFlightBest}
+          onDailyStart={cub.startDaily}
+          onDaily={(score) => cub.noteDaily('flight', score)}
           onReward={cub.reward}
           onExit={goHome}
           onGames={goGames}
@@ -73,6 +75,8 @@ export default function App() {
         <TraitMatch
           best={cub.save.matchBest}
           onBest={cub.recordMatchBest}
+          onDailyStart={cub.startDaily}
+          onDaily={(score) => cub.noteDaily('match', score)}
           onReward={cub.reward}
           onExit={goHome}
           onGames={goGames}
@@ -82,6 +86,8 @@ export default function App() {
         <LazyDojo
           best={cub.save.dojoBest}
           onBest={cub.recordDojoBest}
+          onDailyStart={cub.startDaily}
+          onDaily={(score) => cub.noteDaily('dojo', score)}
           onReward={cub.reward}
           onExit={goHome}
           onGames={goGames}
@@ -91,6 +97,8 @@ export default function App() {
         <CupidArcher
           best={cub.save.archerBest}
           onBest={cub.recordArcherBest}
+          onDailyStart={cub.startDaily}
+          onDaily={(score) => cub.noteDaily('archer', score)}
           onReward={cub.reward}
           onExit={goHome}
           onGames={goGames}
@@ -100,6 +108,8 @@ export default function App() {
         <LazyHoops
           best={cub.save.hoopsBest}
           onBest={cub.recordHoopsBest}
+          onDailyStart={cub.startDaily}
+          onDaily={(score) => cub.noteDaily('hoops', score)}
           onReward={cub.reward}
           onExit={goHome}
           onGames={goGames}

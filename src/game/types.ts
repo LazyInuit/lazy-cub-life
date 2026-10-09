@@ -1,4 +1,8 @@
+import type { DailyProgress } from './dailyTasks'
+
 export type NeedKey = 'hunger' | 'happiness' | 'energy' | 'cleanliness'
+
+export type { DailyProgress }
 
 export type TraitSlot =
   | 'Age'
@@ -59,6 +63,8 @@ export type CubSave = {
   dojoBest: number
   archerBest: number
   hoopsBest: number
+  /** Task scores for the current 24 hour round, and which rewards have been claimed. */
+  daily: DailyProgress
 }
 
 export const NEED_KEYS: NeedKey[] = ['hunger', 'happiness', 'energy', 'cleanliness']

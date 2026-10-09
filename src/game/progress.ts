@@ -11,6 +11,7 @@ import {
   type OutfitTraits,
   type TraitSlot,
 } from './types'
+import { emptyDaily, sanitizeDaily } from './dailyTasks'
 import { sanitizeOwnedOutfits, starterUnlockedKeys } from './traitShop'
 
 const DECAY_PER_MIN: Record<Exclude<NeedKey, 'energy'>, number> = {
@@ -276,6 +277,7 @@ export function defaultSave(now = Date.now()): CubSave {
     dojoBest: 0,
     archerBest: 0,
     hoopsBest: 0,
+    daily: emptyDaily(),
   }
 }
 
@@ -310,6 +312,7 @@ export function sanitizeSave(value: unknown, now = Date.now()): CubSave {
     dojoBest: Math.max(0, Math.floor(num(raw.dojoBest, 0))),
     archerBest: Math.max(0, Math.floor(num(raw.archerBest, 0))),
     hoopsBest: Math.max(0, Math.floor(num(raw.hoopsBest, 0))),
+    daily: sanitizeDaily(raw.daily, new Date(now)),
   })
   return { ...draft, outfits: sanitizeOwnedOutfits(draft, draft.outfits) }
 }

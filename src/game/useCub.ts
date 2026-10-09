@@ -19,6 +19,7 @@ import {
   levelProgress,
   rewardMultiplier,
 } from './progress'
+import { DAILY_TASKS, dailyView, type DailyGame } from './dailyTasks'
 import { readSave, writeSave } from './storage'
 import { isTraitUnlocked, sanitizeOwnedOutfits, traitKey, traitPrice } from './traitShop'
 import type { CareAction, CubOutfits, CubPose, CubSave, NeedKey } from './types'
@@ -341,6 +342,46 @@ export function useCub() {
     })
   }, [commit])
 
+  const startDaily = useCallback(() => {
+    const current = saveRef.current
+    if (!current) return
+    const daily = dailyView(current.daily)
+    if (daily.startedAt != null) return
+    commit({ ...current, daily: { ...daily, startedAt: Date.now() } })
+  }, [commit])
+
+  const noteDaily = useCallback((game: DailyGame, score: number) => {
+    const current = saveRef.current
+    if (!current) return
+    const gained = Math.max(0, Math.floor(score))
+    if (gained === 0) return
+    const daily = dailyView(current.daily)
+    commit({
+      ...current,
+      daily: {
+        ...daily,
+        startedAt: daily.startedAt ?? Date.now(),
+        scores: { ...daily.scores, [game]: (daily.scores[game] ?? 0) + gained },
+      },
+    })
+  }, [commit])
+
+  const claimDaily = useCallback((taskId: string) => {
+    const current = saveRef.current
+    if (!current) return false
+    const task = DAILY_TASKS.find((item) => item.id === taskId)
+    if (!task) return false
+    const daily = dailyView(current.daily)
+    if (daily.claimed.includes(task.id)) return false
+    if ((daily.scores[task.game] ?? 0) < task.goal) return false
+    commit({
+      ...current,
+      cubCash: current.cubCash + task.reward,
+      daily: { ...daily, claimed: [...daily.claimed, task.id] },
+    })
+    return true
+  }, [commit])
+
   const addCubCash = useCallback((amount: number) => {
     const current = saveRef.current
     if (!current) return
@@ -408,6 +449,9 @@ export function useCub() {
     recordDojoBest,
     recordArcherBest,
     recordHoopsBest,
+    startDaily,
+    noteDaily,
+    claimDaily,
     setOutfits,
     addCubCash,
     purchaseTrait,

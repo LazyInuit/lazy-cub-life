@@ -28,7 +28,7 @@ import coconutRight from '../../assets/lazy-dojo/sprites/fruit/sliced/coconut-ri
 
 import bomb from '../../assets/lazy-dojo/sprites/hazards/bomb.png'
 import golden from '../../assets/lazy-dojo/sprites/bonuses/golden.png'
-import lazyCoin from '../../assets/lazy-dojo/sprites/bonuses/lazy-coin.png'
+import lazyCoin from '../../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import bgmEasyBonus from '../../assets/lazy-dojo/audio/bgm-easy-bonus-lounge.wav'
 
 import type { FruitId } from './config'

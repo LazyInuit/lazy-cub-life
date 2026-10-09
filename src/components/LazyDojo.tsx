@@ -21,6 +21,8 @@ type Mode = 'start' | 'howto' | 'play' | 'pause' | 'over'
 type Props = {
   best: number
   onBest: (score: number) => void
+  onDailyStart: () => void
+  onDaily: (score: number) => void
   onReward: (
     baseXp: number,
     needs: Partial<Record<NeedKey, number>>,
@@ -30,7 +32,7 @@ type Props = {
   onGames: () => void
 }
 
-export function LazyDojo({ best, onBest, onReward, onExit, onGames }: Props) {
+export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onExit, onGames }: Props) {
   const [mode, setMode] = useState<Mode>('start')
   const [hudScore, setHudScore] = useState(0)
   const [hudLives, setHudLives] = useState(3)
@@ -49,11 +51,15 @@ export function LazyDojo({ best, onBest, onReward, onExit, onGames }: Props) {
   const rewarded = useRef(false)
   const bestRef = useRef(best)
   const onBestRef = useRef(onBest)
+  const onDailyStartRef = useRef(onDailyStart)
+  const onDailyRef = useRef(onDaily)
   const onRewardRef = useRef(onReward)
   const modeRef = useRef(mode)
   modeRef.current = mode
   bestRef.current = Math.max(bestRef.current, best)
   onBestRef.current = onBest
+  onDailyStartRef.current = onDailyStart
+  onDailyRef.current = onDaily
   onRewardRef.current = onReward
 
   useEffect(() => {
@@ -79,6 +85,7 @@ export function LazyDojo({ best, onBest, onReward, onExit, onGames }: Props) {
       bestRef.current = score
       onBestRef.current(score)
     }
+    onDailyRef.current(score)
     const result = onRewardRef.current(
       Math.round(score * XP_PER_SCORE),
       {
@@ -93,6 +100,21 @@ export function LazyDojo({ best, onBest, onReward, onExit, onGames }: Props) {
 
   const finishRunRef = useRef(finishRun)
   finishRunRef.current = finishRun
+
+  const awardDojo = () => {
+    const engine = engineRef.current
+    const live = modeRef.current === 'play' || modeRef.current === 'pause'
+    if (!engine || rewarded.current || !live) return
+    finishRunRef.current(engine)
+  }
+  const awardDojoRef = useRef(awardDojo)
+  awardDojoRef.current = awardDojo
+
+  useEffect(() => {
+    return () => {
+      awardDojoRef.current()
+    }
+  }, [])
 
   useEffect(() => {
     if (mode !== 'play' && mode !== 'pause') return
@@ -207,6 +229,8 @@ export function LazyDojo({ best, onBest, onReward, onExit, onGames }: Props) {
   }
 
   const startTraining = () => {
+    awardDojo()
+    onDailyStartRef.current()
     playUi()
     rewarded.current = false
     setSummary(null)
@@ -223,9 +247,7 @@ export function LazyDojo({ best, onBest, onReward, onExit, onGames }: Props) {
   useEffect(() => () => stopDojoBgm(), [])
 
   const leaveToGames = () => {
-    if (mode === 'play' && engineRef.current && !rewarded.current) {
-      finishRun(engineRef.current)
-    }
+    awardDojo()
     onGames()
   }
 
@@ -236,7 +258,7 @@ export function LazyDojo({ best, onBest, onReward, onExit, onGames }: Props) {
           <HomeButton
             className="game-home"
             onClick={() => {
-              if (mode === 'play' && engineRef.current && !rewarded.current) finishRun(engineRef.current)
+              awardDojo()
               onExit()
             }}
           />

@@ -106,6 +106,8 @@ type Summary = {
 type Props = {
   best: number
   onBest: (score: number) => void
+  onDailyStart: () => void
+  onDaily: (score: number) => void
   onReward: (
     baseXp: number,
     needs: Partial<Record<NeedKey, number>>,
@@ -190,7 +192,7 @@ function hudFrom(live: Live): Hud {
   }
 }
 
-export function LazyHoops({ best, onBest, onReward, onExit, onGames }: Props) {
+export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onExit, onGames }: Props) {
   const [mode, setMode] = useState<Mode>('home')
   const [rulesOpen, setRulesOpen] = useState(false)
   const [shootHint, setShootHint] = useState({ x: 0, y: 0 })
@@ -209,11 +211,15 @@ export function LazyHoops({ best, onBest, onReward, onExit, onGames }: Props) {
   const rewarded = useRef(false)
   const bestRef = useRef(best)
   const onBestRef = useRef(onBest)
+  const onDailyStartRef = useRef(onDailyStart)
+  const onDailyRef = useRef(onDaily)
   const onRewardRef = useRef(onReward)
   const modeRef = useRef(mode)
   const startRef = useRef<() => void>(() => {})
   bestRef.current = Math.max(bestRef.current, best)
   onBestRef.current = onBest
+  onDailyStartRef.current = onDailyStart
+  onDailyRef.current = onDaily
   onRewardRef.current = onReward
   modeRef.current = mode
 
@@ -251,6 +257,7 @@ export function LazyHoops({ best, onBest, onReward, onExit, onGames }: Props) {
       bestRef.current = score
       onBestRef.current(score)
     }
+    onDailyRef.current(score)
     const regulars = Math.max(0, live.baskets - live.perfects)
     const result = onRewardRef.current(
       regulars * HOOPS_XP_BASKET + live.perfects * HOOPS_XP_PERFECT,
@@ -270,6 +277,20 @@ export function LazyHoops({ best, onBest, onReward, onExit, onGames }: Props) {
   }
   const endRef = useRef(endGame)
   endRef.current = endGame
+
+  const awardHoops = () => {
+    const live = liveRef.current
+    if (!live || rewarded.current || modeRef.current !== 'play') return
+    endRef.current(live)
+  }
+  const awardHoopsRef = useRef(awardHoops)
+  awardHoopsRef.current = awardHoops
+
+  useEffect(() => {
+    return () => {
+      awardHoopsRef.current()
+    }
+  }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -557,6 +578,7 @@ export function LazyHoops({ best, onBest, onReward, onExit, onGames }: Props) {
   useEffect(() => () => stopHoopsBgm(), [])
 
   const playAgain = () => {
+    onDailyStartRef.current()
     const court = courtRef.current
     const live = liveRef.current
     const width = live.viewW
