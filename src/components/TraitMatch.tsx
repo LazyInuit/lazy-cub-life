@@ -174,7 +174,8 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
     setPrideUrgency(0)
     stopPrideAmbience()
     const won = reason === 'You cleared every board.'
-    if (!won) void playPrideFail()
+    const stopped = reason === 'You stopped early.'
+    if (!won && !stopped) void playPrideFail()
     const coins = coinsForBoards(done)
     if (coins > 0) onCoinsRef.current(coins)
     const result = onRewardRef.current(
@@ -359,12 +360,26 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
   }, [])
 
   const back = () => {
-    if (!summary) bankMatch()
+    if (summary) {
+      onExit()
+      return
+    }
+    if (startedRef.current) {
+      finish(clearedRef.current, 'You stopped early.')
+      return
+    }
     onExit()
   }
 
   const toGames = () => {
-    if (!summary) bankMatch()
+    if (summary) {
+      onGames()
+      return
+    }
+    if (startedRef.current) {
+      finish(clearedRef.current, 'You stopped early.')
+      return
+    }
     onGames()
   }
 
@@ -449,12 +464,16 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
         </div>
       ) : null}
       {summary ? (
-        <div className={`results pride-results${summary.won ? ' won' : ' lost'}`}>
-          <p className="pride-results-kicker">{summary.won ? 'Trail complete' : 'Trail ended'}</p>
+        <div className={`results pride-results${summary.won ? ' won' : summary.reason === 'You stopped early.' ? ' stopped' : ' lost'}`}>
+          <p className="pride-results-kicker">
+            {summary.won ? 'Trail complete' : summary.reason === 'You stopped early.' ? 'Trail stopped' : 'Trail ended'}
+          </p>
           <p className="pride-results-boards">
             {summary.won
               ? `All ${summary.cleared} boards cleared`
-              : `Failed on level ${summary.level} · ${summary.cleared} cleared`}
+              : summary.reason === 'You stopped early.'
+                ? `${summary.cleared} board${summary.cleared === 1 ? '' : 's'} cleared`
+                : `Failed on level ${summary.level} · ${summary.cleared} cleared`}
           </p>
           <p className="results-xp">+{summary.xpGained} XP</p>
           <p className="pride-results-coins">

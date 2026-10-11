@@ -1,0 +1,189 @@
+import { sanitizeDaily, type DailyGame, type DailyProgress } from './dailyTasks'
+import { supabase } from './supabase'
+import type { CubSave } from './types'
+
+export type GameCoinSource = 'flight' | 'hoops' | 'archer' | 'dojo' | 'match'
+
+export type WalletPatch = {
+  cubCash: number
+  granted?: number
+  daily?: DailyProgress
+  unlockedTraits?: string[]
+  xpGained?: number
+}
+
+type RpcRow = {
+  cubCash?: unknown
+  granted?: unknown
+  ok?: unknown
+  reason?: unknown
+  daily?: unknown
+  unlockedTraits?: unknown
+  xp?: unknown
+  trait?: unknown
+  coins?: unknown
+}
+
+function asRecord(value: unknown): RpcRow | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  return value as RpcRow
+}
+
+async function signedIn() {
+  if (!supabase) return false
+  const { data } = await supabase.auth.getSession()
+  return Boolean(data.session)
+}
+
+export async function walletActive() {
+  return signedIn()
+}
+
+function readPatch(value: unknown): WalletPatch | null {
+  const row = asRecord(value)
+  if (!row || typeof row.cubCash !== 'number' || !Number.isFinite(row.cubCash)) return null
+  const patch: WalletPatch = { cubCash: Math.max(0, Math.floor(row.cubCash)) }
+  if (typeof row.granted === 'number' && Number.isFinite(row.granted)) patch.granted = Math.floor(row.granted)
+  if (row.daily) patch.daily = sanitizeDaily(row.daily)
+  if (Array.isArray(row.unlockedTraits)) {
+    patch.unlockedTraits = row.unlockedTraits.filter((item): item is string => typeof item === 'string')
+  }
+  if (typeof row.xp === 'number' && Number.isFinite(row.xp)) patch.xpGained = Math.max(0, row.xp)
+  return patch
+}
+
+async function rpc(fn: string, args: Record<string, unknown>): Promise<{ row: RpcRow | null; missing: boolean }> {
+  if (!supabase) return { row: null, missing: false }
+  const { data, error } = await supabase.rpc(fn, args)
+  if (error) {
+    const missing = error.code === 'PGRST202' || error.message.toLowerCase().includes('could not find the function')
+    return { row: null, missing }
+  }
+  return { row: asRecord(data), missing: false }
+}
+
+async function call(fn: string, args: Record<string, unknown>) {
+  if (!(await signedIn())) return { mode: 'local' as const }
+  const { row, missing } = await rpc(fn, args)
+  if (missing) return { mode: 'local' as const }
+  return { mode: 'server' as const, row, patch: readPatch(row) }
+}
+
+/** Split a run total into the amounts the coin server already accepts. */
+export function payoutParts(source: GameCoinSource, amount: number) {
+  const gain = Math.max(0, Math.floor(amount))
+  if (gain === 0) return []
+  if (source === 'flight') {
+    const parts: number[] = []
+    let left = gain - (gain % 5)
+    while (left > 0) {
+      parts.push(5)
+      left -= 5
+    }
+    return parts
+  }
+  if (source === 'match') {
+    const parts: number[] = []
+    let left = gain
+    for (const size of [15, 10, 6, 3, 1]) {
+      while (left >= size) {
+        parts.push(size)
+        left -= size
+      }
+    }
+    return parts
+  }
+  const max = source === 'archer' ? 40 : 80
+  const parts: number[] = []
+  let left = gain
+  while (left > 0) {
+    const take = Math.min(max, left)
+    parts.push(take)
+    left -= take
+  }
+  return parts
+}
+
+const PAYOUT_GAP_MS: Record<GameCoinSource, number> = {
+  flight: 8000,
+  hoops: 20000,
+  archer: 15000,
+  dojo: 10000,
+  match: 8000,
+}
+
+export function payoutGap(source: GameCoinSource) {
+  return PAYOUT_GAP_MS[source]
+}
+
+/** A coin id that still works on the phone over the Wi-Fi address. */
+export function newNonce() {
+  const cryptoRef = globalThis.crypto
+  if (cryptoRef && typeof cryptoRef.randomUUID === 'function') {
+    try {
+      return cryptoRef.randomUUID()
+    } catch {
+      // http://192.168.x.x is not a secure page, so randomUUID is blocked there.
+    }
+  }
+  const bytes = new Uint8Array(16)
+  if (cryptoRef && typeof cryptoRef.getRandomValues === 'function') cryptoRef.getRandomValues(bytes)
+  else {
+    for (let i = 0; i < bytes.length; i += 1) bytes[i] = Math.floor(Math.random() * 256)
+  }
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+export async function grantGameCoins(source: GameCoinSource, amount: number) {
+  return call('grant_game_coins', {
+    p_source: source,
+    p_amount: Math.floor(amount),
+    p_nonce: newNonce(),
+  })
+}
+
+export async function touchDailyBoard() {
+  const result = await call('touch_daily_board', {})
+  return result.mode === 'server' ? result.patch : null
+}
+
+export async function addDailyScore(game: DailyGame, points: number) {
+  const result = await call('add_daily_score', { p_game: game, p_points: Math.floor(points) })
+  return result.mode === 'server' ? result.patch : null
+}
+
+export async function claimDailyTask(taskId: string) {
+  return call('claim_daily_task', { p_task: taskId })
+}
+
+export async function rollDailyBonus() {
+  const result = await call('roll_daily_bonus', {})
+  if (result.mode === 'local') return { mode: 'local' as const }
+  if (!result.row || result.row.ok === false || !result.patch) return { mode: 'rejected' as const }
+  return {
+    mode: 'server' as const,
+    patch: result.patch,
+    trait: result.patch.daily?.bonusTrait ?? null,
+    coins: result.patch.daily?.bonusCoins ?? 0,
+  }
+}
+
+export async function purchaseTraitOnServer(age: string, category: string, name: string) {
+  const result = await call('purchase_trait', { p_age: age, p_category: category, p_name: name })
+  if (result.mode === 'local') return { mode: 'local' as const }
+  if (!result.row) return { mode: 'server' as const, ok: false as const, reason: 'missing' as const }
+  if (result.row.ok === false) {
+    return { mode: 'server' as const, ok: false as const, reason: result.row.reason === 'broke' ? ('broke' as const) : ('missing' as const) }
+  }
+  if (!result.patch) return { mode: 'server' as const, ok: false as const, reason: 'missing' as const }
+  return { mode: 'server' as const, ok: true as const, patch: result.patch }
+}
+
+export function applyWallet(save: CubSave, patch: WalletPatch): CubSave {
+  return {
+    ...save,
+    cubCash: patch.cubCash,
+    daily: patch.daily ?? save.daily,
+    unlockedTraits: patch.unlockedTraits ?? save.unlockedTraits,
+  }
+}

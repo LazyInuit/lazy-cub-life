@@ -21,6 +21,9 @@ import {
 } from './progress'
 import { BONUS_COIN_AMOUNTS, DAILY_TASKS, bonusReady, dailyView, type BonusTrait, type DailyGame } from './dailyTasks'
 import { readSave, writeSave } from './storage'
+import { reconcileCloudSave, scheduleCloudSave, signInAccount, signOutAccount, signUpAccount, takeAdoptedSave, lockedCubCash, noteLockedCash, noteEarnedCash, ethFromUser, usernameFromUser, loadDisplayedUsername, loadUsernameChangedAt, updateAccountSettings, normalizeEthAddress } from './account'
+import { supabase } from './supabase'
+import { addDailyScore, applyWallet, claimDailyTask, grantGameCoins, payoutGap, payoutParts, purchaseTraitOnServer, rollDailyBonus as rollServerBonus, touchDailyBoard, walletActive, type GameCoinSource } from './wallet'
 import { isTraitUnlocked, sanitizeOwnedOutfits, traitKey, traitPrice, traitXpBonus } from './traitShop'
 import type { CareAction, CubOutfits, CubPose, CubSave, NeedKey } from './types'
 import type { TraitCategory } from './cubTraits'
@@ -48,6 +51,9 @@ export function useCub() {
   const [presentedXp, setPresentedXp] = useState(0)
   const [busy, setBusy] = useState(false)
   const [asleep, setAsleep] = useState(false)
+  const [accountName, setAccountName] = useState<string | null>(null)
+  const [accountEth, setAccountEth] = useState<string | null>(null)
+  const [usernameChangedAt, setUsernameChangedAt] = useState<string | null>(null)
   const busyRef = useRef(false)
   const asleepRef = useRef(false)
   const poseTimer = useRef<number | null>(null)
@@ -57,12 +63,16 @@ export function useCub() {
   const revealGenRef = useRef(0)
   const energyClock = useRef(0)
   const sleepEnergyClock = useRef(0)
+  const cashQueue = useRef(Promise.resolve())
 
   const commit = useCallback((next: CubSave) => {
-    saveRef.current = next
-    setNeedLooks(next.energy, next.hunger, next.cleanliness)
-    setSave(next)
-    writeSave(next)
+    const locked = lockedCubCash()
+    const safe = locked == null ? next : { ...next, cubCash: locked }
+    saveRef.current = safe
+    setNeedLooks(safe.energy, safe.hunger, safe.cleanliness)
+    setSave(safe)
+    writeSave(safe)
+    scheduleCloudSave(safe)
   }, [])
 
   const setPresented = useCallback((xp: number) => {
@@ -168,6 +178,12 @@ export function useCub() {
     commit(loaded)
     presentedXpRef.current = loaded.xp
     setPresentedXp(loaded.xp)
+    void reconcileCloudSave(loaded).then((remote) => {
+      if (!remote) return
+      commit(remote)
+      presentedXpRef.current = remote.xp
+      setPresentedXp(remote.xp)
+    })
   }, [commit])
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -348,6 +364,12 @@ export function useCub() {
     const daily = dailyView(current.daily)
     if (daily.startedAt != null) return
     commit({ ...current, daily: { ...daily, startedAt: Date.now() } })
+    void touchDailyBoard().then((patch) => {
+      const latest = saveRef.current
+      if (!patch || !latest) return
+      const cash = noteEarnedCash(patch.cubCash)
+      commit(applyWallet(latest, { ...patch, cubCash: cash }))
+    })
   }, [commit])
 
   const noteDaily = useCallback((game: DailyGame, score: number) => {
@@ -364,11 +386,29 @@ export function useCub() {
         scores: { ...daily.scores, [game]: (daily.scores[game] ?? 0) + gained },
       },
     })
+    void addDailyScore(game, gained).then((patch) => {
+      const latest = saveRef.current
+      if (!patch || !latest) return
+      const cash = noteEarnedCash(patch.cubCash)
+      commit(applyWallet(latest, { ...patch, cubCash: cash }))
+    })
   }, [commit])
 
-  const claimDaily = useCallback((taskId: string) => {
+  const claimDaily = useCallback(async (taskId: string) => {
     const current = saveRef.current
     if (!current) return false
+    if (await walletActive()) {
+      const result = await claimDailyTask(taskId)
+      if (result.mode === 'local') {
+        // The account database is not installed yet, so this claim stays on the device.
+      } else {
+        const latest = saveRef.current
+        if (!result.patch || !latest || !(result.patch.granted && result.patch.granted > 0)) return false
+        const cash = noteEarnedCash(result.patch.cubCash)
+        commit(applyWallet(latest, { ...result.patch, cubCash: cash }))
+        return true
+      }
+    }
     const task = DAILY_TASKS.find((item) => item.id === taskId)
     if (!task) return false
     const daily = dailyView(current.daily)
@@ -387,6 +427,7 @@ export function useCub() {
     if (!current) return false
     const daily = dailyView(current.daily)
     if (!bonusReady(daily)) return false
+    if (lockedCubCash() != null) return false
     const trait = prize.trait
     const coins = trait || !(BONUS_COIN_AMOUNTS as readonly number[]).includes(prize.coins) ? 0 : prize.coins
     const unlockedTraits =
@@ -402,15 +443,65 @@ export function useCub() {
     return true
   }, [commit])
 
-  const addCubCash = useCallback((amount: number) => {
+  const rollDailyBonus = useCallback(async () => {
     const current = saveRef.current
-    if (!current) return
-    const gain = Math.floor(amount)
-    if (gain === 0) return
-    commit({ ...current, cubCash: Math.max(0, current.cubCash + gain) })
+    if (!current) return null
+    const spun = await rollServerBonus()
+    const latest = saveRef.current
+    if (spun.mode === 'local' || !latest) return null
+    if (spun.mode !== 'server') return false
+    const cash = noteEarnedCash(spun.patch.cubCash)
+    commit(applyWallet(latest, { ...spun.patch, cubCash: cash }))
+    return { trait: spun.trait, coins: spun.coins }
   }, [commit])
 
-  const purchaseTrait = useCallback((age: CharacterAge, category: TraitCategory, name: string) => {
+  const addCubCash = useCallback((amount: number, source: GameCoinSource) => {
+    const gain = Math.floor(amount)
+    if (gain <= 0) return
+    cashQueue.current = cashQueue.current.then(async () => {
+      if (await walletActive()) {
+        const parts = payoutParts(source, gain)
+        const waitGap = () => new Promise((resolve) => window.setTimeout(resolve, payoutGap(source) + 400))
+        for (let index = 0; index < parts.length; index += 1) {
+          if (index > 0) await waitGap()
+          let result = await grantGameCoins(source, parts[index])
+          if (result.mode !== 'server') {
+            const latest = saveRef.current
+            if (!latest) return
+            const rest = parts.slice(index).reduce((sum, part) => sum + part, 0)
+            commit({ ...latest, cubCash: Math.max(0, latest.cubCash + rest) })
+            return
+          }
+          for (
+            let attempt = 0;
+            attempt < 4 && (!result.patch || !(result.patch.granted && result.patch.granted > 0));
+            attempt += 1
+          ) {
+            await waitGap()
+            result = await grantGameCoins(source, parts[index])
+            if (result.mode !== 'server') break
+          }
+          if (result.mode !== 'server') {
+            const latest = saveRef.current
+            if (!latest) return
+            const rest = parts.slice(index).reduce((sum, part) => sum + part, 0)
+            commit({ ...latest, cubCash: Math.max(0, latest.cubCash + rest) })
+            return
+          }
+          const latest = saveRef.current
+          if (!result.patch || !latest || !(result.patch.granted && result.patch.granted > 0)) continue
+          const cash = noteEarnedCash(result.patch.cubCash)
+          commit({ ...latest, cubCash: cash })
+        }
+        return
+      }
+      const latest = saveRef.current
+      if (!latest) return
+      commit({ ...latest, cubCash: Math.max(0, latest.cubCash + gain) })
+    }).catch(() => undefined)
+  }, [commit])
+
+  const purchaseTrait = useCallback(async (age: CharacterAge, category: TraitCategory, name: string) => {
     const current = saveRef.current
     if (!current) return { ok: false as const, reason: 'missing' as const }
     if (isTraitUnlocked(current, age, category, name)) {
@@ -419,6 +510,24 @@ export function useCub() {
     const price = traitPrice(age, category, name)
     if (price === null) {
       return { ok: true as const, alreadyOwned: true as const }
+    }
+    if (await walletActive()) {
+      const result = await purchaseTraitOnServer(age, category, name)
+      if (result.mode === 'local') {
+        // Fall through to the device purchase until the account database is installed.
+      } else {
+        const latest = saveRef.current
+        if (!latest || !result.ok) {
+          return { ok: false as const, reason: result.mode === 'server' && !result.ok ? result.reason : 'missing' }
+        }
+        const xp = result.patch.xpGained ?? 0
+        if (xp === 0) return { ok: true as const, alreadyOwned: true as const }
+        noteLockedCash(result.patch.cubCash)
+        const rewarded = applyReward(latest, xp, {})
+        commit(applyWallet(rewarded, result.patch))
+        noteLevel()
+        return { ok: true as const, alreadyOwned: false as const, xp }
+      }
     }
     if (current.cubCash < price) {
       return { ok: false as const, reason: 'broke' as const }
@@ -449,6 +558,74 @@ export function useCub() {
     [commit, noteLevel],
   )
 
+  useEffect(() => {
+    if (!supabase) return
+    let activeId: string | null = null
+    const applySession = (user: Parameters<typeof usernameFromUser>[0] & { id?: string } | null | undefined) => {
+      const userId = user?.id ?? null
+      activeId = userId
+      setAccountName(usernameFromUser(user))
+      setAccountEth(ethFromUser(user))
+      if (!userId) {
+        setUsernameChangedAt(null)
+        return
+      }
+      void loadDisplayedUsername(userId).then((name) => {
+        if (activeId === userId && name) setAccountName(name)
+      })
+      void loadUsernameChangedAt(userId).then((changedAt) => {
+        if (activeId === userId) setUsernameChangedAt(changedAt)
+      })
+    }
+    void supabase.auth.getSession().then(({ data }) => applySession(data.session?.user))
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      applySession(session?.user)
+    })
+    return () => data.subscription.unsubscribe()
+  }, [])
+
+  const signIn = useCallback(async (username: string, password: string) => {
+    const error = await signInAccount(username, password)
+    if (error) return error
+    const local = saveRef.current
+    if (!local) return null
+    const remote = await reconcileCloudSave(local)
+    if (remote) {
+      commit(remote)
+      presentedXpRef.current = remote.xp
+      setPresentedXp(remote.xp)
+    }
+    return null
+  }, [commit])
+
+  const signUp = useCallback(async (username: string, password: string, ethAddress = '') => {
+    const local = saveRef.current
+    if (!local) return 'Your cub is still waking up.'
+    const error = await signUpAccount(username, password, local, ethAddress)
+    if (error) return error
+    const adopted = takeAdoptedSave()
+    if (adopted) {
+      commit(adopted)
+      presentedXpRef.current = adopted.xp
+      setPresentedXp(adopted.xp)
+    }
+    return null
+  }, [commit])
+
+  const signOut = useCallback(async () => {
+    await signOutAccount()
+  }, [])
+
+  const updateAccount = useCallback(async (username: string, eth: string, password: string) => {
+    const error = await updateAccountSettings(username, eth, password)
+    if (error) return error
+    const nextName = username.trim()
+    if (nextName !== accountName) setUsernameChangedAt(new Date().toISOString())
+    setAccountName(nextName)
+    setAccountEth(normalizeEthAddress(eth))
+    return null
+  }, [accountName])
+
   const displayPose: CubPose = asleep
     ? 'sleep'
     : pose === 'idle' && save && isNeedy(save)
@@ -476,10 +653,18 @@ export function useCub() {
     noteDaily,
     claimDaily,
     claimDailyBonus,
+    rollDailyBonus,
     setOutfits,
     addCubCash,
     purchaseTrait,
     setLevelUiVisible,
+    accountName,
+    accountEth,
+    usernameChangedAt,
+    signIn,
+    signUp,
+    signOut,
+    updateAccount,
   }
 }
 

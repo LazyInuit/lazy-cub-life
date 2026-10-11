@@ -18,7 +18,7 @@ type Gate = {
   coinTaken: boolean
 }
 
-type Summary = { score: number; xpGained: number; coins: number }
+type Summary = { score: number; xpGained: number; coins: number; stopped?: boolean }
 
 const COIN_VALUE = 5
 const COIN_PICK = 36
@@ -111,7 +111,12 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
     } else if (ending === 'bounds') {
       playEnd()
     }
-    setSummary({ score: awarded.passed, xpGained: awarded.xpGained, coins: awarded.coins })
+    setSummary({
+      score: awarded.passed,
+      xpGained: awarded.xpGained,
+      coins: awarded.coins,
+      stopped: ending === 'leave',
+    })
     setHudScore(awarded.passed)
   }
 
@@ -290,7 +295,6 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
               }
               if (phase.current === 'play') {
                 settle('leave')
-                onExit()
                 return
               }
               onExit()
@@ -305,7 +309,6 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
               }
               if (phase.current === 'play') {
                 settle('leave')
-                onGames()
                 return
               }
               if (!rewarded.current) {
@@ -328,7 +331,7 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
           </p>
         </div>
         <p className="arcade-help">
-          {summary ? 'The cub crashed!' : started ? 'Tap to flap through the gaps.' : 'Tap to fly.'}
+          {summary ? (summary.stopped ? 'Run stopped.' : 'The cub crashed!') : started ? 'Tap to flap through the gaps.' : 'Tap to fly.'}
         </p>
       </header>
       <div className="flight-stage">

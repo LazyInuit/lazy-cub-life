@@ -264,6 +264,7 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoi
     rewarded.current = true
     live.over = true
     live.paused = false
+    modeRef.current = 'over'
     stopHoopsBgm()
     const score = live.score
     const neuBest = score > bestRef.current
@@ -623,7 +624,10 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoi
 
   const leave = (go: () => void) => {
     const live = liveRef.current
-    if (modeRef.current === 'play' && live && !rewarded.current) endRef.current(live)
+    if (modeRef.current === 'play' && live && !rewarded.current) {
+      endRef.current(live)
+      return
+    }
     stopHoopsBgm()
     go()
   }

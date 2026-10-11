@@ -16,6 +16,7 @@ import diceIconUrl from '../assets/dice-ui.png'
 import chestUrl from '../assets/daily-chest.png'
 import { traitSlug, tryOnFromPicks, type TraitCategory } from '../game/cubTraits'
 import { isTraitUnlocked, sanitizeOwnedOutfit } from '../game/traitShop'
+import { activityArea, setActivityArea } from '../game/activity'
 import { getHomeCharacterAge, setHomeCharacter, type CharacterAge } from '../game/homeScene'
 import {
   BONUS_TRAIT_CHANCE,
@@ -41,6 +42,7 @@ import type { CubController } from '../game/useCub'
 import { CubStage } from './CubStage'
 import { HomeButton } from './HomeButton'
 import { DailyTraitRoll, ageCubLabel, traitsFromManifest } from './DailyTraitRoll'
+import { AccountPanel } from './AccountPanel'
 import { WardrobeScreen } from './WardrobeScreen'
 
 type Props = {
@@ -71,6 +73,7 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
   const [now, setNow] = useState(() => Date.now())
   const [coinBurst, setCoinBurst] = useState<{ id: string; key: number } | null>(null)
   const [wardrobeOpen, setWardrobeOpen] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
   const [bonusRoll, setBonusRoll] = useState<{ prize: BonusTrait | null; coins: number } | null>(null)
   const [diceShake, setDiceShake] = useState(false)
   const [age, setAge] = useState<CharacterAge>(() => getHomeCharacterAge())
@@ -87,6 +90,14 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
     const id = window.setInterval(tick, 1000)
     return () => window.clearInterval(id)
   }, [dailyOpen])
+
+  useEffect(() => {
+    if (!wardrobeOpen) return
+    setActivityArea('wardrobe')
+    return () => {
+      if (activityArea() === 'wardrobe') setActivityArea('home')
+    }
+  }, [wardrobeOpen])
 
   useEffect(() => {
     // Home room and wardrobe both show the LVL badge; the games picker does not.
@@ -210,24 +221,33 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
     const bonusTrait = daily.bonusTrait
     const bonusCoins = daily.bonusCoins
     const canSpin = bonusReady(daily)
-    const spinBonus = () => {
-      if (!canSpin || bonusRoll) return
-      playDiceRattle()
-      setDiceShake(false)
-      requestAnimationFrame(() => setDiceShake(true))
-      void fetch('/traits/manifest.json')
-        .then((res) => res.json())
-        .then((manifest: Record<TraitCategory, Record<CharacterAge, string[]>>) => {
-          const catalog = traitsFromManifest(manifest)
-          const unowned = catalog.filter((trait) => !isTraitUnlocked(save, trait.age, trait.category, trait.name))
-          const prize =
-            unowned.length > 0 && Math.random() < BONUS_TRAIT_CHANCE
-              ? pickBonusTrait(unowned)
-              : null
-          setBonusRoll({ prize, coins: prize ? 0 : rollBonusCoins() })
-        })
-        .catch(() => setDiceShake(false))
-    }
+      const spinBonus = () => {
+        if (!canSpin || bonusRoll) return
+        playDiceRattle()
+        setDiceShake(false)
+        requestAnimationFrame(() => setDiceShake(true))
+        void (async () => {
+          const spun = await cub.rollDailyBonus()
+          if (spun) {
+            setBonusRoll({ prize: spun.trait, coins: spun.coins })
+            return
+          }
+          if (spun === false) {
+            setDiceShake(false)
+            return
+          }
+          try {
+            const res = await fetch('/traits/manifest.json')
+            const manifest = (await res.json()) as Record<TraitCategory, Record<CharacterAge, string[]>>
+            const catalog = traitsFromManifest(manifest)
+            const unowned = catalog.filter((trait) => !isTraitUnlocked(save, trait.age, trait.category, trait.name))
+            const prize = unowned.length > 0 && Math.random() < BONUS_TRAIT_CHANCE ? pickBonusTrait(unowned) : null
+            setBonusRoll({ prize, coins: prize ? 0 : rollBonusCoins() })
+          } catch {
+            setDiceShake(false)
+          }
+        })()
+      }
     return (
       <section className="game-screen game-picks-screen daily-screen">
         <header className="top">
@@ -328,9 +348,11 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
                       type="button"
                       className="daily-claim"
                       onClick={() => {
-                        if (!cub.claimDaily(task.id)) return
-                        playCoin()
-                        setCoinBurst((current) => ({ id: task.id, key: (current?.key ?? 0) + 1 }))
+                        void (async () => {
+                          if (!(await cub.claimDaily(task.id))) return
+                          playCoin()
+                          setCoinBurst((current) => ({ id: task.id, key: (current?.key ?? 0) + 1 }))
+                        })()
                       }}
                     >
                       Claim
@@ -427,28 +449,13 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
           </button>
         </div>
         <div className="top-stats">
-          <div
-            className={cub.levelUp ? 'level-badge level-up' : 'level-badge'}
-            key={cub.levelUp ?? 'level'}
-            aria-label={`Level ${progress.level}, ${progress.into} of ${progress.next} experience`}
+          <button
+            type="button"
+            className="account-open"
+            onClick={() => setAccountOpen(true)}
           >
-            <svg className="xp-ring" viewBox="0 0 84 84" aria-hidden="true">
-              <circle className="xp-ring-track" cx="42" cy="42" r={ringR} />
-              {xpPct > 0 ? (
-                <circle
-                  className="xp-ring-fill"
-                  cx="42"
-                  cy="42"
-                  r={ringR}
-                  strokeDasharray={`${(xpPct / 100) * ringC} ${ringC}`}
-                />
-              ) : null}
-            </svg>
-            <span className="lvl-face">
-              <span className="lvl-kicker">LVL</span>
-              <strong>{progress.level}</strong>
-            </span>
-          </div>
+            {cub.accountName ?? 'Account'}
+          </button>
           <div className="cub-cash" aria-label={`${formatCubCash(save.cubCash)} Cub Cash`}>
             <span className="cub-cash-inner">
               <img src={coinUrl} alt="" />
@@ -456,7 +463,30 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
             </span>
           </div>
         </div>
+        <div
+          className={cub.levelUp ? 'level-badge level-up' : 'level-badge'}
+          key={cub.levelUp ?? 'level'}
+          aria-label={`Level ${progress.level}, ${progress.into} of ${progress.next} experience`}
+        >
+          <svg className="xp-ring" viewBox="0 0 84 84" aria-hidden="true">
+            <circle className="xp-ring-track" cx="42" cy="42" r={ringR} />
+            {xpPct > 0 ? (
+              <circle
+                className="xp-ring-fill"
+                cx="42"
+                cy="42"
+                r={ringR}
+                strokeDasharray={`${(xpPct / 100) * ringC} ${ringC}`}
+              />
+            ) : null}
+          </svg>
+          <span className="lvl-face">
+            <span className="lvl-kicker">LVL</span>
+            <strong>{progress.level}</strong>
+          </span>
+        </div>
         {cub.toast ? <p className="home-toast">{cub.toast}</p> : null}
+        {accountOpen ? <AccountPanel cub={cub} onClose={() => setAccountOpen(false)} /> : null}
         <button
           type="button"
           className="daily-open"

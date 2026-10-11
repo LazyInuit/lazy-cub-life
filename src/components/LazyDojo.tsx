@@ -82,6 +82,7 @@ export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onCoin
   const finishRun = (engine: EngineState) => {
     if (rewarded.current) return
     rewarded.current = true
+    modeRef.current = 'over'
     stopDojoBgm()
     const score = engine.score
     const neuBest = score > bestRef.current
@@ -252,23 +253,22 @@ export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onCoin
 
   useEffect(() => () => stopDojoBgm(), [])
 
-  const leaveToGames = () => {
-    awardDojo()
-    onGames()
+  const leave = (go: () => void) => {
+    const engine = engineRef.current
+    const live = modeRef.current === 'play' || modeRef.current === 'pause'
+    if (live && engine && !rewarded.current) {
+      finishRun(engine)
+      return
+    }
+    go()
   }
 
   return (
     <section className="game-screen dojo-screen">
       <header className="dojo-top">
         <div className="dojo-nav">
-          <HomeButton
-            className="game-home"
-            onClick={() => {
-              awardDojo()
-              onExit()
-            }}
-          />
-          <GamesButton className="game-home game-games" onClick={leaveToGames} />
+          <HomeButton className="game-home" onClick={() => leave(onExit)} />
+          <GamesButton className="game-home game-games" onClick={() => leave(onGames)} />
         </div>
         {mode === 'play' || mode === 'pause' ? (
           <div className="dojo-hud">

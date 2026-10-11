@@ -187,17 +187,19 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
 
   const buyTrait = () => {
     if (owned || price === null) return
-    const result = cub.purchaseTrait(age, category, label)
-    if (!result.ok) {
-      setBuyHint(result.reason === 'broke' ? 'Not enough Cub Cash' : 'Could not buy')
-      return
-    }
-    setBuyHint(null)
-    setDiceLook(null)
-    setWorn((currentWorn) => ({
-      ...currentWorn,
-      [age]: { ...currentWorn[age], [category]: label },
-    }))
+    void (async () => {
+      const result = await cub.purchaseTrait(age, category, label)
+      if (!result.ok) {
+        setBuyHint(result.reason === 'broke' ? 'Not enough Cub Cash' : 'Could not buy')
+        return
+      }
+      setBuyHint(null)
+      setDiceLook(null)
+      setWorn((currentWorn) => ({
+        ...currentWorn,
+        [age]: { ...currentWorn[age], [category]: label },
+      }))
+    })()
   }
 
   const flashPress = (event: { currentTarget: HTMLElement }) => {

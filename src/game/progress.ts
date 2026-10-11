@@ -267,8 +267,7 @@ export function defaultSave(now = Date.now()): CubSave {
       old: { ...DEFAULT_OUTFIT },
       young: { ...DEFAULT_OUTFIT },
     },
-    /** Starter balance for testing wardrobe unlocks before earn loops exist. */
-    cubCash: 10_000,
+    cubCash: 100,
     unlockedTraits: starterUnlockedKeys(),
     hunger: 72,
     happiness: 68,
@@ -297,7 +296,7 @@ export function sanitizeSave(value: unknown, now = Date.now()): CubSave {
   const hasCash = typeof raw.cubCash === 'number' && Number.isFinite(raw.cubCash)
   // Move earlier test seeds, including leftover 800 or 10,000,000 after purchases, onto the starter balance.
   const rawCash = hasCash ? Math.floor(raw.cubCash as number) : base.cubCash
-  const starterSeeds = new Set([0, 100, 150, 200, 300, 400, 500, 600, 700, 800, 100_000, 10_000_000])
+  const starterSeeds = new Set([0, 100, 150, 200, 300, 400, 500, 600, 700, 800, 10_000, 100_000, 10_000_000])
   const fromTestFortune = rawCash >= 1_000_000
   const cubCash = Math.max(0, starterSeeds.has(rawCash) || fromTestFortune ? base.cubCash : rawCash)
   const draft: CubSave = withLevel({

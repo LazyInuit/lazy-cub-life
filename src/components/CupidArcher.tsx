@@ -155,6 +155,7 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onC
   const finish = (round: ArcherRound) => {
     if (rewarded.current) return
     rewarded.current = true
+    modeRef.current = 'over'
     playOver()
     const score = round.score
     const neuBest = score > bestRef.current
@@ -330,7 +331,11 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onC
 
   const leave = (go: () => void) => {
     const round = roundRef.current
-    if (modeRef.current === 'play' && round && !rewarded.current) finish(round)
+    if (modeRef.current === 'play' && round && !rewarded.current) {
+      finish(round)
+      stopArcherBgm()
+      return
+    }
     stopArcherBgm()
     go()
   }
