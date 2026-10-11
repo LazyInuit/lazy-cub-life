@@ -67,6 +67,7 @@ export default function App() {
           onDailyStart={cub.startDaily}
           onDaily={(score) => cub.noteDaily('flight', score)}
           onReward={cub.reward}
+          onCoins={cub.addCubCash}
           onExit={goHome}
           onGames={goGames}
         />
@@ -78,6 +79,7 @@ export default function App() {
           onDailyStart={cub.startDaily}
           onDaily={(score) => cub.noteDaily('match', score)}
           onReward={cub.reward}
+          onCoins={cub.addCubCash}
           onExit={goHome}
           onGames={goGames}
         />
@@ -89,6 +91,7 @@ export default function App() {
           onDailyStart={cub.startDaily}
           onDaily={(score) => cub.noteDaily('dojo', score)}
           onReward={cub.reward}
+          onCoins={cub.addCubCash}
           onExit={goHome}
           onGames={goGames}
         />
@@ -100,6 +103,7 @@ export default function App() {
           onDailyStart={cub.startDaily}
           onDaily={(score) => cub.noteDaily('archer', score)}
           onReward={cub.reward}
+          onCoins={cub.addCubCash}
           onExit={goHome}
           onGames={goGames}
         />
@@ -111,6 +115,7 @@ export default function App() {
           onDailyStart={cub.startDaily}
           onDaily={(score) => cub.noteDaily('hoops', score)}
           onReward={cub.reward}
+          onCoins={cub.addCubCash}
           onExit={goHome}
           onGames={goGames}
         />

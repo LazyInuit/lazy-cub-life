@@ -63,6 +63,30 @@ function click(current: AudioContext, when: number, peak: number, hz: number) {
   noise.stop(when + 0.04)
 }
 
+function chime(current: AudioContext, when: number, frequency: number, seconds: number, peak: number) {
+  const osc = current.createOscillator()
+  osc.type = 'triangle'
+  osc.frequency.setValueAtTime(frequency, when)
+  const gain = current.createGain()
+  gain.gain.setValueAtTime(0.001, when)
+  gain.gain.exponentialRampToValueAtTime(peak, when + 0.02)
+  gain.gain.exponentialRampToValueAtTime(0.001, when + seconds)
+  osc.connect(gain)
+  gain.connect(current.destination)
+  osc.start(when)
+  osc.stop(when + seconds + 0.02)
+}
+
+/** Short rising win sting when the bonus prize is shown. */
+export function playPrizeWin() {
+  const current = context()
+  if (current.state === 'suspended') void current.resume()
+  const now = current.currentTime
+  ;[523, 659, 784, 1047].forEach((frequency, index) => {
+    chime(current, now + index * 0.09, frequency, index === 3 ? 0.55 : 0.28, 0.08)
+  })
+}
+
 /** Dice settling after a shake. Plays when the random outfit button is pressed. */
 export function playDiceRattle() {
   const current = context()

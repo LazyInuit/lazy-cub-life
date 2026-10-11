@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import lionPawUrl from '../assets/lion-paw-clear.png'
+import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import { PLAY_NEED_COST, moodFromScore } from '../game/progress'
 import { traitSlug } from '../game/cubTraits'
+import { playCoin } from '../game/flightAudio'
 import { playPrideFail, resumePrideAudio, setPrideUrgency, startPrideAmbience, stopPrideAmbience } from '../game/prideAudio'
 import type { NeedKey } from '../game/types'
 import { HomeButton, GamesButton } from './HomeButton'
@@ -50,6 +52,16 @@ function prideBoardXp(boards: number) {
   return PRIDE_BOARD_XP[Math.min(count, PRIDE_BOARD_XP.length - 1)] ?? 0
 }
 
+/** Levels 1 and 2 pay nothing. Level 3 pays 1, then one more each board. */
+function coinsForLevel(level: number) {
+  return Math.max(0, Math.floor(level) - 2)
+}
+
+function coinsForBoards(boards: number) {
+  const paid = coinsForLevel(boards)
+  return (paid * (paid + 1)) / 2
+}
+
 type Props = {
   best: number
   onBest: (score: number) => void
@@ -60,6 +72,7 @@ type Props = {
     needs: Partial<Record<NeedKey, number>>,
     options?: { flat?: boolean },
   ) => { xpGained: number }
+  onCoins: (amount: number) => void
   onExit: () => void
   onGames: () => void
 }
@@ -109,7 +122,7 @@ function MatchBust({ body }: { body: string }) {
   )
 }
 
-export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onExit, onGames }: Props) {
+export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames }: Props) {
   const [pairs, setPairs] = useState(2)
   const [cards, setCards] = useState<Card[]>(() => deal(2))
   const [left, setLeft] = useState(() => secondsForPairs(2))
@@ -120,10 +133,12 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onEx
   const [summary, setSummary] = useState<{
     cleared: number
     xpGained: number
+    coins: number
     reason: string
     won: boolean
     level: number
   } | null>(null)
+  const [coinBurst, setCoinBurst] = useState<{ id: number; count: number } | null>(null)
   const clearedRef = useRef(0)
   const scoreRef = useRef(0)
   const bestRef = useRef(best)
@@ -131,13 +146,16 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onEx
   const rewarded = useRef(false)
   const resolving = useRef(false)
   const onRewardRef = useRef(onReward)
+  const onCoinsRef = useRef(onCoins)
   const onBestRef = useRef(onBest)
   const onDailyStartRef = useRef(onDailyStart)
   const onDailyRef = useRef(onDaily)
+  const coinSeq = useRef(0)
   const lockTimer = useRef<number | null>(null)
   const musicStarted = useRef(false)
   const startedRef = useRef(false)
   onRewardRef.current = onReward
+  onCoinsRef.current = onCoins
   onBestRef.current = onBest
   onDailyStartRef.current = onDailyStart
   onDailyRef.current = onDaily
@@ -157,6 +175,8 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onEx
     stopPrideAmbience()
     const won = reason === 'You cleared every board.'
     if (!won) void playPrideFail()
+    const coins = coinsForBoards(done)
+    if (coins > 0) onCoinsRef.current(coins)
     const result = onRewardRef.current(
       prideBoardXp(done),
       {
@@ -168,6 +188,7 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onEx
     setSummary({
       cleared: done,
       xpGained: result.xpGained,
+      coins,
       reason,
       won,
       level: won ? done : done + 1,
@@ -192,6 +213,7 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onEx
     setCleared(0)
     setScore(0)
     setLocked(false)
+    setCoinBurst(null)
   }
 
   useEffect(() => {
@@ -273,6 +295,13 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onEx
       const nextCleared = clearedRef.current + 1
       clearedRef.current = nextCleared
       setCleared(nextCleared)
+      const earned = coinsForLevel(nextCleared)
+      if (earned > 0) {
+        playCoin()
+        const burstId = coinSeq.current
+        coinSeq.current += 1
+        setCoinBurst({ id: burstId, count: earned })
+      }
       setLocked(true)
       lockTimer.current = window.setTimeout(() => {
         resolving.current = false
@@ -308,6 +337,8 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onEx
       onBestRef.current(score)
     }
     onDailyRef.current(score)
+    const coins = coinsForBoards(clearedRef.current)
+    if (coins > 0) onCoinsRef.current(coins)
     onRewardRef.current(
       prideBoardXp(clearedRef.current),
       {
@@ -395,6 +426,28 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onEx
           )
         })}
       </div>
+      {coinBurst ? (
+        <div key={coinBurst.id} className="pride-coin-layer" aria-hidden="true">
+          <p className="pride-coin-tag">+{coinBurst.count}</p>
+          {Array.from({ length: coinBurst.count }, (_, index) => (
+            <img
+              key={index}
+              className="pride-coin"
+              src={coinUrl}
+              alt=""
+              style={{
+                marginLeft: (index - (coinBurst.count - 1) / 2) * 36 - 22,
+                animationDelay: `${index * 70}ms`,
+              }}
+              onAnimationEnd={
+                index === coinBurst.count - 1
+                  ? () => setCoinBurst((current) => (current?.id === coinBurst.id ? null : current))
+                  : undefined
+              }
+            />
+          ))}
+        </div>
+      ) : null}
       {summary ? (
         <div className={`results pride-results${summary.won ? ' won' : ' lost'}`}>
           <p className="pride-results-kicker">{summary.won ? 'Trail complete' : 'Trail ended'}</p>
@@ -404,6 +457,9 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onEx
               : `Failed on level ${summary.level} · ${summary.cleared} cleared`}
           </p>
           <p className="results-xp">+{summary.xpGained} XP</p>
+          <p className="pride-results-coins">
+            <img src={coinUrl} alt="" />+{summary.coins}
+          </p>
           <div className="pride-results-actions">
             {!summary.won ? (
               <button type="button" className="pride-results-btn pride-results-retry" onClick={retry}>

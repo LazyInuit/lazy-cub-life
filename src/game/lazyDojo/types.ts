@@ -70,6 +70,8 @@ export type EngineState = {
   phase: RunPhase
   endReason: 'lives' | 'bomb' | null
   score: number
+  /** Kovu coins sliced this run. Each one is worth 1 Cub Cash. */
+  coins: number
   lives: number
   elapsed: number
   nextSpawn: number

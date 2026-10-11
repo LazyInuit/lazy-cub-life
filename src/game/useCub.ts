@@ -19,9 +19,9 @@ import {
   levelProgress,
   rewardMultiplier,
 } from './progress'
-import { DAILY_TASKS, dailyView, type DailyGame } from './dailyTasks'
+import { BONUS_COIN_AMOUNTS, DAILY_TASKS, bonusReady, dailyView, type BonusTrait, type DailyGame } from './dailyTasks'
 import { readSave, writeSave } from './storage'
-import { isTraitUnlocked, sanitizeOwnedOutfits, traitKey, traitPrice } from './traitShop'
+import { isTraitUnlocked, sanitizeOwnedOutfits, traitKey, traitPrice, traitXpBonus } from './traitShop'
 import type { CareAction, CubOutfits, CubPose, CubSave, NeedKey } from './types'
 import type { TraitCategory } from './cubTraits'
 import type { CharacterAge } from './homeScene'
@@ -382,6 +382,26 @@ export function useCub() {
     return true
   }, [commit])
 
+  const claimDailyBonus = useCallback((prize: { trait: BonusTrait | null; coins: number }) => {
+    const current = saveRef.current
+    if (!current) return false
+    const daily = dailyView(current.daily)
+    if (!bonusReady(daily)) return false
+    const trait = prize.trait
+    const coins = trait || !(BONUS_COIN_AMOUNTS as readonly number[]).includes(prize.coins) ? 0 : prize.coins
+    const unlockedTraits =
+      trait && !isTraitUnlocked(current, trait.age, trait.category, trait.name)
+        ? [...new Set([...current.unlockedTraits, traitKey(trait.age, trait.category, trait.name)])]
+        : current.unlockedTraits
+    commit({
+      ...current,
+      cubCash: current.cubCash + coins,
+      unlockedTraits,
+      daily: { ...daily, bonusClaimed: true, bonusTrait: trait, bonusCoins: coins },
+    })
+    return true
+  }, [commit])
+
   const addCubCash = useCallback((amount: number) => {
     const current = saveRef.current
     if (!current) return
@@ -404,13 +424,16 @@ export function useCub() {
       return { ok: false as const, reason: 'broke' as const }
     }
     const key = traitKey(age, category, name)
+    const xp = traitXpBonus(price)
+    const rewarded = applyReward(current, xp, {})
     commit({
-      ...current,
-      cubCash: current.cubCash - price,
+      ...rewarded,
+      cubCash: rewarded.cubCash - price,
       unlockedTraits: [...new Set([...current.unlockedTraits, key])],
     })
-    return { ok: true as const, alreadyOwned: false as const }
-  }, [commit])
+    noteLevel()
+    return { ok: true as const, alreadyOwned: false as const, xp }
+  }, [commit, noteLevel])
 
   const reward = useCallback(
     (baseXp: number, needs: Partial<Record<NeedKey, number>>, options?: { flat?: boolean }) => {
@@ -452,6 +475,7 @@ export function useCub() {
     startDaily,
     noteDaily,
     claimDaily,
+    claimDailyBonus,
     setOutfits,
     addCubCash,
     purchaseTrait,

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import backgroundUrl from '../assets/cupid-archer/background-2.png'
 import cubUrl from '../assets/cupid-archer/cub.png'
+import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import lionPawUrl from '../assets/lion-paw-ui.png'
 import { ARCHER_XP_PER_SCORE, LIVES, ROUND_SECONDS } from '../game/cupidArcher/config'
 import {
@@ -42,6 +43,7 @@ type Props = {
     needs: Partial<Record<NeedKey, number>>,
     options?: { flat?: boolean },
   ) => { xpGained: number }
+  onCoins: (amount: number) => void
   onExit: () => void
   onGames: () => void
 }
@@ -53,6 +55,7 @@ type Summary = {
   bullseyes: number
   accuracy: number
   xp: number
+  coins: number
 }
 
 function loadImage(src: string) {
@@ -110,7 +113,7 @@ function LivesHud({ lives }: { lives: number }) {
   )
 }
 
-export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onExit, onGames }: Props) {
+export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames }: Props) {
   const [mode, setMode] = useState<Mode>('start')
   const [hud, setHud] = useState({ lives: LIVES, score: 0, time: ROUND_SECONDS, shots: 0, aiming: false })
   const [pullHint, setPullHint] = useState({ x: 0, y: 0 })
@@ -120,6 +123,7 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onE
   const roundRef = useRef<ArcherRound | null>(null)
   const bgRef = useRef<HTMLImageElement | null>(null)
   const cubRef = useRef<HTMLImageElement | null>(null)
+  const coinRef = useRef<HTMLImageElement | null>(null)
   const modeRef = useRef(mode)
   const rewarded = useRef(false)
   const bestRef = useRef(best)
@@ -127,6 +131,7 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onE
   const onDailyStartRef = useRef(onDailyStart)
   const onDailyRef = useRef(onDaily)
   const onRewardRef = useRef(onReward)
+  const onCoinsRef = useRef(onCoins)
   const hudLivesRef = useRef(LIVES)
   const hudTimeRef = useRef(ROUND_SECONDS)
   const hudShotsRef = useRef(0)
@@ -137,10 +142,12 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onE
   onDailyStartRef.current = onDailyStart
   onDailyRef.current = onDaily
   onRewardRef.current = onReward
+  onCoinsRef.current = onCoins
 
   useEffect(() => {
     bgRef.current = loadImage(backgroundUrl)
     cubRef.current = loadImage(cubUrl)
+    coinRef.current = loadImage(coinUrl)
   }, [])
 
   useEffect(() => () => stopArcherBgm(), [])
@@ -162,6 +169,8 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onE
       { flat: true },
     )
     const accuracy = round.shots > 0 ? Math.round((round.hits / round.shots) * 100) : 0
+    const coins = round.bullseyes
+    if (coins > 0) onCoinsRef.current(coins)
     setSummary({
       score,
       best: bestRef.current,
@@ -169,6 +178,7 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onE
       bullseyes: round.bullseyes,
       accuracy,
       xp: result.xpGained,
+      coins,
     })
     setMode('over')
   }
@@ -196,7 +206,7 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onE
     if (!canvas || !round) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    drawArcherFrame(ctx, round, bgRef.current, cubRef.current)
+    drawArcherFrame(ctx, round, bgRef.current, cubRef.current, coinRef.current)
   }
 
   useEffect(() => {
@@ -405,6 +415,10 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onE
               Accuracy <strong>{summary.accuracy}%</strong>
             </p>
             <p className="archer-xp">+{summary.xp} XP</p>
+            <p className="archer-coins">
+              <img src={coinUrl} alt="" />
+              +{summary.coins}
+            </p>
             <button type="button" className="archer-btn" onClick={startRound}>
               Play again
             </button>

@@ -12,25 +12,35 @@ import meatYoungUrl from '../assets/feed-bottle-ui.png'
 import shirtUrl from '../assets/shirt-ui.png'
 import lionPawUrl from '../assets/lion-paw-clear.png'
 import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
+import diceIconUrl from '../assets/dice-ui.png'
 import chestUrl from '../assets/daily-chest.png'
-import { traitSlug, tryOnFromPicks } from '../game/cubTraits'
-import { sanitizeOwnedOutfit } from '../game/traitShop'
+import { traitSlug, tryOnFromPicks, type TraitCategory } from '../game/cubTraits'
+import { isTraitUnlocked, sanitizeOwnedOutfit } from '../game/traitShop'
 import { getHomeCharacterAge, setHomeCharacter, type CharacterAge } from '../game/homeScene'
 import {
+  BONUS_TRAIT_CHANCE,
+  BONUS_TASKS_REQUIRED,
   DAILY_TASKS,
-  DAILY_WINDOW_MS,
-  claimableCount,
+  pickBonusTrait,
+  rollBonusCoins,
+  type BonusTrait,
+  bonusReady,
+  dailyNeedsAttention,
   dailyView,
   formatResetCountdown,
   msUntilDailyReset,
   taskReady,
   taskScore,
+  tasksComplete,
 } from '../game/dailyTasks'
+import { playDiceRattle } from '../game/diceAudio'
+import { playCoin } from '../game/flightAudio'
 import { barIsFull, levelProgress } from '../game/progress'
 import { formatCubCash } from '../game/formatCubCash'
 import type { CubController } from '../game/useCub'
 import { CubStage } from './CubStage'
 import { HomeButton } from './HomeButton'
+import { DailyTraitRoll, ageCubLabel, traitsFromManifest } from './DailyTraitRoll'
 import { WardrobeScreen } from './WardrobeScreen'
 
 type Props = {
@@ -45,13 +55,10 @@ type Props = {
 
 function DailyResetClock({ startedAt, now }: { startedAt: number | null; now: number }) {
   const remain = msUntilDailyReset(startedAt, new Date(now))
-  const label = formatResetCountdown(remain ?? DAILY_WINDOW_MS)
-  const waiting = startedAt == null
+  if (remain == null || remain <= 0) return <span className="daily-reset-gap" aria-hidden="true" />
+  const label = formatResetCountdown(remain)
   return (
-    <p
-      className="daily-reset"
-      aria-label={waiting ? `Tasks reset in ${label} once you play a challenge` : `Tasks reset in ${label}`}
-    >
+    <p className="daily-reset" aria-label={`Tasks reset in ${label}`}>
       <span>Tasks reset in</span>
       <strong>{label}</strong>
     </p>
@@ -64,6 +71,8 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
   const [now, setNow] = useState(() => Date.now())
   const [coinBurst, setCoinBurst] = useState<{ id: string; key: number } | null>(null)
   const [wardrobeOpen, setWardrobeOpen] = useState(false)
+  const [bonusRoll, setBonusRoll] = useState<{ prize: BonusTrait | null; coins: number } | null>(null)
+  const [diceShake, setDiceShake] = useState(false)
   const [age, setAge] = useState<CharacterAge>(() => getHomeCharacterAge())
   const save = cub.save
 
@@ -168,9 +177,11 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
             onPointerCancel={clearSilverPressGlow}
             onClick={onArcher}
           >
-            <span className="game-thumb thumb-archer" aria-hidden="true">
-              <img src={archerThumb} alt="" />
-            </span>
+            <span
+              className="game-thumb thumb-archer"
+              aria-hidden="true"
+              style={{ backgroundImage: `url("${archerThumb}")` }}
+            />
             <span>Cupid Archery</span>
           </button>
           <button
@@ -194,6 +205,29 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
   if (dailyOpen) {
     const daily = dailyView(save.daily, new Date(now))
     const done = DAILY_TASKS.filter((task) => daily.claimed.includes(task.id)).length
+    const complete = tasksComplete(daily)
+    const bonusClaimed = daily.bonusClaimed
+    const bonusTrait = daily.bonusTrait
+    const bonusCoins = daily.bonusCoins
+    const canSpin = bonusReady(daily)
+    const spinBonus = () => {
+      if (!canSpin || bonusRoll) return
+      playDiceRattle()
+      setDiceShake(false)
+      requestAnimationFrame(() => setDiceShake(true))
+      void fetch('/traits/manifest.json')
+        .then((res) => res.json())
+        .then((manifest: Record<TraitCategory, Record<CharacterAge, string[]>>) => {
+          const catalog = traitsFromManifest(manifest)
+          const unowned = catalog.filter((trait) => !isTraitUnlocked(save, trait.age, trait.category, trait.name))
+          const prize =
+            unowned.length > 0 && Math.random() < BONUS_TRAIT_CHANCE
+              ? pickBonusTrait(unowned)
+              : null
+          setBonusRoll({ prize, coins: prize ? 0 : rollBonusCoins() })
+        })
+        .catch(() => setDiceShake(false))
+    }
     return (
       <section className="game-screen game-picks-screen daily-screen">
         <header className="top">
@@ -202,7 +236,61 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
           <DailyResetClock startedAt={daily.startedAt} now={now} />
         </header>
         <div className="daily-list">
-          {DAILY_TASKS.map((task) => {
+          <article className="daily-task daily-bonus">
+            <h2>Daily Bonus Prize</h2>
+            <p>Complete any 3 challenges</p>
+            <p className="daily-count">
+              {Math.min(complete, BONUS_TASKS_REQUIRED)} / {BONUS_TASKS_REQUIRED}
+            </p>
+            <div className="daily-meter" aria-hidden="true">
+              <span style={{ width: `${(Math.min(complete, BONUS_TASKS_REQUIRED) / BONUS_TASKS_REQUIRED) * 100}%` }} />
+            </div>
+            <div className="daily-row">
+              {bonusClaimed && bonusTrait ? (
+                <span className="daily-won">
+                  <strong>{bonusTrait.name}</strong>
+                  <span>
+                    {ageCubLabel(bonusTrait.age)} · {bonusTrait.category}
+                  </span>
+                </span>
+              ) : bonusClaimed && bonusCoins > 0 ? (
+                <span className="daily-reward">
+                  <img src={coinUrl} alt="" />
+                  {bonusCoins}
+                </span>
+              ) : (
+                <span className="daily-reward">Bonus Roll! - Win Wardrobe Items or Coins</span>
+              )}
+              {bonusClaimed ? (
+                <button type="button" className="daily-claim" disabled>
+                  Won
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="daily-dice"
+                  aria-label={canSpin ? 'Spin the bonus dice' : 'Complete any 3 challenges to spin'}
+                  disabled={!canSpin}
+                  onClick={spinBonus}
+                >
+                  <span className="wood-btn">
+                    <img
+                      className={diceShake ? 'dice shake' : 'dice'}
+                      src={diceIconUrl}
+                      alt=""
+                      onAnimationEnd={(event) => {
+                        event.stopPropagation()
+                        setDiceShake(false)
+                      }}
+                    />
+                  </span>
+                </button>
+              )}
+            </div>
+          </article>
+          {[...DAILY_TASKS]
+            .sort((a, b) => Number(daily.claimed.includes(a.id)) - Number(daily.claimed.includes(b.id)))
+            .map((task) => {
             const score = taskScore(daily, task)
             const claimed = daily.claimed.includes(task.id)
             const ready = taskReady(daily, task)
@@ -241,6 +329,7 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
                       className="daily-claim"
                       onClick={() => {
                         if (!cub.claimDaily(task.id)) return
+                        playCoin()
                         setCoinBurst((current) => ({ id: task.id, key: (current?.key ?? 0) + 1 }))
                       }}
                     >
@@ -256,10 +345,20 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
               </article>
             )
           })}
+          {bonusRoll ? (
+            <DailyTraitRoll
+              cub={cub}
+              appearance={save.appearance}
+              homeAge={age}
+              prize={bonusRoll.prize}
+              coins={bonusRoll.coins}
+              onDone={() => setBonusRoll(null)}
+            />
+          ) : null}
           <p className="daily-note">
             {daily.startedAt == null
               ? 'Play a challenge to start the 24 hour timer.'
-              : done === DAILY_TASKS.length
+              : done === DAILY_TASKS.length && bonusClaimed
                 ? 'All claimed for this round.'
                 : 'Same challenges until the timer ends.'}
           </p>
@@ -282,6 +381,8 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
     )
   }
 
+  const daily = dailyView(save.daily)
+  const dailyWaiting = dailyNeedsAttention(daily)
   const feedFull = barIsFull(save.hunger)
   const cleanFull = barIsFull(save.cleanliness)
   const energyFull = barIsFull(save.energy)
@@ -359,14 +460,14 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
         <button
           type="button"
           className="daily-open"
-          aria-label={claimableCount(dailyView(save.daily)) > 0 ? 'Daily Bonus, reward ready' : 'Daily Bonus'}
+          aria-label={dailyWaiting ? 'Daily Bonus, challenges or prizes waiting' : 'Daily Bonus'}
           onPointerDown={flashPress}
           onPointerUp={clearPressGlow}
           onPointerCancel={clearPressGlow}
           onClick={() => setDailyOpen(true)}
         >
           <span className="wood-btn-wrap">
-            {claimableCount(dailyView(save.daily)) > 0 ? <span className="daily-alert">!</span> : null}
+            {dailyWaiting ? <span className="daily-alert" aria-hidden="true">!</span> : null}
             <img className="daily-chest" src={chestUrl} alt="" />
           </span>
         </button>

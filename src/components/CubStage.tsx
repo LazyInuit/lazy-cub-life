@@ -14,6 +14,8 @@ type Props = {
   onPet?: () => void
   mode?: 'home' | 'wardrobe'
   tryOn?: TryOn | null
+  /** Paint the cub on the desk canvas, over the room picture. */
+  overPicture?: boolean
 }
 
 type Motion = {
@@ -50,7 +52,7 @@ function coverRoom(ctx: CanvasRenderingContext2D, image: CanvasImageSource, stag
   ctx.drawImage(image, x, y, w, h)
 }
 
-export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null }: Props) {
+export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null, overPicture = false }: Props) {
   const roomRef = useRef<HTMLCanvasElement>(null)
   const viewRef = useRef<HTMLCanvasElement>(null)
   const fxRef = useRef<HTMLCanvasElement>(null)
@@ -58,10 +60,12 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
   const dimRef = useRef(dim)
   const modeRef = useRef(mode)
   const tryOnRef = useRef(tryOn)
+  const overPictureRef = useRef(overPicture)
   poseRef.current = pose
   dimRef.current = dim
   modeRef.current = mode
   tryOnRef.current = tryOn
+  overPictureRef.current = overPicture
 
   useEffect(() => {
     const room = roomRef.current
@@ -113,27 +117,33 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
 
       const viewCtx = view.getContext('2d')
       const time = (now - started) / 1000
+      const overPicture = overPictureRef.current
+      const drawCharacter = (ctx: CanvasRenderingContext2D, yExtra = 0) => {
+        const layers = characterLayers(now, tryOnRef.current, { preview: wardrobe })
+        const box = homeCharacterBox(rect.width, rect.height)
+        if (!layers.length || !box) return
+        const motion = poseMotion(poseRef.current, time)
+        ctx.save()
+        ctx.translate(box.x + box.w / 2 + motion.x, box.y + box.h + motion.y - wardrobeLift - homeSit + yExtra)
+        ctx.rotate((slotScale.character.restRot ?? 0) + motion.rot)
+        for (const layer of layers) {
+          ctx.drawImage(layer, -box.w / 2, -box.h, box.w, box.h)
+        }
+        ctx.restore()
+      }
       if (viewCtx && rect.width > 0 && rect.height > 0) {
         viewCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
         viewCtx.clearRect(0, 0, rect.width, rect.height)
-        const layers = characterLayers(now, tryOnRef.current, { preview: wardrobe })
-        const box = homeCharacterBox(rect.width, rect.height)
-        if (layers.length && box) {
-          const motion = poseMotion(poseRef.current, time)
-          viewCtx.save()
-          viewCtx.translate(box.x + box.w / 2 + motion.x, box.y + box.h + motion.y - wardrobeLift - homeSit)
-          viewCtx.rotate((slotScale.character.restRot ?? 0) + motion.rot)
-          for (const layer of layers) {
-            viewCtx.drawImage(layer, -box.w / 2, -box.h, box.w, box.h)
-          }
-          viewCtx.restore()
-        }
+        if (!overPicture) drawCharacter(viewCtx)
       }
 
       const fxCtx = fx.getContext('2d')
       if (fxCtx && rect.width > 0 && rect.height > 0) {
         fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
         fxCtx.clearRect(0, 0, rect.width, rect.height)
+        // The room picture is one image behind this canvas. Draw the cub here so the head
+        // covers that image, then the desk covers the cub's feet.
+        if (overPicture) drawCharacter(fxCtx, 20)
         const table = slotBox('table', rect.width, rect.height)
         const cub = homeCharacterBox(rect.width, rect.height)
         const tableArt = homeArt(wardrobe ? 'chest-1' : homeItem('table').id)

@@ -13,6 +13,13 @@ export type BullBurst = {
   maxLife: number
 }
 
+export type CoinPop = {
+  x: number
+  y: number
+  life: number
+  maxLife: number
+}
+
 export type ArcherTarget = {
   x: number
   y: number
@@ -55,6 +62,8 @@ export type ArcherRound = {
   pullY: number
   pops: PopText[]
   bursts: BullBurst[]
+  /** One floating coin per bullseye. Each is worth 1 Cub Cash. */
+  coins: CoinPop[]
   flash: number
   /** Stronger red-gold screen flash for perfect center hits. */
   bullFlash: number

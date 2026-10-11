@@ -1,5 +1,6 @@
 import { STARTER_OUTFIT, TRAIT_CATEGORIES, type TraitCategory } from './cubTraits'
 import type { CharacterAge } from './homeScene'
+import { rarityCoinPrice } from './traitRarity'
 import type { CubOutfits, CubSave, OutfitTraits } from './types'
 
 /** Stable id for a purchasable wardrobe style. */
@@ -9,11 +10,16 @@ export function traitKey(age: CharacterAge, category: TraitCategory, name: strin
 
 /**
  * Coin cost to unlock. `null` means free (always unlocked).
- * Starter looks stay free. Every other style costs 100 Cub Cash.
+ * Starter looks stay free. Other styles cost 100 Cub Cash, more when the Lazy Lion trait is rarer than 5%.
  */
 export function traitPrice(_age: CharacterAge, category: TraitCategory, name: string): number | null {
   if (STARTER_OUTFIT[category] === name) return null
-  return 100
+  return rarityCoinPrice(category, name)
+}
+
+/** XP granted when the trait is bought. 10% of its coin price. */
+export function traitXpBonus(price: number): number {
+  return Math.round(price * 0.1)
 }
 
 export function isTraitFree(age: CharacterAge, category: TraitCategory, name: string) {

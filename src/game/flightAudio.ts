@@ -116,6 +116,59 @@ export function playIgnite(): void {
   bloom.stop(now + 0.4)
 }
 
+function coinClick(current: AudioContext, when: number) {
+  const seconds = 0.018
+  const length = Math.max(1, Math.floor(current.sampleRate * seconds))
+  const buffer = current.createBuffer(1, length, current.sampleRate)
+  const data = buffer.getChannelData(0)
+  for (let i = 0; i < length; i += 1) {
+    const t = i / length
+    data[i] = (Math.random() * 2 - 1) * (1 - t)
+  }
+  const noise = current.createBufferSource()
+  noise.buffer = buffer
+  const filter = current.createBiquadFilter()
+  filter.type = 'highpass'
+  filter.frequency.value = 3400
+  const gain = current.createGain()
+  gain.gain.setValueAtTime(0.07, when)
+  gain.gain.exponentialRampToValueAtTime(0.001, when + seconds)
+  noise.connect(filter)
+  filter.connect(gain)
+  gain.connect(current.destination)
+  noise.start(when)
+  noise.stop(when + seconds)
+}
+
+function coinNote(current: AudioContext, when: number, frequency: number, seconds: number, peak: number) {
+  const osc = current.createOscillator()
+  osc.type = 'square'
+  osc.frequency.setValueAtTime(frequency * 1.05, when)
+  osc.frequency.exponentialRampToValueAtTime(frequency, when + 0.025)
+  const filter = current.createBiquadFilter()
+  filter.type = 'bandpass'
+  filter.frequency.setValueAtTime(frequency * 2, when)
+  filter.Q.value = 0.65
+  const gain = current.createGain()
+  gain.gain.setValueAtTime(0.001, when)
+  gain.gain.exponentialRampToValueAtTime(peak, when + 0.006)
+  gain.gain.exponentialRampToValueAtTime(0.001, when + seconds)
+  osc.connect(filter)
+  filter.connect(gain)
+  gain.connect(current.destination)
+  osc.start(when)
+  osc.stop(when + seconds)
+}
+
+export function playCoin(): void {
+  const current = context()
+  resumeFlightAudio()
+  const now = current.currentTime
+  coinClick(current, now)
+  coinNote(current, now, 988, 0.07, 0.08)
+  coinNote(current, now + 0.05, 1319, 0.11, 0.1)
+}
+
 export function playCrash(): void {
   const current = context()
   resumeFlightAudio()

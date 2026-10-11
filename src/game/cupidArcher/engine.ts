@@ -264,6 +264,7 @@ export function createRound(w: number, h: number): ArcherRound {
     pullY: 0,
     pops: [],
     bursts: [],
+    coins: [],
     flash: 0,
     bullFlash: 0,
     respawn: 0,
@@ -411,6 +412,8 @@ export function stepRound(round: ArcherRound, dt: number): Shot {
   round.pops = round.pops.filter((pop) => pop.life > 0)
   for (const burst of round.bursts) burst.life -= dt
   round.bursts = round.bursts.filter((burst) => burst.life > 0)
+  for (const coin of round.coins) coin.life -= dt
+  round.coins = round.coins.filter((coin) => coin.life > 0)
 
   if (round.respawn > 0) {
     round.respawn -= dt
@@ -465,6 +468,7 @@ export function stepRound(round: ArcherRound, dt: number): Shot {
         if (bonus > 0) round.timeLeft += bonus
         if (hitBase === RING_RED) {
           round.bullseyes += 1
+          round.coins.push({ x: tipX, y: tipY, life: 0.9, maxLife: 0.9 })
           // Same as Dojo golden fruit — restore one life, capped at max.
           if (round.lives < LIVES) {
             round.lives += 1

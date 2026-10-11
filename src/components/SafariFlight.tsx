@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import lionPawUrl from '../assets/lion-paw-ui.png'
+import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import { drawFlightLion } from '../game/drawCub'
 import { PLAY_NEED_COST, moodFromScore } from '../game/progress'
-import { playCrash, playEnd, playFlap, playIgnite, resumeFlightAudio, startSpaceAmbience, stopSpaceAmbience } from '../game/flightAudio'
+import { playCoin, playCrash, playEnd, playFlap, playIgnite, resumeFlightAudio, startSpaceAmbience, stopSpaceAmbience } from '../game/flightAudio'
 import type { NeedKey } from '../game/types'
 import { HomeButton, GamesButton } from './HomeButton'
 
@@ -12,9 +13,17 @@ type Gate = {
   gapY: number
   scored: boolean
   kind: 'tree' | 'rock' | 'grass' | 'green' | 'orange' | 'blue' | 'pink' | 'red' | 'purple' | 'teal'
+  /** Last pillar of a colour set. A coin sits in the middle of the gap. */
+  coin: boolean
+  coinTaken: boolean
 }
 
-type Summary = { score: number; xpGained: number }
+type Summary = { score: number; xpGained: number; coins: number }
+
+const COIN_VALUE = 5
+const COIN_PICK = 36
+const flightCoin = new Image()
+flightCoin.src = coinUrl
 
 const GRAVITY = 1450
 const FLAP = -430
@@ -36,21 +45,24 @@ type Props = {
     needs: Partial<Record<NeedKey, number>>,
     options?: { flat?: boolean },
   ) => { xpGained: number }
+  onCoins: (amount: number) => void
   onExit: () => void
   onGames: () => void
 }
 
-export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, onExit, onGames }: Props) {
+export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const onRewardRef = useRef(onReward)
   const onBestRef = useRef(onBest)
   const onDailyStartRef = useRef(onDailyStart)
   const onDailyRef = useRef(onDaily)
+  const onCoinsRef = useRef(onCoins)
   const bestRef = useRef(best)
   onRewardRef.current = onReward
   onBestRef.current = onBest
   onDailyStartRef.current = onDailyStart
   onDailyRef.current = onDaily
+  onCoinsRef.current = onCoins
   bestRef.current = Math.max(bestRef.current, best)
 
   const phase = useRef<'ready' | 'play' | 'done'>('ready')
@@ -59,6 +71,7 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
   const gates = useRef<Gate[]>([])
   const spawned = useRef(0)
   const score = useRef(0)
+  const coins = useRef(0)
   const rewarded = useRef(false)
   const ready = useRef(true)
 
@@ -84,7 +97,7 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
       },
       { flat: true },
     )
-    return { passed, xpGained: result.xpGained }
+    return { passed, xpGained: result.xpGained, coins: coins.current }
   }
   const awardFlightRef = useRef(awardFlight)
   awardFlightRef.current = awardFlight
@@ -98,7 +111,7 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
     } else if (ending === 'bounds') {
       playEnd()
     }
-    setSummary({ score: awarded.passed, xpGained: awarded.xpGained })
+    setSummary({ score: awarded.passed, xpGained: awarded.xpGained, coins: awarded.coins })
     setHudScore(awarded.passed)
   }
 
@@ -116,6 +129,7 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
     gates.current = []
     spawned.current = 0
     score.current = 0
+    coins.current = 0
     rewarded.current = false
     setHudScore(0)
     setStarted(false)
@@ -162,6 +176,18 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
           ) {
             settle('pillar')
           }
+          if (gate.coin && !gate.coinTaken && phase.current === 'play') {
+            const coinX = gate.x + GATE_W / 2
+            const coinY = gate.gapY + GAP / 2
+            const dx = cubX - coinX
+            const dy = y.current - coinY
+            if (dx * dx + dy * dy < COIN_PICK * COIN_PICK) {
+              gate.coinTaken = true
+              coins.current += COIN_VALUE
+              onCoinsRef.current(COIN_VALUE)
+              playCoin()
+            }
+          }
           if (!gate.scored && gate.x + GATE_W < cubX && phase.current === 'play') {
             gate.scored = true
             playIgnite()
@@ -178,11 +204,14 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
         if (!lastGate || lastGate.x < w - SPACING) {
           const margin = 36
           const gapY = margin + Math.random() * Math.max(40, h - GROUND - GAP - margin * 2)
+          const index = spawned.current
           gates.current.push({
             x: w + 10,
             gapY,
             scored: false,
-            kind: KINDS[Math.floor(spawned.current / 10) % KINDS.length],
+            kind: KINDS[Math.floor(index / 10) % KINDS.length],
+            coin: (index + 1) % 10 === 0,
+            coinTaken: false,
           })
           spawned.current += 1
         }
@@ -223,6 +252,7 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
       gates.current = []
       spawned.current = 0
       score.current = 0
+      coins.current = 0
       setHudScore(0)
       setStarted(true)
     }
@@ -319,6 +349,10 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
         <div className="results">
           <p>{summary.score} gap{summary.score === 1 ? '' : 's'} cleared.</p>
           <p className="results-xp">+{summary.xpGained} XP</p>
+          <p className="results-coins">
+            <img src={coinUrl} alt="" />
+            +{summary.coins}
+          </p>
           <div className="flight-results-actions">
             <button type="button" className="cabinet-key" onClick={retry}>
               Retry
@@ -414,6 +448,24 @@ function drawGate(ctx: CanvasRenderingContext2D, gate: Gate, height: number, tim
   const pulse = 0.72 + Math.sin(time * 4 + gate.x * 0.02) * 0.28
   if (topH > 0) drawPylon(ctx, gate.x, -24, topH + 24, accent, pulse, 'down', gate.scored)
   if (bottomH > 0) drawPylon(ctx, gate.x, bottomY, bottomH + 24, accent, pulse, 'up', gate.scored)
+  if (gate.coin && !gate.coinTaken) drawCoin(ctx, gate.x + GATE_W / 2, gate.gapY + GAP / 2, time)
+}
+
+function drawCoin(ctx: CanvasRenderingContext2D, x: number, y: number, time: number) {
+  const bob = Math.sin(time * 5) * 3
+  const size = 40
+  ctx.save()
+  ctx.shadowColor = '#f0c14a'
+  ctx.shadowBlur = 16
+  if (flightCoin.complete && flightCoin.naturalWidth > 0) {
+    ctx.drawImage(flightCoin, x - size / 2, y - size / 2 + bob, size, size)
+  } else {
+    ctx.fillStyle = '#f0c14a'
+    ctx.beginPath()
+    ctx.arc(x, y + bob, size / 2, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.restore()
 }
 
 function drawPylon(

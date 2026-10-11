@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import lionPawUrl from '../assets/lion-paw-ui.png'
+import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import homeCubUrl from '../assets/lazy-hoops/home-cub.png'
 import homeCubRightUrl from '../assets/lazy-hoops/home-cub-right.png'
 import {
@@ -12,6 +13,8 @@ import {
   NORMAL_POINTS,
   PERFECT_POINTS,
   PERFECT_TIME,
+  RIM_Y,
+  RIM_Z,
   SPOTS,
   cameraForSpot,
   easeInOut,
@@ -101,6 +104,7 @@ type Summary = {
   baskets: number
   perfects: number
   xp: number
+  coins: number
 }
 
 type Props = {
@@ -113,8 +117,15 @@ type Props = {
     needs: Partial<Record<NeedKey, number>>,
     options?: { flat?: boolean },
   ) => { xpGained: number }
+  onCoins: (amount: number) => void
   onExit: () => void
   onGames: () => void
+}
+
+type CoinPop = {
+  id: number
+  x: number
+  y: number
 }
 
 type Drag = {
@@ -192,12 +203,13 @@ function hudFrom(live: Live): Hud {
   }
 }
 
-export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onExit, onGames }: Props) {
+export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames }: Props) {
   const [mode, setMode] = useState<Mode>('home')
   const [rulesOpen, setRulesOpen] = useState(false)
   const [shootHint, setShootHint] = useState({ x: 0, y: 0 })
   const [hud, setHud] = useState<Hud>(() => hudFrom(createMatch()))
   const [summary, setSummary] = useState<Summary | null>(null)
+  const [coinPops, setCoinPops] = useState<CoinPop[]>([])
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const liveRef = useRef<Live>(null as unknown as Live)
@@ -214,6 +226,7 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onExi
   const onDailyStartRef = useRef(onDailyStart)
   const onDailyRef = useRef(onDaily)
   const onRewardRef = useRef(onReward)
+  const onCoinsRef = useRef(onCoins)
   const modeRef = useRef(mode)
   const startRef = useRef<() => void>(() => {})
   bestRef.current = Math.max(bestRef.current, best)
@@ -221,6 +234,7 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onExi
   onDailyStartRef.current = onDailyStart
   onDailyRef.current = onDaily
   onRewardRef.current = onReward
+  onCoinsRef.current = onCoins
   modeRef.current = mode
 
   const publish = (live: Live) => {
@@ -264,6 +278,8 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onExi
       { ...moodFromScore(score), ...PLAY_NEED_COST },
       { flat: true },
     )
+    const coins = live.perfects
+    if (coins > 0) onCoinsRef.current(coins)
     setSummary({
       score,
       best: bestRef.current,
@@ -271,6 +287,7 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onExi
       baskets: live.baskets,
       perfects: live.perfects,
       xp: result.xpGained,
+      coins,
     })
     setMode('over')
     publish(live)
@@ -386,6 +403,8 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onExi
             live.timePulse += 1
             live.baskets += 1
             live.perfects += 1
+            const at = court.project({ x: 0, y: RIM_Y, z: RIM_Z }, live.viewW, live.viewH)
+            setCoinPops((prev) => [...prev, { id: live.toastKey, x: at.x, y: at.y }])
             if (live.lives < LIVES) {
               live.lives += 1
               live.pop = live.lives - 1
@@ -588,6 +607,7 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onExi
     live.viewW = width
     live.viewH = height
     setSummary(null)
+    setCoinPops([])
     setMode('play')
     publish(live)
     if (court) {
@@ -665,7 +685,7 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onExi
                   <strong>60 Seconds:</strong> The game ends when the clock hits zero.
                 </li>
                 <li>
-                  <strong>Perfect Shot:</strong> Score a clean swish without touching the rim or backboard for 300 points and 5 extra seconds!
+                  <strong>Perfect Shot:</strong> Score a clean swish without touching the rim or backboard for 300 points, 5 extra seconds, and 1 Cub Cash.
                 </li>
                 <li>
                   <strong>3 Lives:</strong> You start with 3 lives. Every missed shot costs you one.
@@ -701,6 +721,16 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onExi
         {mode === 'play' && hud.toast ? (
           <ShotToast key={hud.toastKey} kind={hud.toast} points={hud.toastPoints} life={hud.toastLife} />
         ) : null}
+        {coinPops.map((pop) => (
+          <img
+            key={pop.id}
+            className="hoops-coin"
+            src={coinUrl}
+            alt=""
+            style={{ left: pop.x, top: pop.y }}
+            onAnimationEnd={() => setCoinPops((prev) => prev.filter((item) => item.id !== pop.id))}
+          />
+        ))}
         {mode === 'over' && summary ? (
           <div className="hoops-panel">
             <h2>Game Over</h2>
@@ -718,6 +748,9 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onExi
               Perfect baskets <strong>{summary.perfects}</strong>
             </p>
             <p className="hoops-xp">+{summary.xp} XP</p>
+            <p className="hoops-coins">
+              <img src={coinUrl} alt="" />+{summary.coins}
+            </p>
             <button type="button" className="hoops-btn" onClick={playAgain}>
               Play Again
             </button>

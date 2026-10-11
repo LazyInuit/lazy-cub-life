@@ -168,6 +168,33 @@ function drawPinkHeart(
   ctx.restore()
 }
 
+function drawCoinPop(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  t: number,
+  scale: number,
+  coin: HTMLImageElement | null,
+) {
+  const rise = t * 86 * Math.max(scale, 0.7)
+  const pop = t < 0.16 ? t / 0.16 : 1 + Math.sin((t - 0.16) * 10) * 0.04
+  const fade = t > 0.62 ? Math.max(0, (1 - t) / 0.38) : 1
+  const size = 46 * Math.max(scale, 0.75) * (0.45 + pop * 0.7)
+  ctx.save()
+  ctx.globalAlpha = fade
+  ctx.shadowColor = '#f0c14a'
+  ctx.shadowBlur = 18
+  if (coin && coin.complete && coin.naturalWidth > 0) {
+    ctx.drawImage(coin, x - size / 2, y - rise - size / 2, size, size)
+  } else {
+    ctx.fillStyle = '#f0c14a'
+    ctx.beginPath()
+    ctx.arc(x, y - rise, size / 2, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.restore()
+}
+
 function drawBullBurst(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -208,6 +235,7 @@ export function drawArcherFrame(
   round: ArcherRound,
   background: HTMLImageElement | null,
   cub: HTMLImageElement | null,
+  coin: HTMLImageElement | null,
 ) {
   const { w, h } = round
   ctx.clearRect(0, 0, w, h)
@@ -268,6 +296,8 @@ export function drawArcherFrame(
     ctx.fillText(pop.text, pop.x, y)
     ctx.globalAlpha = 1
   }
+
+  for (const pop of round.coins) drawCoinPop(ctx, pop.x, pop.y, 1 - pop.life / pop.maxLife, scale, coin)
 
   const pull = pullPower(round)
   if (pull && pull.dist >= 8) {

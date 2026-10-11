@@ -63,8 +63,12 @@ export type CubSave = {
   dojoBest: number
   archerBest: number
   hoopsBest: number
-  /** Task scores for the current 24 hour round, and which rewards have been claimed. */
+  /** Task scores for the current 24 hour round, which rewards have been claimed, and the board bonus. */
   daily: DailyProgress
+  /** Matches DAILY_BOARD_RESET after a one-time board clear. */
+  dailyBoardReset: number
+  /** Matches WARDROBE_PURCHASE_RESET after a one-time purchase clear. */
+  wardrobePurchaseReset: number
 }
 
 export const NEED_KEYS: NeedKey[] = ['hunger', 'happiness', 'energy', 'cleanliness']

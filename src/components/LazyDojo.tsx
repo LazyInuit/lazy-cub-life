@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import { PLAY_NEED_COST, moodFromScore } from '../game/progress'
 import { DOJO_ASSETS, loadDojoSprites, type DojoSprites } from '../game/lazyDojo/assets'
 import { XP_PER_SCORE } from '../game/lazyDojo/config'
@@ -28,15 +29,16 @@ type Props = {
     needs: Partial<Record<NeedKey, number>>,
     options?: { flat?: boolean },
   ) => { xpGained: number }
+  onCoins: (amount: number) => void
   onExit: () => void
   onGames: () => void
 }
 
-export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onExit, onGames }: Props) {
+export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames }: Props) {
   const [mode, setMode] = useState<Mode>('start')
   const [hudScore, setHudScore] = useState(0)
   const [hudLives, setHudLives] = useState(3)
-  const [summary, setSummary] = useState<{ score: number; best: number; neuBest: boolean; xp: number } | null>(
+  const [summary, setSummary] = useState<{ score: number; best: number; neuBest: boolean; xp: number; coins: number } | null>(
     null,
   )
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -54,6 +56,7 @@ export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onExit
   const onDailyStartRef = useRef(onDailyStart)
   const onDailyRef = useRef(onDaily)
   const onRewardRef = useRef(onReward)
+  const onCoinsRef = useRef(onCoins)
   const modeRef = useRef(mode)
   modeRef.current = mode
   bestRef.current = Math.max(bestRef.current, best)
@@ -61,6 +64,7 @@ export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onExit
   onDailyStartRef.current = onDailyStart
   onDailyRef.current = onDaily
   onRewardRef.current = onReward
+  onCoinsRef.current = onCoins
 
   useEffect(() => {
     const img = new Image()
@@ -94,7 +98,9 @@ export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onExit
       },
       { flat: true },
     )
-    setSummary({ score, best: bestRef.current, neuBest, xp: result.xpGained })
+    const coins = engine.coins
+    if (coins > 0) onCoinsRef.current(coins)
+    setSummary({ score, best: bestRef.current, neuBest, xp: result.xpGained, coins })
     setMode('over')
   }
 
@@ -478,6 +484,10 @@ export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onExit
               Best <strong>{summary.best}</strong>
             </p>
             <p className="dojo-over-xp">+{summary.xp} XP</p>
+            <p className="dojo-over-coins">
+              <img src={coinUrl} alt="" />
+              +{summary.coins}
+            </p>
             <button type="button" className="dojo-btn" onClick={startTraining}>
               TRAIN AGAIN
             </button>

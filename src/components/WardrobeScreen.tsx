@@ -9,7 +9,7 @@ import { playDiceRattle } from '../game/diceAudio'
 import type { CharacterAge } from '../game/homeScene'
 import { levelProgress } from '../game/progress'
 import { formatCubCash } from '../game/formatCubCash'
-import { isTraitUnlocked, traitPrice } from '../game/traitShop'
+import { isTraitUnlocked, traitPrice, traitXpBonus } from '../game/traitShop'
 import type { CubController } from '../game/useCub'
 import type { OutfitTraits } from '../game/types'
 import { CubStage } from './CubStage'
@@ -111,7 +111,7 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
         return
       }
       if (probeGroup) probeGroup.textContent = 'Bodygear'
-      if (probeCost) probeCost.textContent = '100'
+      if (probeCost) probeCost.textContent = '1,000 +100 XP'
       let tallest = 0
       for (const traitCategory of TRAIT_CATEGORIES) {
         for (const traitAge of ['old', 'young'] as const) {
@@ -145,6 +145,7 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
   const label = shown[age][category]
   const price = traitPrice(age, category, label)
   const cost = price ?? 0
+  const xpBonus = price === null ? 0 : traitXpBonus(price)
   const owned = isTraitUnlocked(save, age, category, label)
   const isStarter = STARTER_OUTFIT[category] === label
   const isOn = isStarter || (owned && worn[age][category] === label)
@@ -364,11 +365,15 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
                 <strong className="wardrobe-trait-name">
                   <span>{label}</span>
                 </strong>
-                <span className="wardrobe-cost" aria-label={owned ? 'Owned' : `${formatCubCash(cost)} Cub Cash`}>
+                <span
+                  className="wardrobe-cost"
+                  aria-label={owned ? 'Owned' : `${formatCubCash(cost)} Cub Cash, plus ${xpBonus} XP`}
+                >
                   {owned ? null : (
                     <>
                       <img src={coinUrl} alt="" />
                       <span>{formatCubCash(cost)}</span>
+                      <span className="wardrobe-xp">+{xpBonus} XP</span>
                     </>
                   )}
                 </span>

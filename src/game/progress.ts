@@ -12,6 +12,11 @@ import {
   type TraitSlot,
 } from './types'
 import { emptyDaily, sanitizeDaily } from './dailyTasks'
+
+/** Bump this to clear the daily board once on the next load. */
+const DAILY_BOARD_RESET = 2
+/** Bump this to clear purchased wardrobe traits once on the next load. */
+const WARDROBE_PURCHASE_RESET = 1
 import { sanitizeOwnedOutfits, starterUnlockedKeys } from './traitShop'
 
 const DECAY_PER_MIN: Record<Exclude<NeedKey, 'energy'>, number> = {
@@ -278,6 +283,8 @@ export function defaultSave(now = Date.now()): CubSave {
     archerBest: 0,
     hoopsBest: 0,
     daily: emptyDaily(),
+    dailyBoardReset: DAILY_BOARD_RESET,
+    wardrobePurchaseReset: WARDROBE_PURCHASE_RESET,
   }
 }
 
@@ -288,7 +295,6 @@ export function sanitizeSave(value: unknown, now = Date.now()): CubSave {
   const base = defaultSave(now)
   const xp = Math.max(0, Math.round(num(raw.xp, 0) * 2) / 2)
   const hasCash = typeof raw.cubCash === 'number' && Number.isFinite(raw.cubCash)
-  const unlockedTraits = sanitizeUnlockedTraits(raw.unlockedTraits)
   // Move earlier test seeds, including leftover 800 or 10,000,000 after purchases, onto the starter balance.
   const rawCash = hasCash ? Math.floor(raw.cubCash as number) : base.cubCash
   const starterSeeds = new Set([0, 100, 150, 200, 300, 400, 500, 600, 700, 800, 100_000, 10_000_000])
@@ -299,7 +305,10 @@ export function sanitizeSave(value: unknown, now = Date.now()): CubSave {
     appearance: sanitizeAppearance(raw.appearance),
     outfits: sanitizeOutfits(raw.outfits),
     cubCash,
-    unlockedTraits,
+    unlockedTraits:
+      raw.wardrobePurchaseReset === WARDROBE_PURCHASE_RESET
+        ? sanitizeUnlockedTraits(raw.unlockedTraits)
+        : starterUnlockedKeys(),
     hunger: clampNeed(num(raw.hunger, base.hunger)),
     happiness: clampNeed(num(raw.happiness, base.happiness)),
     energy: clampNeed(num(raw.energy, base.energy)),
@@ -312,7 +321,10 @@ export function sanitizeSave(value: unknown, now = Date.now()): CubSave {
     dojoBest: Math.max(0, Math.floor(num(raw.dojoBest, 0))),
     archerBest: Math.max(0, Math.floor(num(raw.archerBest, 0))),
     hoopsBest: Math.max(0, Math.floor(num(raw.hoopsBest, 0))),
-    daily: sanitizeDaily(raw.daily, new Date(now)),
+    daily:
+      raw.dailyBoardReset === DAILY_BOARD_RESET ? sanitizeDaily(raw.daily, new Date(now)) : emptyDaily(),
+    dailyBoardReset: DAILY_BOARD_RESET,
+    wardrobePurchaseReset: WARDROBE_PURCHASE_RESET,
   })
   return { ...draft, outfits: sanitizeOwnedOutfits(draft, draft.outfits) }
 }

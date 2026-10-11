@@ -116,6 +116,7 @@ export function createEngine(width: number, height: number): EngineState {
     phase: 'playing',
     endReason: null,
     score: 0,
+    coins: 0,
     lives: LIVES,
     elapsed: 0,
     nextSpawn: 1.4,
@@ -336,6 +337,7 @@ export function applySwipeSegment(
     state.score += body.points
     gained += body.points
     floatAt(state, body.x, body.y - 20, `+${body.points}`)
+    if (body.kind === 'bonus' && body.bonusId === 'lazyCoin') state.coins += 1
     if (body.kind === 'bonus' && body.bonusId === 'golden' && state.lives < LIVES) {
       state.lives += 1
       floatAt(state, body.x, body.y - 44, '+1 LIFE', '#ffe066')
