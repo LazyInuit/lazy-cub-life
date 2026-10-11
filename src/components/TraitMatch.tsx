@@ -96,6 +96,12 @@ function secondsForPairs(pairs: number): number {
   return 14 + pairs * 4
 }
 
+/** Whole seconds still on the clock, matching the timer the player sees. */
+function secondsLeft(endsAt: number | null, now = Date.now()) {
+  if (endsAt == null) return 0
+  return Math.max(0, Math.ceil((endsAt - now) / 1000))
+}
+
 function deal(pairs: number): Card[] {
   const picked = shuffle(BODY_TRAITS).slice(0, pairs)
   const cards = picked.flatMap((trait) => [
@@ -139,8 +145,10 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
     level: number
   } | null>(null)
   const [coinBurst, setCoinBurst] = useState<{ id: number; count: number } | null>(null)
+  const [timePop, setTimePop] = useState<{ id: number; amount: number } | null>(null)
   const clearedRef = useRef(0)
   const scoreRef = useRef(0)
+  const endsAtRef = useRef<number | null>(null)
   const bestRef = useRef(best)
   const scoredPairs = useRef(new Set<string>())
   const rewarded = useRef(false)
@@ -215,6 +223,7 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
     setScore(0)
     setLocked(false)
     setCoinBurst(null)
+    setTimePop(null)
   }
 
   useEffect(() => {
@@ -225,11 +234,13 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
 
   useEffect(() => {
     if (summary || !timerStarted) {
+      endsAtRef.current = null
       setPrideUrgency(0)
       return
     }
     const total = secondsForPairs(pairs)
     const ends = Date.now() + total * 1000
+    endsAtRef.current = ends
     setLeft(total)
     const id = window.setInterval(() => {
       const remain = Math.max(0, (ends - Date.now()) / 1000)
@@ -247,6 +258,17 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
       if (lockTimer.current !== null) window.clearTimeout(lockTimer.current)
     }
   }, [])
+
+  const bankPoints = (points: number) => {
+    if (points <= 0) return
+    const nextScore = scoreRef.current + points
+    scoreRef.current = nextScore
+    setScore(nextScore)
+    if (nextScore > bestRef.current) {
+      bestRef.current = nextScore
+      onBestRef.current(nextScore)
+    }
+  }
 
   const flip = (key: string) => {
     if (summary || locked || resolving.current) return
@@ -277,13 +299,7 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
       const pairKey = `${clearedRef.current}:${first.id}`
       if (!scoredPairs.current.has(pairKey)) {
         scoredPairs.current.add(pairKey)
-        const nextScore = scoreRef.current + 1
-        scoreRef.current = nextScore
-        setScore(nextScore)
-        if (nextScore > bestRef.current) {
-          bestRef.current = nextScore
-          onBestRef.current(nextScore)
-        }
+        bankPoints(1)
       }
       const matched = cards.map((item) =>
         item.id === first.id ? { ...item, matched: true, up: true } : item,
@@ -292,6 +308,13 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
       if (!matched.every((item) => item.matched)) {
         resolving.current = false
         return
+      }
+      const bonus = secondsLeft(endsAtRef.current)
+      if (bonus > 0) {
+        bankPoints(bonus)
+        const popId = coinSeq.current
+        coinSeq.current += 1
+        setTimePop({ id: popId, amount: bonus })
       }
       const nextCleared = clearedRef.current + 1
       clearedRef.current = nextCleared
@@ -401,12 +424,19 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
           <span>Best</span>
           <strong>{Math.max(best, score)}</strong>
         </p>
-        <p className="timer">{summary ? 'Done' : `${left}s`}</p>
+        <p className="timer">
+          {summary ? 'Done' : `${left}s`}
+          {timePop ? (
+            <span key={timePop.id} className="match-time-bonus" onAnimationEnd={() => setTimePop((current) => (current?.id === timePop.id ? null : current))}>
+              +{timePop.amount}
+            </span>
+          ) : null}
+        </p>
       </div>
       <p className="game-help">
         {summary
           ? summary.reason
-          : `Find matching cubs. ${cards.length} cards · ${cleared} board${cleared === 1 ? '' : 's'} cleared`}
+          : `Match pairs. Time left is added when the board clears. ${cards.length} cards · ${cleared} cleared`}
       </p>
       <div className="timer-track" aria-hidden="true">
         <div

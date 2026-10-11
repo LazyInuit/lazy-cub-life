@@ -20,6 +20,7 @@ import {
   rewardMultiplier,
 } from './progress'
 import { BONUS_COIN_AMOUNTS, DAILY_TASKS, bonusReady, dailyView, type BonusTrait, type DailyGame } from './dailyTasks'
+import { submitLeaderboardScore } from './leaderboard'
 import { readSave, writeSave } from './storage'
 import { reconcileCloudSave, scheduleCloudSave, signInAccount, signOutAccount, signUpAccount, takeAdoptedSave, lockedCubCash, noteLockedCash, noteEarnedCash, ethFromUser, usernameFromUser, loadDisplayedUsername, loadUsernameChangedAt, updateAccountSettings, normalizeEthAddress } from './account'
 import { supabase } from './supabase'
@@ -376,6 +377,7 @@ export function useCub() {
     const current = saveRef.current
     if (!current) return
     const gained = Math.max(0, Math.floor(score))
+    if (gained > 0) void submitLeaderboardScore(game, gained)
     if (gained === 0) return
     const daily = dailyView(current.daily)
     commit({

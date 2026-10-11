@@ -101,11 +101,11 @@ export const DAILY_TASKS: DailyTask[] = [
     reward: 10,
   },
   {
-    id: 'pairs-20',
+    id: 'pairs-60',
     game: 'match',
     gameLabel: 'Pride Pairs',
-    detail: 'Earn 20 points',
-    goal: 20,
+    detail: 'Earn 60 points',
+    goal: 60,
     reward: 10,
   },
 ]
