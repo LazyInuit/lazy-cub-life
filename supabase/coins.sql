@@ -212,7 +212,7 @@ begin
     ('hoops-5000', 'hoops', 5000),
     ('archer-2000', 'archer', 2000),
     ('dojo-5000', 'dojo', 5000),
-    ('pairs-20', 'match', 20)
+    ('pairs-60', 'match', 60)
   ) as tasks(id, game, goal)
   where tasks.id = p_task;
   board := public.ensure_daily(uid);
@@ -271,7 +271,7 @@ begin
     ('hoops', 5000),
     ('archer', 2000),
     ('dojo', 5000),
-    ('match', 20)
+    ('match', 60)
   ) as tasks(game, goal)
   where coalesce((board.scores->>tasks.game)::integer, 0) >= tasks.goal;
   if ready < 3 then
