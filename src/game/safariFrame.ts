@@ -1,33 +1,26 @@
 /**
- * Safari's visible page on the phone, measured from the browser screenshot.
- * The page sits under the address bar and above the bottom toolbar: 77% of the screen.
- * The installed app is letterboxed to this height. It is not scaled.
+ * Safari's visible page on the iPhone, from the side-by-side screenshots.
+ * 472px wide and 777px tall between the address bar and the bottom toolbar.
+ * The installed app uses this same shape at full width. Height is not a
+ * percentage of the screen, so the taller PWA screen cannot stretch the game.
  */
-const SAFARI_PAGE = 0.77
+const SAFARI_ASPECT = 472 / 777
 
 function isHomeScreenApp() {
   const nav = navigator as Navigator & { standalone?: boolean }
   return nav.standalone === true || window.matchMedia('(display-mode: standalone)').matches
 }
 
-function fullScreenHeight() {
-  const visible = window.innerHeight || 0
-  let screenH = window.screen?.height || visible
-  if (screenH > visible * 1.5) screenH = visible
-  return Math.max(screenH, visible)
-}
-
 /**
- * In the home-screen app, keep the game at Safari's page size and center it.
- * The space above and below stays outside the game.
+ * Letterbox the home-screen app around Safari's page.
+ * The game keeps Safari's width and height. Black bands sit outside that box.
  */
 function updateSafariFrame() {
   const root = document.documentElement
   const width = window.innerWidth
-  const fullH = fullScreenHeight()
-  const available = window.innerHeight || fullH
-  const pageH = Math.round(fullH * SAFARI_PAGE)
-  if (!isHomeScreenApp() || width >= 520 || pageH >= available - 1) {
+  const available = window.innerHeight
+  const pageH = Math.round(width / SAFARI_ASPECT)
+  if (!isHomeScreenApp() || width >= 520 || pageH < 1 || pageH >= available - 1) {
     root.classList.remove('safari-frame')
     root.style.removeProperty('--safari-page-top')
     root.style.removeProperty('--safari-page-h')
