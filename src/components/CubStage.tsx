@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { drawCubEffects, drawHomeBackground, drawHomeChair, drawHomeTable, homeCharacterBox } from '../game/drawCub'
 import { characterLayers, type TryOn } from '../game/cubTraits'
-import { artSize, fitInBox, homeArt, homeFrame, homeItem, slotBox, slotScale } from '../game/homeScene'
+import { artSize, fitInBox, homeArt, homeItem, slotBox, slotScale } from '../game/homeScene'
 import { playPlantRuffle } from '../game/plantAudio'
 import { playTableKnock } from '../game/tableAudio'
 import { playWindowTap } from '../game/windowAudio'
@@ -88,14 +88,10 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
           canvas.height = height
         }
       }
-      const scene = homeFrame(rect.width, rect.height)
-      const layoutW = scene.layoutW
-      const layoutH = scene.layoutH
-      const placeX = (x: number) => scene.ox + x * scene.scale
-      const placeY = (y: number) => scene.oy + y * scene.scale
-      const place = (n: number) => n * scene.scale
+      const layoutW = rect.width
+      const layoutH = rect.height
       const useFrame = (ctx: CanvasRenderingContext2D) => {
-        ctx.setTransform(dpr * scene.scale, 0, 0, dpr * scene.scale, dpr * scene.ox, dpr * scene.oy)
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       }
       const wardrobe = modeRef.current === 'wardrobe'
       const wardrobeLift = wardrobe ? layoutH * 0.04 : 0
@@ -165,10 +161,10 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
         const sitDrop = wardrobe && cub ? cub.y + cub.h - fittedTop - wardrobeLift : 0
         drawHomeTable(fxCtx, layoutW, layoutH, wardrobe ? 'chest-1' : 'table-1', sitDrop)
         if (!wardrobe) drawCubEffects(fxCtx, poseRef.current, time, layoutW, layoutH)
-        const dockBottom = rect.height - placeY(table.y + table.h) + place(36)
+        const dockBottom = rect.height - (table.y + table.h) + 36
         const roomEl = room.closest('.home-room') as HTMLElement | null
         roomEl?.style.setProperty('--dock-bottom', `${Math.max(0, dockBottom)}px`)
-        roomEl?.style.setProperty('--table-top', `${placeY(fittedTop + sitDrop)}px`)
+        roomEl?.style.setProperty('--table-top', `${fittedTop + sitDrop}px`)
         const bg = slotBox('background', layoutW, layoutH)
         const stage = room.parentElement
         if (stage && !wardrobe) {
@@ -176,27 +172,27 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
           const chair = slotBox('chair', layoutW, layoutH)
           const chairTop = chair.y - homeSit
           const windowH = Math.max(40, Math.min(bg.h * 0.38, chairTop - windowY - chair.h * 0.12))
-          stage.style.setProperty('--window-x', `${placeX(bg.x + bg.w * 0.15)}px`)
-          stage.style.setProperty('--window-y', `${placeY(windowY)}px`)
-          stage.style.setProperty('--window-w', `${place(bg.w * 0.72)}px`)
-          stage.style.setProperty('--window-h', `${place(windowH)}px`)
-          stage.style.setProperty('--plant-x', `${placeX(bg.x + bg.w * 0.01)}px`)
-          stage.style.setProperty('--plant-y', `${placeY(bg.y + bg.h * 0.43)}px`)
-          stage.style.setProperty('--plant-w', `${place(bg.w * 0.24)}px`)
-          stage.style.setProperty('--plant-h', `${place(bg.h * 0.2)}px`)
+          stage.style.setProperty('--window-x', `${bg.x + bg.w * 0.15}px`)
+          stage.style.setProperty('--window-y', `${windowY}px`)
+          stage.style.setProperty('--window-w', `${bg.w * 0.72}px`)
+          stage.style.setProperty('--window-h', `${windowH}px`)
+          stage.style.setProperty('--plant-x', `${bg.x + bg.w * 0.01}px`)
+          stage.style.setProperty('--plant-y', `${bg.y + bg.h * 0.43}px`)
+          stage.style.setProperty('--plant-w', `${bg.w * 0.24}px`)
+          stage.style.setProperty('--plant-h', `${bg.h * 0.2}px`)
           if (cub) {
             const cubTop = cub.y - homeSit
             const petBottom = Math.min(cub.y + cub.h - homeSit, table.y)
-            stage.style.setProperty('--pet-x', `${placeX(cub.x)}px`)
-            stage.style.setProperty('--pet-y', `${placeY(cubTop)}px`)
-            stage.style.setProperty('--pet-w', `${place(cub.w * 0.76)}px`)
-            stage.style.setProperty('--pet-h', `${place(Math.max(0, petBottom - cubTop))}px`)
+            stage.style.setProperty('--pet-x', `${cub.x}px`)
+            stage.style.setProperty('--pet-y', `${cubTop}px`)
+            stage.style.setProperty('--pet-w', `${cub.w * 0.76}px`)
+            stage.style.setProperty('--pet-h', `${Math.max(0, petBottom - cubTop)}px`)
           }
           const tableTop = table.y + 22
-          stage.style.setProperty('--table-x', `${placeX(0)}px`)
-          stage.style.setProperty('--table-y', `${placeY(tableTop)}px`)
-          stage.style.setProperty('--table-w', `${place(layoutW)}px`)
-          stage.style.setProperty('--table-h', `${place(32)}px`)
+          stage.style.setProperty('--table-x', '0px')
+          stage.style.setProperty('--table-y', `${tableTop}px`)
+          stage.style.setProperty('--table-w', `${layoutW}px`)
+          stage.style.setProperty('--table-h', '32px')
         }
       }
       frame = requestAnimationFrame(paint)

@@ -181,42 +181,6 @@ export function slotBox(slot: HomeSlot, stageW: number, stageH: number): SceneBo
   return { x, y, w, h }
 }
 
-/** Safari's visible page is shorter than the full screen, so the room is cropped wider. */
-const SAFARI_PAGE_ASPECT = 0.54
-
-export type HomeFrame = {
-  layoutW: number
-  layoutH: number
-  scale: number
-  ox: number
-  oy: number
-}
-
-function isHomeScreenApp() {
-  if (typeof window === 'undefined') return false
-  const nav = navigator as Navigator & { standalone?: boolean }
-  return nav.standalone === true || window.matchMedia('(display-mode: standalone)').matches
-}
-
-/**
- * The home-screen app is the full phone. Lay the room out at Safari's page shape,
- * then scale it to fill so the floor under the table is cropped the same way.
- */
-export function homeFrame(stageW: number, stageH: number): HomeFrame {
-  const full = { layoutW: stageW, layoutH: stageH, scale: 1, ox: 0, oy: 0 }
-  if (!isHomeScreenApp() || stageW >= 520 || stageH <= 0) return full
-  const layoutH = Math.min(stageH, stageW / SAFARI_PAGE_ASPECT)
-  if (layoutH >= stageH - 1) return full
-  const scale = stageH / layoutH
-  return {
-    layoutW: stageW,
-    layoutH,
-    scale,
-    ox: (stageW - stageW * scale) / 2,
-    oy: 0,
-  }
-}
-
 /** Fit an image inside a slot box, keeping its aspect. */
 export function fitInBox(imageW: number, imageH: number, box: SceneBox): SceneBox {
   const scale = Math.min(box.w / imageW, box.h / imageH)
