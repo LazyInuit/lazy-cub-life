@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { drawCubEffects, drawHomeBackground, drawHomeChair, drawHomeTable, homeCharacterBox } from '../game/drawCub'
 import { characterLayers, type TryOn } from '../game/cubTraits'
-import { artSize, fitInBox, homeArt, homeItem, slotBox, slotScale } from '../game/homeScene'
+import { artSize, fitInBox, homeArt, homeFrame, homeItem, slotBox, slotScale } from '../game/homeScene'
 import { playPlantRuffle } from '../game/plantAudio'
 import { playTableKnock } from '../game/tableAudio'
 import { playWindowTap } from '../game/windowAudio'
@@ -88,10 +88,19 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
           canvas.height = height
         }
       }
+      const scene = homeFrame(rect.width, rect.height)
+      const layoutW = scene.layoutW
+      const layoutH = scene.layoutH
+      const placeX = (x: number) => scene.ox + x * scene.scale
+      const placeY = (y: number) => scene.oy + y * scene.scale
+      const place = (n: number) => n * scene.scale
+      const useFrame = (ctx: CanvasRenderingContext2D) => {
+        ctx.setTransform(dpr * scene.scale, 0, 0, dpr * scene.scale, dpr * scene.ox, dpr * scene.oy)
+      }
       const wardrobe = modeRef.current === 'wardrobe'
-      const wardrobeLift = wardrobe ? rect.height * 0.04 : 0
-      const tableSlot = slotBox('table', rect.width, rect.height)
-      const cubBox = homeCharacterBox(rect.width, rect.height)
+      const wardrobeLift = wardrobe ? layoutH * 0.04 : 0
+      const tableSlot = slotBox('table', layoutW, layoutH)
+      const cubBox = homeCharacterBox(layoutW, layoutH)
       const homeTableArt = homeArt('table-1')
       const homeTableTop = homeTableArt
         ? fitInBox(artSize(homeTableArt).w, artSize(homeTableArt).h, tableSlot).y
@@ -102,16 +111,17 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
       const roomCtx = room.getContext('2d')
       if (roomCtx && rect.width > 0 && rect.height > 0) {
         roomCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
+        roomCtx.clearRect(0, 0, rect.width, rect.height)
+        useFrame(roomCtx)
         if (wardrobe) {
-          roomCtx.clearRect(0, 0, rect.width, rect.height)
           const bedroom = homeArt('bedroom-2')
           if (bedroom) {
             const size = artSize(bedroom)
-            if (size.w > 0 && size.h > 0) coverRoom(roomCtx, bedroom, rect.width, rect.height, size.w, size.h)
+            if (size.w > 0 && size.h > 0) coverRoom(roomCtx, bedroom, layoutW, layoutH, size.w, size.h)
           }
         } else {
-          drawHomeBackground(roomCtx, rect.width, rect.height, dimRef.current)
-          drawHomeChair(roomCtx, rect.width, rect.height, 'back', -homeSit)
+          drawHomeBackground(roomCtx, layoutW, layoutH, dimRef.current)
+          drawHomeChair(roomCtx, layoutW, layoutH, 'back', -homeSit)
         }
       }
 
@@ -120,7 +130,7 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
       const overPicture = overPictureRef.current
       const drawCharacter = (ctx: CanvasRenderingContext2D, yExtra = 0) => {
         const layers = characterLayers(now, tryOnRef.current, { preview: wardrobe })
-        const box = homeCharacterBox(rect.width, rect.height)
+        const box = homeCharacterBox(layoutW, layoutH)
         if (!layers.length || !box) return
         const motion = poseMotion(poseRef.current, time)
         ctx.save()
@@ -134,55 +144,59 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
       if (viewCtx && rect.width > 0 && rect.height > 0) {
         viewCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
         viewCtx.clearRect(0, 0, rect.width, rect.height)
-        if (!overPicture) drawCharacter(viewCtx)
+        if (!overPicture) {
+          useFrame(viewCtx)
+          drawCharacter(viewCtx)
+        }
       }
 
       const fxCtx = fx.getContext('2d')
       if (fxCtx && rect.width > 0 && rect.height > 0) {
         fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
         fxCtx.clearRect(0, 0, rect.width, rect.height)
+        useFrame(fxCtx)
         // The room picture is one image behind this canvas. Draw the cub here so the head
         // covers that image, then the desk covers the cub's feet.
         if (overPicture) drawCharacter(fxCtx, 20)
-        const table = slotBox('table', rect.width, rect.height)
-        const cub = homeCharacterBox(rect.width, rect.height)
+        const table = slotBox('table', layoutW, layoutH)
+        const cub = homeCharacterBox(layoutW, layoutH)
         const tableArt = homeArt(wardrobe ? 'chest-1' : homeItem('table').id)
         const fittedTop = tableArt ? fitInBox(artSize(tableArt).w, artSize(tableArt).h, table).y : table.y
         const sitDrop = wardrobe && cub ? cub.y + cub.h - fittedTop - wardrobeLift : 0
-        drawHomeTable(fxCtx, rect.width, rect.height, wardrobe ? 'chest-1' : 'table-1', sitDrop)
-        if (!wardrobe) drawCubEffects(fxCtx, poseRef.current, time, rect.width, rect.height)
-        const dockBottom = rect.height - (table.y + table.h) + 36
+        drawHomeTable(fxCtx, layoutW, layoutH, wardrobe ? 'chest-1' : 'table-1', sitDrop)
+        if (!wardrobe) drawCubEffects(fxCtx, poseRef.current, time, layoutW, layoutH)
+        const dockBottom = rect.height - placeY(table.y + table.h) + place(36)
         const roomEl = room.closest('.home-room') as HTMLElement | null
         roomEl?.style.setProperty('--dock-bottom', `${Math.max(0, dockBottom)}px`)
-        roomEl?.style.setProperty('--table-top', `${fittedTop + sitDrop}px`)
-        const bg = slotBox('background', rect.width, rect.height)
+        roomEl?.style.setProperty('--table-top', `${placeY(fittedTop + sitDrop)}px`)
+        const bg = slotBox('background', layoutW, layoutH)
         const stage = room.parentElement
         if (stage && !wardrobe) {
           const windowY = bg.y + bg.h * 0.2
-          const chair = slotBox('chair', rect.width, rect.height)
+          const chair = slotBox('chair', layoutW, layoutH)
           const chairTop = chair.y - homeSit
           const windowH = Math.max(40, Math.min(bg.h * 0.38, chairTop - windowY - chair.h * 0.12))
-          stage.style.setProperty('--window-x', `${bg.x + bg.w * 0.15}px`)
-          stage.style.setProperty('--window-y', `${windowY}px`)
-          stage.style.setProperty('--window-w', `${bg.w * 0.72}px`)
-          stage.style.setProperty('--window-h', `${windowH}px`)
-          stage.style.setProperty('--plant-x', `${bg.x + bg.w * 0.01}px`)
-          stage.style.setProperty('--plant-y', `${bg.y + bg.h * 0.43}px`)
-          stage.style.setProperty('--plant-w', `${bg.w * 0.24}px`)
-          stage.style.setProperty('--plant-h', `${bg.h * 0.2}px`)
+          stage.style.setProperty('--window-x', `${placeX(bg.x + bg.w * 0.15)}px`)
+          stage.style.setProperty('--window-y', `${placeY(windowY)}px`)
+          stage.style.setProperty('--window-w', `${place(bg.w * 0.72)}px`)
+          stage.style.setProperty('--window-h', `${place(windowH)}px`)
+          stage.style.setProperty('--plant-x', `${placeX(bg.x + bg.w * 0.01)}px`)
+          stage.style.setProperty('--plant-y', `${placeY(bg.y + bg.h * 0.43)}px`)
+          stage.style.setProperty('--plant-w', `${place(bg.w * 0.24)}px`)
+          stage.style.setProperty('--plant-h', `${place(bg.h * 0.2)}px`)
           if (cub) {
             const cubTop = cub.y - homeSit
             const petBottom = Math.min(cub.y + cub.h - homeSit, table.y)
-            stage.style.setProperty('--pet-x', `${cub.x}px`)
-            stage.style.setProperty('--pet-y', `${cubTop}px`)
-            stage.style.setProperty('--pet-w', `${cub.w * 0.76}px`)
-            stage.style.setProperty('--pet-h', `${Math.max(0, petBottom - cubTop)}px`)
+            stage.style.setProperty('--pet-x', `${placeX(cub.x)}px`)
+            stage.style.setProperty('--pet-y', `${placeY(cubTop)}px`)
+            stage.style.setProperty('--pet-w', `${place(cub.w * 0.76)}px`)
+            stage.style.setProperty('--pet-h', `${place(Math.max(0, petBottom - cubTop))}px`)
           }
           const tableTop = table.y + 22
-          stage.style.setProperty('--table-x', '0px')
-          stage.style.setProperty('--table-y', `${tableTop}px`)
-          stage.style.setProperty('--table-w', `${rect.width}px`)
-          stage.style.setProperty('--table-h', '32px')
+          stage.style.setProperty('--table-x', `${placeX(0)}px`)
+          stage.style.setProperty('--table-y', `${placeY(tableTop)}px`)
+          stage.style.setProperty('--table-w', `${place(layoutW)}px`)
+          stage.style.setProperty('--table-h', `${place(32)}px`)
         }
       }
       frame = requestAnimationFrame(paint)
