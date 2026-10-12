@@ -37,7 +37,7 @@ button:disabled {
 html.safari-frame {
   --safe-top: 0px;
   --safe-bottom: 0px;
-  background: #f4e2c6;
+  background: #000;
 }
 
 html.safari-frame,
@@ -45,6 +45,7 @@ html.safari-frame body,
 html.safari-frame #root {
   height: 100dvh;
   min-height: 100dvh;
+  background: #000;
 }
 
 html.safari-frame #root {
@@ -54,7 +55,7 @@ html.safari-frame #root {
 html.safari-frame .phone {
   width: 100%;
   height: var(--safari-page-h);
-  max-height: none;
+  max-height: var(--safari-page-h);
   margin-top: var(--safari-page-top);
 }
 

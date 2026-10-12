@@ -1,36 +1,39 @@
-/** Safari on iPhone 15 / iOS 26 keeps a 94px tab bar under the page. */
-const SAFARI_BOTTOM_BAR = 94
+/**
+ * Safari's visible page on the phone, measured from the browser screenshot.
+ * The page sits under the address bar and above the bottom toolbar: 77% of the screen.
+ * The installed app is letterboxed to this height. It is not scaled.
+ */
+const SAFARI_PAGE = 0.77
 
 function isHomeScreenApp() {
   const nav = navigator as Navigator & { standalone?: boolean }
   return nav.standalone === true || window.matchMedia('(display-mode: standalone)').matches
 }
 
-function safeTop() {
-  const probe = document.createElement('div')
-  probe.style.position = 'fixed'
-  probe.style.visibility = 'hidden'
-  probe.style.paddingTop = 'env(safe-area-inset-top)'
-  document.body.appendChild(probe)
-  const top = parseFloat(getComputedStyle(probe).paddingTop) || 0
-  probe.remove()
-  return top
+function fullScreenHeight() {
+  const visible = window.innerHeight || 0
+  let screenH = window.screen?.height || visible
+  if (screenH > visible * 1.5) screenH = visible
+  return Math.max(screenH, visible)
 }
 
 /**
- * The home-screen app is the full phone. Shrink the page to Safari's visible
- * area so every screen is cropped the same way as the browser.
+ * In the home-screen app, keep the game at Safari's page size and center it.
+ * The space above and below stays outside the game.
  */
 function updateSafariFrame() {
   const root = document.documentElement
   const width = window.innerWidth
-  const top = safeTop()
-  const screenH = window.screen?.height || window.innerHeight
-  const pageH = Math.round(screenH - top - SAFARI_BOTTOM_BAR)
-  if (!isHomeScreenApp() || width >= 520 || pageH >= window.innerHeight - 1) {
+  const fullH = fullScreenHeight()
+  const available = window.innerHeight || fullH
+  const pageH = Math.round(fullH * SAFARI_PAGE)
+  if (!isHomeScreenApp() || width >= 520 || pageH >= available - 1) {
     root.classList.remove('safari-frame')
+    root.style.removeProperty('--safari-page-top')
+    root.style.removeProperty('--safari-page-h')
     return
   }
+  const top = Math.round((available - pageH) / 2)
   root.classList.add('safari-frame')
   root.style.setProperty('--safari-page-top', `${top}px`)
   root.style.setProperty('--safari-page-h', `${pageH}px`)
