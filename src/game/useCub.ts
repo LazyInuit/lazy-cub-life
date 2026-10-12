@@ -24,7 +24,7 @@ import { BONUS_COIN_AMOUNTS, DAILY_TASKS, bonusReady, dailyView, type BonusTrait
 import { DRINKS, type DrinkId } from './drinks'
 import { submitLeaderboardScore } from './leaderboard'
 import { readSave, writeSave } from './storage'
-import { reconcileCloudSave, scheduleCloudSave, flushCloudSave, flushCloudSaveNow, signInAccount, signOutAccount, signUpAccount, takeAdoptedSave, lockedCubCash, noteLockedCash, noteEarnedCash, ethFromUser, usernameFromUser, loadDisplayedUsername, loadUsernameChangedAt, updateAccountSettings, normalizeEthAddress } from './account'
+import { reconcileCloudSave, scheduleCloudSave, flushCloudSave, flushCloudSaveNow, cloudBaseVisit, signInAccount, signOutAccount, signUpAccount, takeAdoptedSave, lockedCubCash, noteLockedCash, noteEarnedCash, ethFromUser, usernameFromUser, loadDisplayedUsername, loadUsernameChangedAt, updateAccountSettings, normalizeEthAddress } from './account'
 import { supabase } from './supabase'
 import { addDailyScore, applyWallet, buyDrinkOnServer, claimDailyTask, grantGameCoins, payoutGap, payoutParts, purchaseTraitOnServer, rollDailyBonus as rollServerBonus, touchDailyBoard, walletActive, type GameCoinSource } from './wallet'
 import { isTraitUnlocked, sanitizeOwnedOutfits, traitKey, traitPrice, traitXpBonus } from './traitShop'
@@ -65,6 +65,7 @@ export function useCub() {
   const revealBusyRef = useRef(false)
   const revealGenRef = useRef(0)
   const sleepEnergyClock = useRef(0)
+  const cloudSettled = useRef(false)
   const cashQueue = useRef(Promise.resolve())
 
   const commit = useCallback((next: CubSave) => {
@@ -202,35 +203,42 @@ export function useCub() {
   }, [])
 
   useEffect(() => {
-    const loaded = applyAbsence(readSave()).save
-    // Open with ?lvl1 to force level 1 (xp 0) for device testing.
-    if (new URLSearchParams(window.location.search).has('lvl1')) {
-      loaded.xp = 0
-    }
-    const awake = { ...loaded, asleep: false }
+    const stored = readSave()
+    const storedVisit = stored.lastVisit
+    const awake = { ...stored, asleep: false }
+    if (new URLSearchParams(window.location.search).has('lvl1')) awake.xp = 0
     commit(awake)
     showAsleep(false)
     presentedXpRef.current = awake.xp
     setPresentedXp(awake.xp)
-    void reconcileCloudSave(awake).then((remote) => {
-      if (!remote) return
-      const next = { ...applyAbsence(remote).save, asleep: false }
+    void reconcileCloudSave(awake, storedVisit).then((remote) => {
+      const base = remote ?? saveRef.current ?? stored
+      const next = { ...applyAbsence(base).save, asleep: false }
+      if (new URLSearchParams(window.location.search).has('lvl1')) next.xp = 0
       commit(next)
       showAsleep(false)
       presentedXpRef.current = next.xp
       setPresentedXp(next.xp)
+      cloudSettled.current = true
     })
   }, [commit, showAsleep])
   useEffect(() => {
     const catchUp = () => {
       const current = saveRef.current
       if (!current) return
-      const next = { ...applyAbsence(current).save, asleep: false }
-      commit(next)
-      sleepEnergyClock.current = 0
-      showAsleep(false)
+      const storedVisit = cloudBaseVisit() || current.lastVisit
+      const caught = { ...applyAbsence(current).save, asleep: false }
+      void reconcileCloudSave(caught, storedVisit).then((remote) => {
+        const latest = saveRef.current
+        if (!latest) return
+        const next = remote ? { ...applyAbsence(remote).save, asleep: false } : { ...applyAbsence(latest).save, asleep: false }
+        commit(next)
+        sleepEnergyClock.current = 0
+        showAsleep(false)
+      })
     }
     const onVisible = () => {
+      if (!cloudSettled.current) return
       if (document.visibilityState === 'hidden') {
         tuckIn()
         const current = saveRef.current
@@ -238,10 +246,14 @@ export function useCub() {
       }
       if (document.visibilityState === 'visible') catchUp()
     }
+    const onHide = () => {
+      if (!cloudSettled.current) return
+      tuckIn()
+    }
     document.addEventListener('visibilitychange', onVisible)
-    window.addEventListener('pagehide', tuckIn, true)
+    window.addEventListener('pagehide', onHide, true)
     const id = window.setInterval(() => {
-      if (document.visibilityState === 'hidden') return
+      if (document.visibilityState === 'hidden' || !cloudSettled.current) return
       const current = saveRef.current
       if (!current || busyRef.current) return
       const next = decaySave(current, 1000, false)
@@ -260,7 +272,7 @@ export function useCub() {
     }, 1000)
     return () => {
       document.removeEventListener('visibilitychange', onVisible)
-      window.removeEventListener('pagehide', tuckIn, true)
+      window.removeEventListener('pagehide', onHide, true)
       window.clearInterval(id)
     }
   }, [commit, showAsleep, tuckIn])

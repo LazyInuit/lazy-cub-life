@@ -124,17 +124,32 @@ async function writeProfile(userId: string, username: string, save: CubSave) {
 }
 
 let pushTail: Promise<void> = Promise.resolve()
+/** lastVisit on the account when this copy last matched it. Opening the app must not move this. */
+let syncedVisit = 0
+let refreshing = false
 
-async function sendCloudSave(save: CubSave) {
-  if (!supabase) return
+export function cloudBaseVisit() {
+  return syncedVisit
+}
+
+function noteSyncedVisit(visit: number) {
+  if (Number.isFinite(visit)) syncedVisit = visit
+}
+
+async function sendCloudSave(save: CubSave): Promise<'ok' | 'stale' | 'skip'> {
+  if (!supabase) return 'skip'
   const { data } = await supabase.auth.getSession()
   const session = data.session
-  if (!session) return
+  if (!session) return 'skip'
+  const loaded = await loadProfile(session.user.id)
+  if (loaded && sanitizeSave(loaded.save).lastVisit > syncedVisit) return 'stale'
   const { error } = await supabase.from('profiles').update({
     save,
     updated_at: new Date().toISOString(),
   }).eq('id', session.user.id)
   if (error) throw error
+  noteSyncedVisit(save.lastVisit)
+  return 'ok'
 }
 
 /** One upload at a time, always sending the newest save so an older write cannot land last. */
@@ -144,7 +159,8 @@ function enqueueCloudSave() {
       const next = pendingSave
       pendingSave = null
       try {
-        await sendCloudSave(next)
+        const sent = await sendCloudSave(next)
+        if (sent === 'stale') break
       } catch {
         if (!pendingSave) pendingSave = next
         break
@@ -159,7 +175,7 @@ function enqueueCloudSave() {
 }
 
 export function scheduleCloudSave(save: CubSave) {
-  if (!supabase || !cloudReady) return
+  if (!supabase || !cloudReady || refreshing) return
   pendingSave = save
   // The home screen rewrites the save every second. Restarting this timer
   // each time meant the upload never left while the shortcut stayed open.
@@ -210,35 +226,41 @@ function withLockedCash(save: CubSave, cash: number | null) {
   return { ...save, cubCash: cash }
 }
 
-/** Cloud save wins when it is newer. Returns null when the local cub should stay. */
-export async function reconcileCloudSave(local: CubSave): Promise<CubSave | null> {
-  if (!supabase) {
-    cloudReady = true
-    return null
-  }
-  const { data } = await supabase.auth.getSession()
-  const session = data.session
-  if (!session) {
-    cloudReady = true
-    return null
-  }
-  const loaded = await loadProfile(session.user.id)
-  if (!loaded) {
+/**
+ * The account cub wins when it was saved later than this copy's real last visit.
+ * storedVisit must be the visit from before this open refreshed the clock,
+ * because Safari and the home-screen shortcut keep separate copies.
+ */
+export async function reconcileCloudSave(local: CubSave, storedVisit = local.lastVisit): Promise<CubSave | null> {
+  refreshing = true
+  if (syncTimer !== null) window.clearTimeout(syncTimer)
+  syncTimer = null
+  try {
+    if (!supabase) return null
+    const { data } = await supabase.auth.getSession()
+    const session = data.session
+    if (!session) return null
+    const loaded = await loadProfile(session.user.id)
+    if (!loaded) {
+      noteSyncedVisit(storedVisit)
+      pendingSave = local
+      await enqueueCloudSave()
+      return null
+    }
+    const remote = withLockedCash(sanitizeSave(loaded.save), loaded.cubCash)
+    if (remote.lastVisit > storedVisit) {
+      noteSyncedVisit(remote.lastVisit)
+      return remote
+    }
+    noteSyncedVisit(remote.lastVisit)
     pendingSave = local
     await enqueueCloudSave()
-    cloudReady = true
+    if (loaded.cubCash != null) noteLockedCash(loaded.cubCash)
     return null
-  }
-  const remote = withLockedCash(sanitizeSave(loaded.save), loaded.cubCash)
-  if (remote.lastVisit > local.lastVisit) {
+  } finally {
+    refreshing = false
     cloudReady = true
-    return remote
   }
-  pendingSave = local
-  await enqueueCloudSave()
-  cloudReady = true
-  if (loaded.cubCash == null) return null
-  return withLockedCash(local, loaded.cubCash)
 }
 
 export async function signUpAccount(usernameInput: string, password: string, save: CubSave, ethInput = '') {
@@ -372,6 +394,7 @@ export async function signOutAccount() {
   syncTimer = null
   if (pendingSave) await enqueueCloudSave()
   clearLockedCash()
+  syncedVisit = 0
   cloudReady = false
   await supabase.auth.signOut()
   cloudReady = true
