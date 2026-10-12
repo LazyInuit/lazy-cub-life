@@ -146,11 +146,16 @@ export function scheduleCloudSave(save: CubSave) {
   }, 12000)
 }
 
+export function flushCloudSave() {
+  if (syncTimer !== null) window.clearTimeout(syncTimer)
+  syncTimer = null
+  const next = pendingSave
+  if (next) void pushCloudSave(next)
+}
+
 if (typeof window !== 'undefined') {
   window.addEventListener('pagehide', () => {
-    if (syncTimer !== null) window.clearTimeout(syncTimer)
-    const next = pendingSave
-    if (next) void pushCloudSave(next)
+    flushCloudSave()
   })
 }
 

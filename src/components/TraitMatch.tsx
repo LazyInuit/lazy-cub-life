@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import lionPawUrl from '../assets/lion-paw-clear.png'
 import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
-import { PLAY_NEED_COST, moodFromScore } from '../game/progress'
+import { PLAY_ENERGY_COST, PLAY_NEED_COST, moodFromScore } from '../game/progress'
 import { traitSlug } from '../game/cubTraits'
 import { playCoin } from '../game/flightAudio'
 import { playPrideFail, resumePrideAudio, setPrideUrgency, startPrideAmbience, stopPrideAmbience } from '../game/prideAudio'
 import type { NeedKey } from '../game/types'
+import { RunEnergy } from './EnergyBar'
 import { HomeButton, GamesButton } from './HomeButton'
 
 type BodyTrait = { id: string; label: string }
@@ -65,7 +66,7 @@ function coinsForBoards(boards: number) {
 type Props = {
   best: number
   onBest: (score: number) => void
-  onDailyStart: () => void
+  onDailyStart: () => boolean
   onDaily: (score: number) => void
   onReward: (
     baseXp: number,
@@ -75,6 +76,8 @@ type Props = {
   onCoins: (amount: number) => void
   onExit: () => void
   onGames: () => void
+  energy: number
+  onShop: () => void
 }
 
 function layerUrl(part: string, name: string) {
@@ -128,7 +131,7 @@ function MatchBust({ body }: { body: string }) {
   )
 }
 
-export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames }: Props) {
+export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop }: Props) {
   const [pairs, setPairs] = useState(2)
   const [cards, setCards] = useState<Card[]>(() => deal(2))
   const [left, setLeft] = useState(() => secondsForPairs(2))
@@ -136,6 +139,7 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
   const [cleared, setCleared] = useState(0)
   const [score, setScore] = useState(0)
   const [locked, setLocked] = useState(false)
+  const [lowEnergy, setLowEnergy] = useState(false)
   const [summary, setSummary] = useState<{
     cleared: number
     xpGained: number
@@ -282,9 +286,13 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
       resumePrideAudio()
     }
     if (!timerStarted) {
+      if (!onDailyStartRef.current()) {
+        setLowEnergy(true)
+        return
+      }
+      setLowEnergy(false)
       startedRef.current = true
       setTimerStarted(true)
-      onDailyStartRef.current()
     }
     setCards((current) => current.map((item) => (item.key === key ? { ...item, up: true } : item)))
   }
@@ -436,7 +444,9 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
       <p className="game-help">
         {summary
           ? summary.reason
-          : `Match pairs. Time left is added when the board clears. ${cards.length} cards · ${cleared} cleared`}
+          : lowEnergy
+            ? 'Sleep or visit the shop to recover energy.'
+            : `Match pairs. Time left is added when the board clears. ${cards.length} cards · ${cleared} cleared`}
       </p>
       <div className="timer-track" aria-hidden="true">
         <div
@@ -509,9 +519,10 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
           <p className="pride-results-coins">
             <img src={coinUrl} alt="" />+{summary.coins}
           </p>
+          <RunEnergy energy={energy} onShop={onShop} />
           <div className="pride-results-actions">
             {!summary.won ? (
-              <button type="button" className="pride-results-btn pride-results-retry" onClick={retry}>
+              <button type="button" className="pride-results-btn pride-results-retry" onClick={retry} disabled={energy < PLAY_ENERGY_COST}>
                 Retry
               </button>
             ) : null}

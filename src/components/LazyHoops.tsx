@@ -41,8 +41,9 @@ import {
   type Swipe,
   type Vec3,
 } from '../game/lazyHoops/sim'
-import { PLAY_NEED_COST, moodFromScore } from '../game/progress'
+import { PLAY_ENERGY_COST, PLAY_NEED_COST, moodFromScore } from '../game/progress'
 import type { NeedKey } from '../game/types'
+import { RunEnergy } from './EnergyBar'
 import { GamesButton, HomeButton } from './HomeButton'
 
 type Mode = 'home' | 'play' | 'over'
@@ -110,7 +111,7 @@ type Summary = {
 type Props = {
   best: number
   onBest: (score: number) => void
-  onDailyStart: () => void
+  onDailyStart: () => boolean
   onDaily: (score: number) => void
   onReward: (
     baseXp: number,
@@ -120,6 +121,8 @@ type Props = {
   onCoins: (amount: number) => void
   onExit: () => void
   onGames: () => void
+  energy: number
+  onShop: () => void
 }
 
 type CoinPop = {
@@ -203,8 +206,9 @@ function hudFrom(live: Live): Hud {
   }
 }
 
-export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames }: Props) {
+export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop }: Props) {
   const [mode, setMode] = useState<Mode>('home')
+  const [lowEnergy, setLowEnergy] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
   const [shootHint, setShootHint] = useState({ x: 0, y: 0 })
   const [hud, setHud] = useState<Hud>(() => hudFrom(createMatch()))
@@ -598,7 +602,11 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoi
   useEffect(() => () => stopHoopsBgm(), [])
 
   const playAgain = () => {
-    onDailyStartRef.current()
+    if (!onDailyStartRef.current()) {
+      setLowEnergy(true)
+      return
+    }
+    setLowEnergy(false)
     const court = courtRef.current
     const live = liveRef.current
     const width = live.viewW
@@ -669,6 +677,7 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoi
             <img className="hoops-home-cub hoops-home-cub-right" src={homeCubRightUrl} alt="" />
             <p className="hoops-lead">Ready to shoot some hoops? You have 60 seconds. Swipe up on the ball and aim for the basket!</p>
             <p className="hoops-best">Best Score {bestRef.current}</p>
+            {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
             <button type="button" className="hoops-btn" onClick={playAgain}>
               Play
             </button>
@@ -755,7 +764,8 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoi
             <p className="hoops-coins">
               <img src={coinUrl} alt="" />+{summary.coins}
             </p>
-            <button type="button" className="hoops-btn" onClick={playAgain}>
+            <RunEnergy energy={energy} onShop={onShop} />
+            <button type="button" className="hoops-btn" onClick={playAgain} disabled={energy < PLAY_ENERGY_COST}>
               Play Again
             </button>
             <button type="button" className="hoops-btn hoops-btn-ghost" onClick={onGames}>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
-import { PLAY_NEED_COST, moodFromScore } from '../game/progress'
+import { PLAY_ENERGY_COST, PLAY_NEED_COST, moodFromScore } from '../game/progress'
 import { DOJO_ASSETS, loadDojoSprites, type DojoSprites } from '../game/lazyDojo/assets'
 import { XP_PER_SCORE } from '../game/lazyDojo/config'
 import {
@@ -15,6 +15,7 @@ import { drawDojoFrame } from '../game/lazyDojo/draw'
 import { playBomb, playCombo, playMiss, playSlash, playSwipe, playUi, resumeDojoAudio, startDojoBgm, stopDojoBgm } from '../game/lazyDojo/audio'
 import type { EngineState } from '../game/lazyDojo/types'
 import type { NeedKey } from '../game/types'
+import { RunEnergy } from './EnergyBar'
 import { GamesButton, HomeButton } from './HomeButton'
 
 type Mode = 'start' | 'howto' | 'play' | 'pause' | 'over'
@@ -22,7 +23,7 @@ type Mode = 'start' | 'howto' | 'play' | 'pause' | 'over'
 type Props = {
   best: number
   onBest: (score: number) => void
-  onDailyStart: () => void
+  onDailyStart: () => boolean
   onDaily: (score: number) => void
   onReward: (
     baseXp: number,
@@ -32,10 +33,13 @@ type Props = {
   onCoins: (amount: number) => void
   onExit: () => void
   onGames: () => void
+  energy: number
+  onShop: () => void
 }
 
-export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames }: Props) {
+export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop }: Props) {
   const [mode, setMode] = useState<Mode>('start')
+  const [lowEnergy, setLowEnergy] = useState(false)
   const [hudScore, setHudScore] = useState(0)
   const [hudLives, setHudLives] = useState(3)
   const [summary, setSummary] = useState<{ score: number; best: number; neuBest: boolean; xp: number; coins: number } | null>(
@@ -236,8 +240,12 @@ export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onCoin
   }
 
   const startTraining = () => {
+    if (!onDailyStartRef.current()) {
+      setLowEnergy(true)
+      return
+    }
+    setLowEnergy(false)
     awardDojo()
-    onDailyStartRef.current()
     playUi()
     rewarded.current = false
     setSummary(null)
@@ -363,6 +371,7 @@ export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onCoin
             <h2>NINJA CUB DOJO</h2>
             <p className="dojo-sub">Train your Cub. Master the blade.</p>
             <p className="dojo-best">Best Score {bestRef.current}</p>
+            {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
             <button type="button" className="dojo-btn" onClick={startTraining}>
               START TRAINING
             </button>
@@ -445,6 +454,7 @@ export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onCoin
         {mode === 'pause' ? (
           <div className="dojo-panel dojo-pause">
             <h2>PAUSED</h2>
+            {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
             <button type="button" className="dojo-btn" onClick={() => setMode('play')}>
               RESUME
             </button>
@@ -488,7 +498,8 @@ export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onCoin
               <img src={coinUrl} alt="" />
               +{summary.coins}
             </p>
-            <button type="button" className="dojo-btn" onClick={startTraining}>
+            <RunEnergy energy={energy} onShop={onShop} />
+            <button type="button" className="dojo-btn" onClick={startTraining} disabled={energy < PLAY_ENERGY_COST}>
               TRAIN AGAIN
             </button>
             <button

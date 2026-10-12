@@ -7,13 +7,12 @@ import dojoCover from '../assets/lazy-dojo/ui/ninja-cub-cover.png'
 import controllerUrl from '../assets/controller-icon.png'
 import dropUrl from '../assets/drop-ui.png'
 import moonUrl from '../assets/moon-ui.png'
-import meatOldUrl from '../assets/feed-carton-centered.png'
-import meatYoungUrl from '../assets/feed-bottle-ui.png'
 import shirtUrl from '../assets/shirt-ui.png'
 import lionPawUrl from '../assets/lion-paw-clear.png'
 import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import diceIconUrl from '../assets/dice-ui.png'
 import chestUrl from '../assets/daily-chest.png'
+import shopFaceUrl from '../assets/home/shop-badge.png'
 import { traitSlug, tryOnFromPicks, type TraitCategory } from '../game/cubTraits'
 import { isTraitUnlocked, sanitizeOwnedOutfit } from '../game/traitShop'
 import { activityArea, setActivityArea } from '../game/activity'
@@ -36,7 +35,7 @@ import {
 } from '../game/dailyTasks'
 import { playDiceRattle } from '../game/diceAudio'
 import { playCoin } from '../game/flightAudio'
-import { barIsFull, levelProgress } from '../game/progress'
+import { barIsFull, energyFillColor, levelProgress, PLAY_ENERGY_COST } from '../game/progress'
 import { formatCubCash } from '../game/formatCubCash'
 import type { CubController } from '../game/useCub'
 import { CubStage } from './CubStage'
@@ -45,6 +44,7 @@ import { DailyTraitRoll, ageCubLabel, traitsFromManifest } from './DailyTraitRol
 import { AccountPanel } from './AccountPanel'
 import { LeaderboardScreen } from './LeaderboardScreen'
 import { WardrobeScreen } from './WardrobeScreen'
+import { ShopScreen } from './ShopScreen'
 
 type Props = {
   cub: CubController
@@ -54,6 +54,7 @@ type Props = {
   onArcher: () => void
   onHoops: () => void
   startInGames?: boolean
+  startInShop?: boolean
 }
 
 function DailyResetClock({ startedAt, now }: { startedAt: number | null; now: number }) {
@@ -68,14 +69,16 @@ function DailyResetClock({ startedAt, now }: { startedAt: number | null; now: nu
   )
 }
 
-export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, startInGames = false }: Props) {
-  const [gamesOpen, setGamesOpen] = useState(startInGames)
+export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, startInGames = false, startInShop = false }: Props) {
+  const [gamesOpen, setGamesOpen] = useState(startInGames && !startInShop)
   const [boardOpen, setBoardOpen] = useState(false)
   const [boardPressed, setBoardPressed] = useState(false)
   const [dailyOpen, setDailyOpen] = useState(false)
   const [now, setNow] = useState(() => Date.now())
   const [coinBurst, setCoinBurst] = useState<{ id: string; key: number } | null>(null)
   const [wardrobeOpen, setWardrobeOpen] = useState(false)
+  const [shopOpen, setShopOpen] = useState(startInShop)
+  const [energyWarn, setEnergyWarn] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
   const [bonusRoll, setBonusRoll] = useState<{ prize: BonusTrait | null; coins: number } | null>(null)
   const [diceShake, setDiceShake] = useState(false)
@@ -131,6 +134,15 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
   }
 
   if (!save) return null
+
+  const tryGame = (start: () => void) => {
+    if (save.energy < PLAY_ENERGY_COST) {
+      setEnergyWarn(true)
+      return
+    }
+    setEnergyWarn(false)
+    start()
+  }
 
   if (boardOpen) {
     return <LeaderboardScreen onHome={() => { setBoardOpen(false); setGamesOpen(false) }} onGames={() => setBoardOpen(false)} />
@@ -194,6 +206,36 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
             </span>
           </span>
         </button>
+        {energyWarn ? (
+          <div className="energy-pop" role="presentation" onClick={() => setEnergyWarn(false)}>
+            <div
+              className="energy-pop-card"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="energy-pop-title"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="energy-pop-face">
+                <h2 id="energy-pop-title">Recover energy</h2>
+                <p>You need {PLAY_ENERGY_COST} energy to play. Buy a drink in the shop to fill the bar, or put your cub to sleep.</p>
+                <button
+                  type="button"
+                  className="energy-pop-shop"
+                  onClick={() => {
+                    setEnergyWarn(false)
+                    setGamesOpen(false)
+                    setShopOpen(true)
+                  }}
+                >
+                  Visit the shop
+                </button>
+                <button type="button" className="energy-pop-close" onClick={() => setEnergyWarn(false)}>
+                  Not now
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
         <div className="game-picks">
           <button
             type="button"
@@ -201,7 +243,7 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
             onPointerDown={flashSilverPress}
             onPointerUp={clearSilverPressGlow}
             onPointerCancel={clearSilverPressGlow}
-            onClick={onFlight}
+            onClick={() => tryGame(onFlight)}
           >
             <span className="game-thumb thumb-flight" aria-hidden="true">
               <img src={dashThumb} alt="" />
@@ -214,7 +256,7 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
             onPointerDown={flashSilverPress}
             onPointerUp={clearSilverPressGlow}
             onPointerCancel={clearSilverPressGlow}
-            onClick={onMatch}
+            onClick={() => tryGame(onMatch)}
           >
             <span className="game-thumb thumb-match" aria-hidden="true">
               <PrideThumbBack />
@@ -230,7 +272,7 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
             onPointerDown={flashSilverPress}
             onPointerUp={clearSilverPressGlow}
             onPointerCancel={clearSilverPressGlow}
-            onClick={onDojo}
+            onClick={() => tryGame(onDojo)}
           >
             <span className="game-thumb thumb-dojo" aria-hidden="true">
               <img className="thumb-dojo-bg" src={dojoBg} alt="" />
@@ -244,7 +286,7 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
             onPointerDown={flashSilverPress}
             onPointerUp={clearSilverPressGlow}
             onPointerCancel={clearSilverPressGlow}
-            onClick={onArcher}
+            onClick={() => tryGame(onArcher)}
           >
             <span
               className="game-thumb thumb-archer"
@@ -259,7 +301,7 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
             onPointerDown={flashSilverPress}
             onPointerUp={clearSilverPressGlow}
             onPointerCancel={clearSilverPressGlow}
-            onClick={onHoops}
+            onClick={() => tryGame(onHoops)}
           >
             <span className="game-thumb thumb-hoops" aria-hidden="true">
               <img src={hoopsThumb} alt="" />
@@ -447,6 +489,19 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
     )
   }
 
+  if (shopOpen) {
+    return (
+      <ShopScreen
+        cub={cub}
+        onBack={() => setShopOpen(false)}
+        onGames={() => {
+          setShopOpen(false)
+          setGamesOpen(true)
+        }}
+      />
+    )
+  }
+
   if (wardrobeOpen) {
     return (
       <WardrobeScreen
@@ -463,7 +518,6 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
 
   const daily = dailyView(save.daily)
   const dailyWaiting = dailyNeedsAttention(daily)
-  const feedFull = barIsFull(save.hunger)
   const cleanFull = barIsFull(save.cleanliness)
   const energyFull = barIsFull(save.energy)
   const progress = levelProgress(cub.presentedXp)
@@ -575,22 +629,18 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
         <div className="room-dock">
           <button
             type="button"
-            className="room-action"
-            disabled={cub.busy || asleep || feedFull}
+            className="room-action shop-action"
+            aria-label="Shop"
+            disabled={cub.busy || asleep}
             onPointerDown={flashPress}
             onPointerUp={clearPressGlow}
             onPointerCancel={clearPressGlow}
-            onClick={() => cub.care('feed')}
+            onClick={() => setShopOpen(true)}
           >
-            <span className="wood-btn-wrap">
-              {save.hunger < 30 ? <span className="need-alert" aria-label="Energy needs attention">!</span> : null}
-              <span className="wood-btn">
-                <img className={age === 'young' ? 'meat-mouth' : 'meat-mouth meat-old'} src={age === 'young' ? meatYoungUrl : meatOldUrl} alt="" />
-              </span>
+            <span className="wood-btn shop-face">
+              <img className="shop-mark" src={shopFaceUrl} alt="" />
             </span>
-            <WoodLabel value={save.hunger} color="#e08a3c">
-              Energy
-            </WoodLabel>
+            <span className="wood-label"><span>Shop</span></span>
           </button>
           <button
             type="button"
@@ -607,7 +657,7 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
                 <PlayIcon />
               </span>
             </span>
-            <WoodLabel value={save.happiness} color="#d45d78">
+            <WoodLabel value={save.happiness} color={energyFillColor(save.happiness)} keepColor className="band-meter">
               Mood
             </WoodLabel>
           </button>
@@ -621,13 +671,13 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
             onClick={cub.toggleSleep}
           >
             <span className="wood-btn-wrap">
-              {save.energy < 30 ? <span className="need-alert" aria-label="Sleep needs attention">!</span> : null}
+              {save.energy < PLAY_ENERGY_COST ? <span className="need-alert" aria-label="Energy needs attention">!</span> : null}
               <span className="wood-btn">
                 <MoonIcon />
               </span>
             </span>
-            <WoodLabel value={save.energy} color="#3d8fba">
-              {asleep ? 'Wake' : 'Sleep'}
+            <WoodLabel value={save.energy} color={energyFillColor(save.energy)} keepColor className="band-meter">
+              Energy
             </WoodLabel>
           </button>
           <button
@@ -645,7 +695,7 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
                 <DropIcon />
               </span>
             </span>
-            <WoodLabel value={save.cleanliness} color="#3f9a78">
+            <WoodLabel value={save.cleanliness} color={energyFillColor(save.cleanliness)} keepColor className="band-meter">
               Wash
             </WoodLabel>
           </button>
@@ -667,11 +717,11 @@ function CoinBurst() {
   )
 }
 
-function WoodLabel({ value, color, children }: { value: number; color: string; children: ReactNode }) {
+function WoodLabel({ value, color, keepColor = false, className, children }: { value: number; color: string; keepColor?: boolean; className?: string; children: ReactNode }) {
   const amount = Math.max(0, Math.min(100, value))
-  const low = amount < 25
+  const low = !keepColor && amount < 25
   return (
-    <span className="wood-label">
+    <span className={className ? `wood-label ${className}` : 'wood-label'}>
       <span className="need-fill" style={{ width: `${low ? Math.max(amount, 8) : amount}%`, background: low ? '#c4473a' : color }} />
       <span>{children}</span>
     </span>

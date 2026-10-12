@@ -25,13 +25,28 @@ const DECAY_PER_MIN: Record<Exclude<NeedKey, 'energy'>, number> = {
   cleanliness: 0.6,
 }
 
-const ENERGY_REGEN = 10
-const ENERGY_REGEN_MS = 10_000
+/** Energy restored for each minute the cub is asleep. */
+export const SLEEP_ENERGY_PER_MIN = 1
+const SLEEP_ENERGY_MS = 60_000
+/** Energy spent when a game run starts. */
+export const PLAY_ENERGY_COST = 10
+
+/** 50–100 green, 21–49 orange, 20 and under red. */
+export function energyBand(energy: number): 'high' | 'mid' | 'low' {
+  const amount = Math.max(0, Math.min(100, Math.round(energy)))
+  if (amount <= 20) return 'low'
+  if (amount < 50) return 'mid'
+  return 'high'
+}
+
+export function energyFillColor(energy: number) {
+  if (energyBand(energy) === 'low') return '#e24b3b'
+  if (energyBand(energy) === 'mid') return '#f5a524'
+  return '#7ed347'
+}
 
 /** Playing one round of a mini-game. High is good, so these are costs. */
 export const PLAY_NEED_COST: Partial<Record<NeedKey, number>> = {
-  hunger: -5,
-  energy: -5,
   cleanliness: -5,
 }
 
@@ -108,7 +123,7 @@ export function decaySave(save: CubSave, elapsedMs: number, capDrops: boolean): 
   const mult = decayMultiplier(levelFromXp(save.xp))
   const next: CubSave = { ...save }
   for (const key of NEED_KEYS) {
-    if (key === 'energy') continue
+    if (key === 'energy' || key === 'hunger') continue
     const drop = DECAY_PER_MIN[key] * minutes * mult
     const applied = capDrops ? Math.min(drop, MAX_AWAY_DROP[key]) : drop
     next[key] = clampNeed(save[key] - applied)
@@ -117,9 +132,11 @@ export function decaySave(save: CubSave, elapsedMs: number, capDrops: boolean): 
 }
 
 export function regenEnergy(save: CubSave, elapsedMs: number): CubSave {
-  const steps = Math.floor(Math.max(0, elapsedMs) / ENERGY_REGEN_MS)
+  if (!save.asleep) return save
+  const steps = Math.floor(Math.max(0, elapsedMs) / SLEEP_ENERGY_MS)
   if (steps <= 0) return save
-  return { ...save, energy: clampNeed(save.energy + steps * ENERGY_REGEN) }
+  const energy = clampNeed(save.energy + steps * SLEEP_ENERGY_PER_MIN)
+  return { ...save, energy, asleep: energy < 100 }
 }
 
 export function applyAbsence(save: CubSave, now = Date.now()): { save: CubSave; awayMs: number } {
@@ -146,7 +163,7 @@ const CARE_SPECS: Record<
   { stat: NeedKey; amount: number; needs: Partial<Record<NeedKey, number>>; blockWhenFull: boolean }
 > = {
   feed: { stat: 'hunger', amount: 20, blockWhenFull: true, needs: { hunger: 20, cleanliness: -4 } },
-  sleep: { stat: 'energy', amount: 36, blockWhenFull: false, needs: { energy: 36, hunger: -8 } },
+  sleep: { stat: 'energy', amount: 0, blockWhenFull: true, needs: {} },
   clean: { stat: 'cleanliness', amount: 100, blockWhenFull: true, needs: { cleanliness: 100 } },
 }
 
@@ -206,7 +223,7 @@ export function applyReward(
 }
 
 export function isNeedy(save: CubSave): boolean {
-  return NEED_KEYS.some((key) => save[key] < 25)
+  return NEED_KEYS.some((key) => key !== 'hunger' && save[key] < 25)
 }
 
 function num(value: unknown, fallback: number): number {
@@ -273,6 +290,7 @@ export function defaultSave(now = Date.now()): CubSave {
     happiness: 68,
     energy: 70,
     cleanliness: 74,
+    asleep: false,
     xp: 0,
     level: 1,
     lastVisit: now,
@@ -312,6 +330,7 @@ export function sanitizeSave(value: unknown, now = Date.now()): CubSave {
     happiness: clampNeed(num(raw.happiness, base.happiness)),
     energy: clampNeed(num(raw.energy, base.energy)),
     cleanliness: clampNeed(num(raw.cleanliness, base.cleanliness)),
+    asleep: raw.asleep === true,
     xp,
     level: 1,
     lastVisit: num(raw.lastVisit, now),

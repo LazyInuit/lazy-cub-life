@@ -55,6 +55,8 @@ export type CubSave = {
   happiness: number
   energy: number
   cleanliness: number
+  /** The cub stays asleep across closing the app, and energy recovers while this is true. */
+  asleep: boolean
   xp: number
   level: number
   lastVisit: number

@@ -112,6 +112,7 @@ function Game() {
   const cub = useCub()
   const [screen, setScreen] = useState<Screen>('home')
   const [openGames, setOpenGames] = useState(false)
+  const [openShop, setOpenShop] = useState(false)
 
   useEffect(() => {
     setActivityArea(screen)
@@ -127,11 +128,19 @@ function Game() {
 
   const goHome = () => {
     setOpenGames(false)
+    setOpenShop(false)
     setScreen('home')
   }
 
   const goGames = () => {
     setOpenGames(true)
+    setOpenShop(false)
+    setScreen('home')
+  }
+
+  const goShop = () => {
+    setOpenGames(false)
+    setOpenShop(true)
     setScreen('home')
   }
 
@@ -141,6 +150,7 @@ function Game() {
         <CareScreen
           cub={cub}
           startInGames={openGames}
+          startInShop={openShop}
           onFlight={() => {
             setOpenGames(false)
             setScreen('flight')
@@ -173,6 +183,8 @@ function Game() {
           onCoins={(amount) => cub.addCubCash(amount, 'flight')}
           onExit={goHome}
           onGames={goGames}
+          energy={cub.save.energy}
+          onShop={goShop}
         />
       ) : null}
       {screen === 'match' ? (
@@ -185,6 +197,8 @@ function Game() {
           onCoins={(amount) => cub.addCubCash(amount, 'match')}
           onExit={goHome}
           onGames={goGames}
+          energy={cub.save.energy}
+          onShop={goShop}
         />
       ) : null}
       {screen === 'dojo' ? (
@@ -197,6 +211,8 @@ function Game() {
           onCoins={(amount) => cub.addCubCash(amount, 'dojo')}
           onExit={goHome}
           onGames={goGames}
+          energy={cub.save.energy}
+          onShop={goShop}
         />
       ) : null}
       {screen === 'archer' ? (
@@ -209,6 +225,8 @@ function Game() {
           onCoins={(amount) => cub.addCubCash(amount, 'archer')}
           onExit={goHome}
           onGames={goGames}
+          energy={cub.save.energy}
+          onShop={goShop}
         />
       ) : null}
       {screen === 'hoops' ? (
@@ -221,6 +239,8 @@ function Game() {
           onCoins={(amount) => cub.addCubCash(amount, 'hoops')}
           onExit={goHome}
           onGames={goGames}
+          energy={cub.save.energy}
+          onShop={goShop}
         />
       ) : null}
     </main>

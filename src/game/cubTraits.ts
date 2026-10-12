@@ -122,13 +122,11 @@ for (const age of ['old', 'young'] as const) {
 }
 
 let needEnergy = 100
-let needHunger = 100
 let needCleanliness = 100
 
 /** Home cub face/dirt follow need meters. Temporary care poses still win. */
-export function setNeedLooks(energy: number, hunger: number, cleanliness = 100) {
+export function setNeedLooks(energy: number, _hunger: number, cleanliness = 100) {
   needEnergy = energy
-  needHunger = hunger
   needCleanliness = cleanliness
 }
 
@@ -190,7 +188,7 @@ export function characterLayers(
     }
     if (!image && meat && part === 'mouth') image = images.get(`${age}-mouth-meat`)
     if (!image && yelling && part === 'mouth') image = images.get(`${age}-mouth-yell`)
-    if (!image && !preview && needHunger < 30 && part === 'mouth') {
+    if (!image && !preview && needEnergy < 30 && part === 'mouth') {
       const sad = images.get(`${age}-mouth-sad`)
       if (sad?.complete && sad.naturalWidth > 0) image = sad
     }

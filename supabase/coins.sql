@@ -335,6 +335,52 @@ begin
 end;
 $$;
 
+create or replace function public.buy_drink(p_drink text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  cost integer;
+  gain integer;
+  balance integer;
+  save_row jsonb;
+  energy integer;
+  next_energy integer;
+begin
+  if uid is null then
+    raise exception 'Sign in required';
+  end if;
+  if p_drink = 'milk' then
+    cost := 1;
+    gain := 50;
+  elsif p_drink = 'juice' then
+    cost := 2;
+    gain := 100;
+  else
+    return jsonb_build_object('ok', false, 'reason', 'missing');
+  end if;
+  select cub_cash, save into balance, save_row from public.profiles where id = uid;
+  energy := least(100, greatest(0, coalesce((save_row->>'energy')::integer, 0)));
+  if energy >= 100 then
+    return jsonb_build_object('ok', false, 'reason', 'full', 'cubCash', balance, 'energy', energy);
+  end if;
+  if balance < cost then
+    return jsonb_build_object('ok', false, 'reason', 'broke', 'cubCash', balance, 'energy', energy);
+  end if;
+  next_energy := least(100, energy + gain);
+  perform set_config('cub.cash_write', 'allow', true);
+  update public.profiles
+    set cub_cash = cub_cash - cost,
+        save = jsonb_set(save, '{energy}', to_jsonb(next_energy), true)
+    where id = uid
+    returning cub_cash into balance;
+  return jsonb_build_object('ok', true, 'cubCash', balance, 'energy', next_energy);
+end;
+$$;
+
 create or replace function public.purchase_trait(p_age text, p_category text, p_name text)
 returns jsonb
 language plpgsql
@@ -487,6 +533,7 @@ revoke all on function public.add_daily_score(text, integer) from public, anon, 
 revoke all on function public.claim_daily_task(text) from public, anon, authenticated;
 revoke all on function public.roll_daily_bonus() from public, anon, authenticated;
 revoke all on function public.purchase_trait(text, text, text) from public, anon, authenticated;
+revoke all on function public.buy_drink(text) from public, anon, authenticated;
 revoke all on function public.grant_game_coins(text, integer, text) from public, anon, authenticated;
 
 grant execute on function public.touch_daily_board() to authenticated;
@@ -494,6 +541,7 @@ grant execute on function public.add_daily_score(text, integer) to authenticated
 grant execute on function public.claim_daily_task(text) to authenticated;
 grant execute on function public.roll_daily_bonus() to authenticated;
 grant execute on function public.purchase_trait(text, text, text) to authenticated;
+grant execute on function public.buy_drink(text) to authenticated;
 grant execute on function public.grant_game_coins(text, integer, text) to authenticated;
 
 -- BEGIN TRAIT PRICES

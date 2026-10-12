@@ -27,8 +27,9 @@ import {
   stepRound,
 } from '../game/cupidArcher/engine'
 import type { ArcherRound } from '../game/cupidArcher/types'
-import { PLAY_NEED_COST, moodFromScore } from '../game/progress'
+import { PLAY_ENERGY_COST, PLAY_NEED_COST, moodFromScore } from '../game/progress'
 import type { NeedKey } from '../game/types'
+import { RunEnergy } from './EnergyBar'
 import { GamesButton, HomeButton } from './HomeButton'
 
 type Mode = 'start' | 'play' | 'over'
@@ -36,7 +37,7 @@ type Mode = 'start' | 'play' | 'over'
 type Props = {
   best: number
   onBest: (score: number) => void
-  onDailyStart: () => void
+  onDailyStart: () => boolean
   onDaily: (score: number) => void
   onReward: (
     baseXp: number,
@@ -46,6 +47,8 @@ type Props = {
   onCoins: (amount: number) => void
   onExit: () => void
   onGames: () => void
+  energy: number
+  onShop: () => void
 }
 
 type Summary = {
@@ -113,8 +116,9 @@ function LivesHud({ lives }: { lives: number }) {
   )
 }
 
-export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames }: Props) {
+export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop }: Props) {
   const [mode, setMode] = useState<Mode>('start')
+  const [lowEnergy, setLowEnergy] = useState(false)
   const [hud, setHud] = useState({ lives: LIVES, score: 0, time: ROUND_SECONDS, shots: 0, aiming: false })
   const [pullHint, setPullHint] = useState({ x: 0, y: 0 })
   const [summary, setSummary] = useState<Summary | null>(null)
@@ -309,7 +313,11 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onC
   }
 
   const startRound = () => {
-    onDailyStartRef.current()
+    if (!onDailyStartRef.current()) {
+      setLowEnergy(true)
+      return
+    }
+    setLowEnergy(false)
     resumeArcherAudio()
     startArcherBgm()
     const wrap = wrapRef.current
@@ -397,6 +405,7 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onC
               <h2>Cupid Archery</h2>
               <p>Drag back from the cub, then let go to shoot. 3 Lives - 60 second timer. Hit the bullseye to add time and lives.</p>
               <p className="archer-best">Best Score {bestRef.current}</p>
+              {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
               <button type="button" className="archer-btn" onClick={startRound}>
                 Play
               </button>
@@ -424,7 +433,8 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onC
               <img src={coinUrl} alt="" />
               +{summary.coins}
             </p>
-            <button type="button" className="archer-btn" onClick={startRound}>
+            <RunEnergy energy={energy} onShop={onShop} />
+            <button type="button" className="archer-btn" onClick={startRound} disabled={energy < PLAY_ENERGY_COST}>
               Play again
             </button>
             <button type="button" className="archer-btn archer-btn-ghost" onClick={onGames}>

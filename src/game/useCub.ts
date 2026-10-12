@@ -17,14 +17,16 @@ import {
   isNeedy,
   levelFromXp,
   levelProgress,
+  PLAY_ENERGY_COST,
   rewardMultiplier,
 } from './progress'
 import { BONUS_COIN_AMOUNTS, DAILY_TASKS, bonusReady, dailyView, type BonusTrait, type DailyGame } from './dailyTasks'
+import { DRINKS, type DrinkId } from './drinks'
 import { submitLeaderboardScore } from './leaderboard'
 import { readSave, writeSave } from './storage'
-import { reconcileCloudSave, scheduleCloudSave, signInAccount, signOutAccount, signUpAccount, takeAdoptedSave, lockedCubCash, noteLockedCash, noteEarnedCash, ethFromUser, usernameFromUser, loadDisplayedUsername, loadUsernameChangedAt, updateAccountSettings, normalizeEthAddress } from './account'
+import { reconcileCloudSave, scheduleCloudSave, flushCloudSave, signInAccount, signOutAccount, signUpAccount, takeAdoptedSave, lockedCubCash, noteLockedCash, noteEarnedCash, ethFromUser, usernameFromUser, loadDisplayedUsername, loadUsernameChangedAt, updateAccountSettings, normalizeEthAddress } from './account'
 import { supabase } from './supabase'
-import { addDailyScore, applyWallet, claimDailyTask, grantGameCoins, payoutGap, payoutParts, purchaseTraitOnServer, rollDailyBonus as rollServerBonus, touchDailyBoard, walletActive, type GameCoinSource } from './wallet'
+import { addDailyScore, applyWallet, buyDrinkOnServer, claimDailyTask, grantGameCoins, payoutGap, payoutParts, purchaseTraitOnServer, rollDailyBonus as rollServerBonus, touchDailyBoard, walletActive, type GameCoinSource } from './wallet'
 import { isTraitUnlocked, sanitizeOwnedOutfits, traitKey, traitPrice, traitXpBonus } from './traitShop'
 import type { CareAction, CubOutfits, CubPose, CubSave, NeedKey } from './types'
 import type { TraitCategory } from './cubTraits'
@@ -62,7 +64,6 @@ export function useCub() {
   const levelUiVisibleRef = useRef(false)
   const revealBusyRef = useRef(false)
   const revealGenRef = useRef(0)
-  const energyClock = useRef(0)
   const sleepEnergyClock = useRef(0)
   const cashQueue = useRef(Promise.resolve())
 
@@ -75,6 +76,13 @@ export function useCub() {
     writeSave(safe)
     scheduleCloudSave(safe)
   }, [])
+
+  const tuckIn = useCallback(() => {
+    const current = saveRef.current
+    if (!current || current.asleep || barIsFull(current.energy)) return
+    commit({ ...current, asleep: true, lastVisit: Date.now() })
+    flushCloudSave()
+  }, [commit])
 
   const setPresented = useCallback((xp: number) => {
     presentedXpRef.current = xp
@@ -170,47 +178,88 @@ export function useCub() {
     [runReveal],
   )
 
+  const showAsleep = useCallback((sleeping: boolean) => {
+    if (sleeping) {
+      if (asleepRef.current) return
+      asleepRef.current = true
+      setAsleep(true)
+      setClosedEyes(true)
+      setPose('sleep')
+      startLullaby()
+      startSnore()
+      sleepEnergyClock.current = 0
+      return
+    }
+    if (!asleepRef.current) return
+    asleepRef.current = false
+    setAsleep(false)
+    setClosedEyes(false)
+    stopLullaby()
+    stopSnore()
+    sleepEnergyClock.current = 0
+    const current = saveRef.current
+    setPose(current && isNeedy(current) ? 'sad' : 'idle')
+  }, [])
+
   useEffect(() => {
     const loaded = applyAbsence(readSave()).save
     // Open with ?lvl1 to force level 1 (xp 0) for device testing.
     if (new URLSearchParams(window.location.search).has('lvl1')) {
       loaded.xp = 0
     }
-    commit(loaded)
-    presentedXpRef.current = loaded.xp
-    setPresentedXp(loaded.xp)
-    void reconcileCloudSave(loaded).then((remote) => {
+    const awake = { ...loaded, asleep: false }
+    commit(awake)
+    showAsleep(false)
+    presentedXpRef.current = awake.xp
+    setPresentedXp(awake.xp)
+    void reconcileCloudSave(awake).then((remote) => {
       if (!remote) return
-      commit(remote)
-      presentedXpRef.current = remote.xp
-      setPresentedXp(remote.xp)
+      const next = { ...applyAbsence(remote).save, asleep: false }
+      commit(next)
+      showAsleep(false)
+      presentedXpRef.current = next.xp
+      setPresentedXp(next.xp)
     })
-  }, [commit])
+  }, [commit, showAsleep])
   useEffect(() => {
+    const catchUp = () => {
+      const current = saveRef.current
+      if (!current) return
+      const next = { ...applyAbsence(current).save, asleep: false }
+      commit(next)
+      sleepEnergyClock.current = 0
+      showAsleep(false)
+    }
+    const onVisible = () => {
+      if (document.visibilityState === 'hidden') tuckIn()
+      if (document.visibilityState === 'visible') catchUp()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('pagehide', tuckIn, true)
     const id = window.setInterval(() => {
+      if (document.visibilityState === 'hidden') return
       const current = saveRef.current
       if (!current || busyRef.current) return
       const next = decaySave(current, 1000, false)
       if (asleepRef.current) {
         sleepEnergyClock.current += 1000
-        if (sleepEnergyClock.current >= 3000) {
-          const steps = Math.floor(sleepEnergyClock.current / 3000)
-          sleepEnergyClock.current %= 3000
-          next.energy = clampNeed(next.energy + steps * 10)
+        if (sleepEnergyClock.current >= 60_000) {
+          const steps = Math.floor(sleepEnergyClock.current / 60_000)
+          sleepEnergyClock.current %= 60_000
+          next.energy = clampNeed(next.energy + steps)
         }
-      } else {
-        energyClock.current += 1000
-        if (energyClock.current >= 10000) {
-          const steps = Math.floor(energyClock.current / 10000)
-          energyClock.current %= 10000
-          next.energy = clampNeed(next.energy + steps * 10)
-        }
+        if (barIsFull(next.energy)) next.asleep = false
       }
       next.lastVisit = Date.now()
       commit(next)
+      if (asleepRef.current && !next.asleep) showAsleep(false)
     }, 1000)
-    return () => window.clearInterval(id)
-  }, [commit])
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('pagehide', tuckIn, true)
+      window.clearInterval(id)
+    }
+  }, [commit, showAsleep, tuckIn])
 
   useEffect(() => {
     return () => {
@@ -266,30 +315,14 @@ export function useCub() {
     const current = saveRef.current
     if (!current || busyRef.current) return
     if (asleepRef.current) {
-      asleepRef.current = false
-      setAsleep(false)
-      setClosedEyes(false)
-      setToast(null)
-      setPose(isNeedy(current) ? 'sad' : 'idle')
-      stopLullaby()
-      stopSnore()
-      sleepEnergyClock.current = 0
+      commit({ ...current, asleep: false })
+      showAsleep(false)
       return
     }
     if (barIsFull(current.energy)) return
-    const next = applyCare(current, 'sleep')
-    if (next) {
-      commit(next)
-      noteLevel()
-    }
-    sleepEnergyClock.current = 0
-    asleepRef.current = true
-    setAsleep(true)
-    setClosedEyes(true)
-    setPose('sleep')
-    startLullaby()
-    startSnore()
-  }, [commit, noteLevel])
+    commit({ ...current, asleep: true })
+    showAsleep(true)
+  }, [commit, showAsleep])
 
   const pet = useCallback(() => {
     const current = saveRef.current
@@ -361,16 +394,22 @@ export function useCub() {
 
   const startDaily = useCallback(() => {
     const current = saveRef.current
-    if (!current) return
-    const daily = dailyView(current.daily)
-    if (daily.startedAt != null) return
-    commit({ ...current, daily: { ...daily, startedAt: Date.now() } })
-    void touchDailyBoard().then((patch) => {
-      const latest = saveRef.current
-      if (!patch || !latest) return
-      const cash = noteEarnedCash(patch.cubCash)
-      commit(applyWallet(latest, { ...patch, cubCash: cash }))
-    })
+    if (!current || current.energy < PLAY_ENERGY_COST) return false
+    const next: CubSave = { ...current, energy: current.energy - PLAY_ENERGY_COST }
+    const daily = dailyView(next.daily)
+    if (daily.startedAt == null) {
+      next.daily = { ...daily, startedAt: Date.now() }
+      commit(next)
+      void touchDailyBoard().then((patch) => {
+        const latest = saveRef.current
+        if (!patch || !latest) return
+        const cash = noteEarnedCash(patch.cubCash)
+        commit(applyWallet(latest, { ...patch, cubCash: cash }))
+      })
+      return true
+    }
+    commit(next)
+    return true
   }, [commit])
 
   const noteDaily = useCallback((game: DailyGame, score: number) => {
@@ -615,8 +654,9 @@ export function useCub() {
   }, [commit])
 
   const signOut = useCallback(async () => {
+    tuckIn()
     await signOutAccount()
-  }, [])
+  }, [tuckIn])
 
   const updateAccount = useCallback(async (username: string, eth: string, password: string) => {
     const error = await updateAccountSettings(username, eth, password)
@@ -627,6 +667,32 @@ export function useCub() {
     setAccountEth(normalizeEthAddress(eth))
     return null
   }, [accountName])
+
+  const buyDrink = useCallback(async (drink: DrinkId) => {
+    const current = saveRef.current
+    if (!current) return { ok: false as const, reason: 'missing' as const }
+    if (barIsFull(current.energy)) return { ok: false as const, reason: 'full' as const }
+    const spec = DRINKS[drink]
+    if (await walletActive()) {
+      const result = await buyDrinkOnServer(drink)
+      if (result.mode !== 'local') {
+        const latest = saveRef.current
+        if (!result.ok || !latest) {
+          return { ok: false as const, reason: result.mode === 'server' && !result.ok ? result.reason : ('missing' as const) }
+        }
+        noteLockedCash(result.patch.cubCash)
+        const energy = result.patch.energy ?? clampNeed(latest.energy + spec.energy)
+        commit(applyWallet({ ...latest, energy, asleep: energy >= 100 ? false : latest.asleep }, result.patch))
+        if (energy >= 100) showAsleep(false)
+        return { ok: true as const }
+      }
+    }
+    if (current.cubCash < spec.price) return { ok: false as const, reason: 'broke' as const }
+    const energy = clampNeed(current.energy + spec.energy)
+    commit({ ...current, cubCash: current.cubCash - spec.price, energy, asleep: energy >= 100 ? false : current.asleep })
+    if (energy >= 100) showAsleep(false)
+    return { ok: true as const }
+  }, [commit, showAsleep])
 
   const displayPose: CubPose = asleep
     ? 'sleep'
@@ -659,6 +725,7 @@ export function useCub() {
     setOutfits,
     addCubCash,
     purchaseTrait,
+    buyDrink,
     setLevelUiVisible,
     accountName,
     accountEth,

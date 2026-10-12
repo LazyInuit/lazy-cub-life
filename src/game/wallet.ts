@@ -10,6 +10,7 @@ export type WalletPatch = {
   daily?: DailyProgress
   unlockedTraits?: string[]
   xpGained?: number
+  energy?: number
 }
 
 type RpcRow = {
@@ -20,6 +21,7 @@ type RpcRow = {
   daily?: unknown
   unlockedTraits?: unknown
   xp?: unknown
+  energy?: unknown
   trait?: unknown
   coins?: unknown
 }
@@ -49,6 +51,7 @@ function readPatch(value: unknown): WalletPatch | null {
     patch.unlockedTraits = row.unlockedTraits.filter((item): item is string => typeof item === 'string')
   }
   if (typeof row.xp === 'number' && Number.isFinite(row.xp)) patch.xpGained = Math.max(0, row.xp)
+  if (typeof row.energy === 'number' && Number.isFinite(row.energy)) patch.energy = Math.max(0, Math.min(100, Math.floor(row.energy)))
   return patch
 }
 
@@ -168,6 +171,16 @@ export async function rollDailyBonus() {
   }
 }
 
+export async function buyDrinkOnServer(drink: 'milk' | 'juice') {
+  const result = await call('buy_drink', { p_drink: drink })
+  if (result.mode === 'local') return { mode: 'local' as const }
+  if (!result.row || result.row.ok === false || !result.patch) {
+    const reason = result.row?.reason === 'broke' ? 'broke' : result.row?.reason === 'full' ? 'full' : 'missing'
+    return { mode: 'server' as const, ok: false as const, reason: reason as 'broke' | 'full' | 'missing' }
+  }
+  return { mode: 'server' as const, ok: true as const, patch: result.patch }
+}
+
 export async function purchaseTraitOnServer(age: string, category: string, name: string) {
   const result = await call('purchase_trait', { p_age: age, p_category: category, p_name: name })
   if (result.mode === 'local') return { mode: 'local' as const }
@@ -185,5 +198,6 @@ export function applyWallet(save: CubSave, patch: WalletPatch): CubSave {
     cubCash: patch.cubCash,
     daily: patch.daily ?? save.daily,
     unlockedTraits: patch.unlockedTraits ?? save.unlockedTraits,
+    energy: patch.energy ?? save.energy,
   }
 }

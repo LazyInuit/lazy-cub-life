@@ -3,9 +3,10 @@ import type { PointerEvent as ReactPointerEvent } from 'react'
 import lionPawUrl from '../assets/lion-paw-ui.png'
 import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import { drawFlightLion } from '../game/drawCub'
-import { PLAY_NEED_COST, moodFromScore } from '../game/progress'
+import { PLAY_ENERGY_COST, PLAY_NEED_COST, moodFromScore } from '../game/progress'
 import { playCoin, playCrash, playEnd, playFlap, playIgnite, resumeFlightAudio, startSpaceAmbience, stopSpaceAmbience } from '../game/flightAudio'
 import type { NeedKey } from '../game/types'
+import { RunEnergy } from './EnergyBar'
 import { HomeButton, GamesButton } from './HomeButton'
 
 type Gate = {
@@ -38,7 +39,7 @@ const KINDS: Gate['kind'][] = ['tree', 'rock', 'grass', 'green', 'orange', 'blue
 type Props = {
   best: number
   onBest: (score: number) => void
-  onDailyStart: () => void
+  onDailyStart: () => boolean
   onDaily: (score: number) => void
   onReward: (
     baseXp: number,
@@ -48,9 +49,11 @@ type Props = {
   onCoins: (amount: number) => void
   onExit: () => void
   onGames: () => void
+  energy: number
+  onShop: () => void
 }
 
-export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames }: Props) {
+export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const onRewardRef = useRef(onReward)
   const onBestRef = useRef(onBest)
@@ -78,6 +81,7 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
   const [hudScore, setHudScore] = useState(0)
   const [summary, setSummary] = useState<Summary | null>(null)
   const [started, setStarted] = useState(false)
+  const [lowEnergy, setLowEnergy] = useState(false)
 
   const awardFlight = () => {
     if (rewarded.current || phase.current !== 'play') return null
@@ -247,12 +251,16 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
   }, [])
 
   const flap = () => {
-    resumeFlightAudio()
     if (phase.current === 'done') return
+    if (phase.current === 'ready' && !onDailyStartRef.current()) {
+      setLowEnergy(true)
+      return
+    }
+    resumeFlightAudio()
     playFlap()
     if (phase.current === 'ready') {
+      setLowEnergy(false)
       phase.current = 'play'
-      onDailyStartRef.current()
       ready.current = false
       gates.current = []
       spawned.current = 0
@@ -331,7 +339,7 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
           </p>
         </div>
         <p className="arcade-help">
-          {summary ? (summary.stopped ? 'Run stopped.' : 'The cub crashed!') : started ? 'Tap to flap through the gaps.' : 'Tap to fly.'}
+          {summary ? (summary.stopped ? 'Run stopped.' : 'The cub crashed!') : lowEnergy ? 'Sleep or visit the shop to recover energy.' : started ? 'Tap to flap through the gaps.' : 'Tap to fly.'}
         </p>
       </header>
       <div className="flight-stage">
@@ -356,8 +364,9 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
             <img src={coinUrl} alt="" />
             +{summary.coins}
           </p>
+          <RunEnergy energy={energy} onShop={onShop} />
           <div className="flight-results-actions">
-            <button type="button" className="cabinet-key" onClick={retry}>
+            <button type="button" className="cabinet-key" onClick={retry} disabled={energy < PLAY_ENERGY_COST}>
               Retry
             </button>
             <button type="button" className="cabinet-key" onClick={onExit}>
