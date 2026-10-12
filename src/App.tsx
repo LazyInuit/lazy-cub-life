@@ -67,7 +67,10 @@ function LandingScreen({ onPlay }: { onPlay: () => void }) {
   )
 }
 
+const IN_APP_KEY = 'lazy-cub-in-app'
+
 function PlayGate() {
+  const returning = useRef(sessionStorage.getItem(IN_APP_KEY) === '1')
   const [phase, setPhase] = useState<'splash' | 'gate' | 'play'>('splash')
   const [notice, setNotice] = useState<string | null>(null)
   const next = useRef<'gate' | 'play' | null>(null)
@@ -78,6 +81,7 @@ function PlayGate() {
   }
 
   const play = () => {
+    sessionStorage.setItem(IN_APP_KEY, '1')
     stopLandingBgm()
     playClick()
     wakeStoredCub()
@@ -96,10 +100,12 @@ function PlayGate() {
     const enter = async () => {
       const { data } = await client.auth.getSession()
       const userId = data.session?.user.id
+      if (returning.current) pressed.current = true
       if (!userId) {
         if (!ignore) {
           next.current = 'gate'
-          openNext()
+          if (returning.current) setPhase('gate')
+          else openNext()
         }
         return
       }
@@ -107,19 +113,38 @@ function PlayGate() {
         await signOutAccount()
         if (!ignore) {
           setNotice('This account is banned.')
+          sessionStorage.removeItem(IN_APP_KEY)
           next.current = 'gate'
-          openNext()
+          if (returning.current) setPhase('gate')
+          else openNext()
         }
         return
       }
       if (!ignore) {
         next.current = 'play'
-        openNext()
+        if (returning.current) setPhase('play')
+        else openNext()
       }
     }
     void enter()
     const { data } = client.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') setPhase('gate')
+      if (event !== 'SIGNED_OUT') return
+      // A resume in the home-screen app can report a sign-out while the session is still there.
+      window.setTimeout(() => {
+        if (ignore) return
+        void client.auth.getSession().then(async ({ data: sessionData }) => {
+          if (ignore || sessionData.session || !pressed.current) return
+          try {
+            const { data: refreshed } = await client.auth.refreshSession()
+            if (refreshed.session) return
+          } catch {
+            // The session is gone. Leave the game below.
+          }
+          if (ignore) return
+          sessionStorage.removeItem(IN_APP_KEY)
+          setPhase('gate')
+        })
+      }, 0)
     })
     return () => {
       ignore = true
@@ -155,6 +180,13 @@ function PlayGate() {
     }
   }, [phase])
 
+  if (phase === 'splash' && returning.current) {
+    return (
+      <main className="phone landing-screen">
+        <img className="landing-art" src={landingUrl} alt="" />
+      </main>
+    )
+  }
   if (phase === 'splash') return <LandingScreen onPlay={play} />
   if (phase === 'gate') {
     return (

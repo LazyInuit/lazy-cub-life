@@ -232,7 +232,6 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
 
   useEffect(() => {
     setLeft(secondsForPairs(pairs))
-    setTimerStarted(false)
     setPrideUrgency(0)
   }, [pairs])
 
@@ -243,18 +242,44 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
       return
     }
     const total = secondsForPairs(pairs)
-    const ends = Date.now() + total * 1000
+    let ends = Date.now() + total * 1000
     endsAtRef.current = ends
     setLeft(total)
-    const id = window.setInterval(() => {
-      const remain = Math.max(0, (ends - Date.now()) / 1000)
+    let hiddenAt: number | null = null
+    let lastTick = Date.now()
+    const onClock = () => {
+      const now = Date.now()
+      if (document.visibilityState === 'hidden') {
+        if (hiddenAt == null) hiddenAt = now
+        lastTick = now
+        return
+      }
+      if (hiddenAt != null) {
+        ends += now - hiddenAt
+        hiddenAt = null
+        endsAtRef.current = ends
+        lastTick = now
+      }
+      const gap = now - lastTick
+      lastTick = now
+      // The home-screen app freezes the clock. A frozen tick must not expire the board.
+      if (gap > 1000) {
+        ends += gap
+        endsAtRef.current = ends
+      }
+      const remain = Math.max(0, (ends - now) / 1000)
       setLeft(Math.ceil(remain))
       // Climb only in the final 10 seconds of any board.
       const urgency = remain >= 10 ? 0 : 1 - remain / 10
       setPrideUrgency(urgency)
       if (remain <= 0) finish(clearedRef.current, 'Time is up.')
-    }, 200)
-    return () => window.clearInterval(id)
+    }
+    document.addEventListener('visibilitychange', onClock)
+    const id = window.setInterval(onClock, 200)
+    return () => {
+      document.removeEventListener('visibilitychange', onClock)
+      window.clearInterval(id)
+    }
   }, [pairs, summary, timerStarted])
 
   useEffect(() => {

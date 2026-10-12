@@ -24,7 +24,7 @@ import { BONUS_COIN_AMOUNTS, DAILY_TASKS, bonusReady, dailyView, type BonusTrait
 import { DRINKS, type DrinkId } from './drinks'
 import { submitLeaderboardScore } from './leaderboard'
 import { readSave, writeSave } from './storage'
-import { reconcileCloudSave, scheduleCloudSave, flushCloudSave, signInAccount, signOutAccount, signUpAccount, takeAdoptedSave, lockedCubCash, noteLockedCash, noteEarnedCash, ethFromUser, usernameFromUser, loadDisplayedUsername, loadUsernameChangedAt, updateAccountSettings, normalizeEthAddress } from './account'
+import { reconcileCloudSave, scheduleCloudSave, flushCloudSave, flushCloudSaveNow, signInAccount, signOutAccount, signUpAccount, takeAdoptedSave, lockedCubCash, noteLockedCash, noteEarnedCash, ethFromUser, usernameFromUser, loadDisplayedUsername, loadUsernameChangedAt, updateAccountSettings, normalizeEthAddress } from './account'
 import { supabase } from './supabase'
 import { addDailyScore, applyWallet, buyDrinkOnServer, claimDailyTask, grantGameCoins, payoutGap, payoutParts, purchaseTraitOnServer, rollDailyBonus as rollServerBonus, touchDailyBoard, walletActive, type GameCoinSource } from './wallet'
 import { isTraitUnlocked, sanitizeOwnedOutfits, traitKey, traitPrice, traitXpBonus } from './traitShop'
@@ -231,7 +231,11 @@ export function useCub() {
       showAsleep(false)
     }
     const onVisible = () => {
-      if (document.visibilityState === 'hidden') tuckIn()
+      if (document.visibilityState === 'hidden') {
+        tuckIn()
+        const current = saveRef.current
+        if (current) void flushCloudSaveNow(current)
+      }
       if (document.visibilityState === 'visible') catchUp()
     }
     document.addEventListener('visibilitychange', onVisible)
@@ -400,6 +404,7 @@ export function useCub() {
     if (daily.startedAt == null) {
       next.daily = { ...daily, startedAt: Date.now() }
       commit(next)
+      void flushCloudSaveNow(next)
       void touchDailyBoard().then((patch) => {
         const latest = saveRef.current
         if (!patch || !latest) return
@@ -409,6 +414,7 @@ export function useCub() {
       return true
     }
     commit(next)
+    void flushCloudSaveNow(next)
     return true
   }, [commit])
 
@@ -669,16 +675,26 @@ export function useCub() {
   }, [accountName])
 
   const buyDrink = useCallback(async (drink: DrinkId) => {
-    const current = saveRef.current
-    if (!current) return { ok: false as const, reason: 'missing' as const }
-    if (barIsFull(current.energy)) return { ok: false as const, reason: 'full' as const }
     const spec = DRINKS[drink]
+    const opened = saveRef.current
+    if (!opened) return { ok: false as const, reason: 'missing' as const }
+    if (barIsFull(opened.energy)) return { ok: false as const, reason: 'full' as const }
     if (await walletActive()) {
+      // The shop checks the saved energy. Upload the bar on the phone first,
+      // or a drink is refused while that bar still has room.
+      await flushCloudSaveNow(saveRef.current ?? opened)
+      const fresh = saveRef.current
+      if (!fresh) return { ok: false as const, reason: 'missing' as const }
+      if (barIsFull(fresh.energy)) return { ok: false as const, reason: 'full' as const }
       const result = await buyDrinkOnServer(drink)
       if (result.mode !== 'local') {
         const latest = saveRef.current
         if (!result.ok || !latest) {
-          return { ok: false as const, reason: result.mode === 'server' && !result.ok ? result.reason : ('missing' as const) }
+          const reason = result.mode === 'server' && !result.ok ? result.reason : ('missing' as const)
+          if (reason === 'full' && latest && !barIsFull(latest.energy)) {
+            return { ok: false as const, reason: 'missing' as const }
+          }
+          return { ok: false as const, reason }
         }
         noteLockedCash(result.patch.cubCash)
         const energy = result.patch.energy ?? clampNeed(latest.energy + spec.energy)
@@ -687,6 +703,9 @@ export function useCub() {
         return { ok: true as const }
       }
     }
+    const current = saveRef.current
+    if (!current) return { ok: false as const, reason: 'missing' as const }
+    if (barIsFull(current.energy)) return { ok: false as const, reason: 'full' as const }
     if (current.cubCash < spec.price) return { ok: false as const, reason: 'broke' as const }
     const energy = clampNeed(current.energy + spec.energy)
     commit({ ...current, cubCash: current.cubCash - spec.price, energy, asleep: energy >= 100 ? false : current.asleep })

@@ -123,34 +123,67 @@ async function writeProfile(userId: string, username: string, save: CubSave) {
   return supabase.from('profiles').insert({ id: userId, ...row })
 }
 
-async function pushCloudSave(save: CubSave) {
+let pushTail: Promise<void> = Promise.resolve()
+
+async function sendCloudSave(save: CubSave) {
   if (!supabase) return
   const { data } = await supabase.auth.getSession()
   const session = data.session
   if (!session) return
-  pendingSave = null
-  await supabase.from('profiles').update({
+  const { error } = await supabase.from('profiles').update({
     save,
     updated_at: new Date().toISOString(),
   }).eq('id', session.user.id)
+  if (error) throw error
+}
+
+/** One upload at a time, always sending the newest save so an older write cannot land last. */
+function enqueueCloudSave() {
+  const run = pushTail.then(async () => {
+    while (pendingSave) {
+      const next = pendingSave
+      pendingSave = null
+      try {
+        await sendCloudSave(next)
+      } catch {
+        if (!pendingSave) pendingSave = next
+        break
+      }
+    }
+  })
+  pushTail = run.then(
+    () => undefined,
+    () => undefined,
+  )
+  return run
 }
 
 export function scheduleCloudSave(save: CubSave) {
   if (!supabase || !cloudReady) return
   pendingSave = save
-  if (syncTimer !== null) window.clearTimeout(syncTimer)
+  // The home screen rewrites the save every second. Restarting this timer
+  // each time meant the upload never left while the shortcut stayed open.
+  if (syncTimer !== null) return
   syncTimer = window.setTimeout(() => {
     syncTimer = null
-    const next = pendingSave
-    if (next) void pushCloudSave(next)
+    if (pendingSave) void enqueueCloudSave()
   }, 12000)
 }
 
 export function flushCloudSave() {
   if (syncTimer !== null) window.clearTimeout(syncTimer)
   syncTimer = null
-  const next = pendingSave
-  if (next) void pushCloudSave(next)
+  if (!pendingSave || !supabase) return
+  void enqueueCloudSave()
+}
+
+/** Wait until this save is the latest one stored for the signed-in account. */
+export function flushCloudSaveNow(save?: CubSave) {
+  if (syncTimer !== null) window.clearTimeout(syncTimer)
+  syncTimer = null
+  if (save) pendingSave = save
+  if (!pendingSave || !supabase || !cloudReady) return Promise.resolve()
+  return enqueueCloudSave()
 }
 
 if (typeof window !== 'undefined') {
@@ -191,7 +224,8 @@ export async function reconcileCloudSave(local: CubSave): Promise<CubSave | null
   }
   const loaded = await loadProfile(session.user.id)
   if (!loaded) {
-    await pushCloudSave(local)
+    pendingSave = local
+    await enqueueCloudSave()
     cloudReady = true
     return null
   }
@@ -200,7 +234,8 @@ export async function reconcileCloudSave(local: CubSave): Promise<CubSave | null
     cloudReady = true
     return remote
   }
-  await pushCloudSave(local)
+  pendingSave = local
+  await enqueueCloudSave()
   cloudReady = true
   if (loaded.cubCash == null) return null
   return withLockedCash(local, loaded.cubCash)
@@ -334,9 +369,8 @@ export async function loadUsernameChangedAt(userId: string) {
 export async function signOutAccount() {
   if (!supabase) return
   if (syncTimer !== null) window.clearTimeout(syncTimer)
-  const next = pendingSave
-  pendingSave = null
-  if (next) await pushCloudSave(next)
+  syncTimer = null
+  if (pendingSave) await enqueueCloudSave()
   clearLockedCash()
   cloudReady = false
   await supabase.auth.signOut()
