@@ -1,4 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import landingUrl from './assets/home/landing.jpg'
+import landingDoorsUrl from './assets/home/landing-doors.jpg'
+import landingPawUrl from './assets/home/landing-paw.png'
+import landingPlayUrl from './assets/home/landing-play.png'
 import { setActivityArea } from './game/activity'
 import { AccountGate } from './components/AccountGate'
 import { AdminScreen } from './components/AdminScreen'
@@ -9,6 +13,9 @@ import { LazyDojo } from './components/LazyDojo'
 import { SafariFlight } from './components/SafariFlight'
 import { TraitMatch } from './components/TraitMatch'
 import { accountIsBanned, signOutAccount } from './game/account'
+import { playClick } from './game/clickAudio'
+import { startLandingBgm, stopLandingBgm } from './game/landingAudio'
+import { wakeStoredCub } from './game/storage'
 import { useCub } from './game/useCub'
 import { supabase } from './game/supabase'
 
@@ -21,14 +28,68 @@ export default function App() {
   return <PlayGate />
 }
 
+function LandingScreen({ onPlay }: { onPlay: () => void }) {
+  const [opening, setOpening] = useState(false)
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    return () => stopLandingBgm()
+  }, [])
+
+  const enter = () => {
+    if (opening || open) return
+    startLandingBgm()
+    setOpening(true)
+    window.setTimeout(() => setOpen(true), 980)
+  }
+
+  return (
+    <main className="phone landing-screen">
+      <img className="landing-art" src={landingUrl} alt="" />
+      {open ? (
+        <button type="button" className="landing-play" onClick={onPlay} aria-label="Play">
+          <img src={landingPlayUrl} alt="" />
+        </button>
+      ) : (
+        <div className={opening ? 'doors doors-open' : 'doors'}>
+          <button type="button" className="door door-left" onClick={enter} aria-label="Open the doors">
+            <img className="door-panel" src={landingDoorsUrl} alt="" />
+          </button>
+          <button type="button" className="door door-right" onClick={enter} aria-label="Open the doors">
+            <img className="door-panel" src={landingDoorsUrl} alt="" />
+          </button>
+          <div className="door-paw" aria-hidden="true">
+            <img src={landingPawUrl} alt="" />
+          </div>
+        </div>
+      )}
+    </main>
+  )
+}
+
 function PlayGate() {
-  const [phase, setPhase] = useState<'loading' | 'gate' | 'play'>('loading')
+  const [phase, setPhase] = useState<'splash' | 'gate' | 'play'>('splash')
   const [notice, setNotice] = useState<string | null>(null)
+  const next = useRef<'gate' | 'play' | null>(null)
+  const pressed = useRef(false)
+
+  const openNext = () => {
+    if (pressed.current && next.current) setPhase(next.current)
+  }
+
+  const play = () => {
+    stopLandingBgm()
+    playClick()
+    wakeStoredCub()
+    pressed.current = true
+    openNext()
+  }
 
   useEffect(() => {
     const client = supabase
     if (!client) {
-      setPhase('gate')
+      next.current = 'gate'
+      openNext()
       return
     }
     let ignore = false
@@ -36,18 +97,25 @@ function PlayGate() {
       const { data } = await client.auth.getSession()
       const userId = data.session?.user.id
       if (!userId) {
-        if (!ignore) setPhase('gate')
+        if (!ignore) {
+          next.current = 'gate'
+          openNext()
+        }
         return
       }
       if (await accountIsBanned(userId)) {
         await signOutAccount()
         if (!ignore) {
           setNotice('This account is banned.')
-          setPhase('gate')
+          next.current = 'gate'
+          openNext()
         }
         return
       }
-      if (!ignore) setPhase('play')
+      if (!ignore) {
+        next.current = 'play'
+        openNext()
+      }
     }
     void enter()
     const { data } = client.auth.onAuthStateChange((event) => {
@@ -87,13 +155,7 @@ function PlayGate() {
     }
   }, [phase])
 
-  if (phase === 'loading') {
-    return (
-      <main className="phone">
-        <p className="boot">Waking your cub...</p>
-      </main>
-    )
-  }
+  if (phase === 'splash') return <LandingScreen onPlay={play} />
   if (phase === 'gate') {
     return (
       <AccountGate
@@ -120,8 +182,8 @@ function Game() {
 
   if (!cub.save) {
     return (
-      <main className="phone">
-        <p className="boot">Waking your cub...</p>
+      <main className="phone landing-screen">
+        <img className="landing-art" src={landingUrl} alt="" />
       </main>
     )
   }

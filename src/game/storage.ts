@@ -1,4 +1,4 @@
-import { defaultSave, sanitizeSave } from './progress'
+import { applyAbsence, defaultSave, sanitizeSave } from './progress'
 import type { CubSave } from './types'
 
 const SAVE_KEY = 'lazy-lion-cub-save-v1'
@@ -15,4 +15,10 @@ export function readSave(now = Date.now()): CubSave {
 
 export function writeSave(save: CubSave): void {
   localStorage.setItem(SAVE_KEY, JSON.stringify(save))
+}
+
+/** Apply away-time energy, then leave the stored cub awake. */
+export function wakeStoredCub() {
+  if (!localStorage.getItem(SAVE_KEY)) return
+  writeSave({ ...applyAbsence(readSave()).save, asleep: false })
 }

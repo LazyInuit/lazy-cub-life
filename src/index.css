@@ -48,6 +48,142 @@ button:disabled {
   font-size: 1.1rem;
 }
 
+.landing-screen {
+  background: #0164db;
+  overflow: hidden;
+  padding: 0;
+}
+
+.landing-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+
+.landing-play {
+  position: absolute;
+  left: 50%;
+  bottom: 8%;
+  z-index: 1;
+  width: min(70.2%, 288px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  opacity: 1;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 8px 0 rgba(42, 22, 8, 0.55)) drop-shadow(0 0 18px rgba(255, 214, 64, 0.85));
+  animation: landing-play-pop 1.35s ease-in-out infinite;
+}
+
+.landing-play img {
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+}
+
+.landing-play:active {
+  animation: none;
+  transform: translateX(-50%) translateY(3px) scale(0.98);
+}
+
+.doors {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  perspective: 1400px;
+}
+
+.door {
+  position: relative;
+  width: 50%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: hidden;
+  opacity: 1;
+  backface-visibility: hidden;
+  transition: transform 1.05s cubic-bezier(0.65, 0.02, 0.35, 1);
+}
+
+.door-left { transform-origin: left center; }
+.door-right { transform-origin: right center; }
+
+.doors-open .door-left { transform: translateX(-100%); }
+.doors-open .door-right { transform: translateX(100%); }
+
+.door-panel {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 460%;
+  max-width: none;
+  object-fit: cover;
+  object-position: center 58%;
+  display: block;
+  pointer-events: none;
+}
+
+.door-left .door-panel { left: -130%; }
+.door-right .door-panel { left: -230%; }
+
+.door-paw {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  z-index: 3;
+  width: min(42%, 176px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.door-paw::before {
+  content: "";
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 214, 64, 0.9);
+  animation: door-paw-ring 1.35s ease-out infinite;
+}
+
+.door-paw img {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 8px 0 rgba(42, 22, 8, 0.4)) drop-shadow(0 0 14px rgba(255, 214, 64, 0.95));
+  animation: door-paw-tap 1.15s ease-in-out infinite;
+}
+
+.doors-open .door-paw {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+@keyframes door-paw-tap {
+  0%, 100% { transform: scale(1); }
+  35% { transform: translateY(-6%) scale(1.08); }
+  55% { transform: translateY(2%) scale(0.94); }
+}
+
+@keyframes door-paw-ring {
+  0% { transform: scale(0.72); opacity: 0.9; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+@keyframes landing-play-pop {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.07); }
+}
+
 .top {
   display: flex;
   align-items: center;
