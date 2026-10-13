@@ -171,14 +171,6 @@ export function coverPlacement(
   return { x, y, w, h }
 }
 
-/** Cover scale of the room picture. This is the layout scale factor. */
-export function roomScale(stageW: number, stageH: number) {
-  const src = referenceSize('background')
-  const frameH = stageW < 520 && isStandalone() ? pageHeightForWidth(stageW) : stageH
-  if (src.w <= 0 || src.h <= 0) return 0
-  return Math.max(stageW / src.w, frameH / src.h)
-}
-
 /** The on-screen box for a slot. New art in that slot is fitted inside it. */
 export function slotBox(slot: HomeSlot, stageW: number, stageH: number): SceneBox {
   const scale = slotScale[slot]
