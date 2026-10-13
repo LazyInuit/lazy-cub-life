@@ -1,10 +1,11 @@
 /**
  * Safari's visible page on the iPhone, from the side-by-side screenshots.
- * 472px wide and 777px tall between the address bar and the bottom toolbar.
- * The installed app uses this same shape at full width. Height is not a
- * percentage of the screen, so the taller PWA screen cannot stretch the game.
+ * The cub, table, and buttons already match. The remaining gap is the room
+ * behind them: the window sits 18px further above the table in the installed
+ * app, which is a page 28px too tall (the background crop moves 0.64px per
+ * pixel of page height). 472px wide by 764px tall.
  */
-const SAFARI_ASPECT = 472 / 777
+const SAFARI_ASPECT = 472 / 764
 
 function isHomeScreenApp() {
   const nav = navigator as Navigator & { standalone?: boolean }
