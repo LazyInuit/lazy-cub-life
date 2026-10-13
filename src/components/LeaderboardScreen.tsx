@@ -1,27 +1,30 @@
 import { useEffect, useRef, useState } from 'react'
+import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import {
   LEADERBOARD_BOARDS,
+  WEEKLY_OVERALL_PRIZES,
   formatCountdown,
   loadLeaderboard,
   nextEasternReset,
   type LeaderboardBoard,
   type LeaderboardPeriod,
   type LeaderboardRow,
-  type LeaderboardStanding,
 } from '../game/leaderboard'
+import { settleWeeklyPrize, type WeeklyWinner } from '../game/wallet'
+import type { WalletPatch } from '../game/wallet'
 import { GamesButton, HomeButton } from './HomeButton'
 
 type Props = {
   onHome: () => void
   onGames: () => void
+  onSettlePrize?: (patch?: WalletPatch | null) => void
 }
 
-export function LeaderboardScreen({ onHome, onGames }: Props) {
+export function LeaderboardScreen({ onHome, onGames, onSettlePrize }: Props) {
   const [game, setGame] = useState<LeaderboardBoard>('overall')
   const [period, setPeriod] = useState<LeaderboardPeriod>('week')
   const [offset, setOffset] = useState(0)
   const [rows, setRows] = useState<LeaderboardRow[]>([])
-  const [mine, setMine] = useState<LeaderboardStanding | null>(null)
   const [total, setTotal] = useState(0)
   const [resetsAt, setResetsAt] = useState<string | null>(null)
   const [serverNow, setServerNow] = useState<string | null>(null)
@@ -29,10 +32,23 @@ export function LeaderboardScreen({ onHome, onGames }: Props) {
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [lastWinners, setLastWinners] = useState<WeeklyWinner[]>([])
   const menuRef = useRef<HTMLDivElement>(null)
   const countdown = useCountdown(resetsAt, serverNow)
   const board = LEADERBOARD_BOARDS.find((item) => item.id === game)
   const more = !loading && !note && rows.length < total
+
+  useEffect(() => {
+    let cancel = false
+    void settleWeeklyPrize().then((prize) => {
+      if (cancel) return
+      setLastWinners(prize?.winners ?? [])
+      onSettlePrize?.(prize)
+    })
+    return () => {
+      cancel = true
+    }
+  }, [onSettlePrize])
 
   useEffect(() => {
     let cancel = false
@@ -43,7 +59,6 @@ export function LeaderboardScreen({ onHome, onGames }: Props) {
       .then((page) => {
         if (cancel) return
         setRows((current) => (first ? page.rows : [...current, ...page.rows]))
-        setMine(page.mine)
         setTotal(page.total)
         if (page.resetsAt) setResetsAt(page.resetsAt)
         if (page.serverNow) setServerNow(page.serverNow)
@@ -84,7 +99,6 @@ export function LeaderboardScreen({ onHome, onGames }: Props) {
     setGame(next)
     setOffset(0)
     setRows([])
-    setMine(null)
     setNote(null)
     setLoading(true)
     setMenuOpen(false)
@@ -94,7 +108,6 @@ export function LeaderboardScreen({ onHome, onGames }: Props) {
     setPeriod(next)
     setOffset(0)
     setRows([])
-    setMine(null)
     setNote(null)
     setLoading(true)
   }
@@ -147,6 +160,40 @@ export function LeaderboardScreen({ onHome, onGames }: Props) {
         </button>
       </div>
       <p className="leaderboard-countdown">Week resets in {countdown}</p>
+      {game === 'overall' && period === 'week' ? (
+        <div
+          className="leaderboard-prize-banner"
+          aria-label={WEEKLY_OVERALL_PRIZES.map((prize) => {
+            const winner = lastWinners.find((row) => row.place === prize.place)?.username ?? 'not decided yet'
+            return `${prize.label} wins ${prize.amount} Cub Cash. Last week's ${prize.label} is ${winner}.`
+          }).join(' ')}
+        >
+          <div className="leaderboard-prize-head">
+            <span>This week prizes</span>
+            <span>Last week winners</span>
+          </div>
+          {WEEKLY_OVERALL_PRIZES.map((prize) => {
+            const winner = lastWinners.find((row) => row.place === prize.place)?.username
+            return (
+              <div className="leaderboard-prize-row" key={prize.place}>
+                <div className="leaderboard-prize-offer">
+                  <span className="leaderboard-prize-place">
+                    <PlaceMedal place={prize.place} />
+                    <span className="leaderboard-prize-kicker">{prize.label}</span>
+                  </span>
+                  <span className="leaderboard-prize-amount">
+                    <img src={coinUrl} alt="" />
+                    {prize.amount}
+                  </span>
+                </div>
+                <div className="leaderboard-prize-winner">
+                  <strong className="leaderboard-prize-name">{winner ?? '—'}</strong>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      ) : null}
 
       <div className="leaderboard-scroll">
         <div className="leaderboard-heading">
@@ -170,8 +217,10 @@ export function LeaderboardScreen({ onHome, onGames }: Props) {
               <li key={row.username} className={rowClass(row)}>
                 <span className="leaderboard-rank">{row.rank}</span>
                 <span className="leaderboard-player">
-                  <strong>{row.username}</strong>
-                  {row.mine ? <small>Your position</small> : null}
+                  <span className="leaderboard-name-line">
+                    <strong>{row.username}</strong>
+                    {row.mine ? <span className="leaderboard-you">You</span> : null}
+                  </span>
                 </span>
                 <span className="leaderboard-score">{row.score.toLocaleString('en-US')}</span>
               </li>
@@ -189,23 +238,33 @@ export function LeaderboardScreen({ onHome, onGames }: Props) {
           </button>
         ) : null}
       </div>
-
-      {!loading && !note ? (
-        <div className="leaderboard-yours">
-          <div>
-            <strong>Your rank</strong>
-            <p>{mine ? 'Your best score is on this board.' : 'Finish a game to join this board.'}</p>
-          </div>
-          <span>{mine ? `#${mine.rank}` : '—'}</span>
-        </div>
-      ) : null}
     </section>
   )
 }
 
+function PlaceMedal({ place }: { place: number }) {
+  const face = place === 1 ? '#ffe08a' : place === 2 ? '#f4f7fb' : '#f0b27a'
+  const edge = place === 1 ? '#8d5224' : place === 2 ? '#5e6b7c' : '#7a4520'
+  const shade = place === 1 ? '#c4843e' : place === 2 ? '#9aa6b5' : '#a86432'
+  return (
+    <svg className="leaderboard-prize-medal" viewBox="0 0 32 36" aria-hidden="true">
+      <path d="M10 1.5h5.2L16 14h-7.2z" fill="#d24b42" />
+      <path d="M16.8 1.5H22L23.2 14H16z" fill="#3d6fbe" />
+      <circle cx="16" cy="22" r="11" fill={shade} />
+      <circle cx="16" cy="22" r="8.4" fill={face} stroke={edge} strokeWidth="1.4" />
+      <circle cx="16" cy="22" r="6.2" fill="none" stroke={edge} strokeWidth="0.8" opacity="0.55" />
+      <text x="16" y="25.5" textAnchor="middle" fontSize="9" fontWeight="800" fill={edge}>
+        {place}
+      </text>
+    </svg>
+  )
+}
+
 function rowClass(row: LeaderboardRow) {
-  const medal = row.rank === 1 ? 'gold' : row.rank === 2 ? 'silver' : row.rank === 3 ? 'bronze' : ''
-  return [medal, row.mine ? 'mine' : ''].filter(Boolean).join(' ')
+  if (row.rank === 1) return 'gold'
+  if (row.rank === 2) return 'silver'
+  if (row.rank === 3) return 'bronze'
+  return ''
 }
 
 function useCountdown(resetsAt: string | null, serverNow: string | null) {

@@ -145,7 +145,13 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
   }
 
   if (boardOpen) {
-    return <LeaderboardScreen onHome={() => { setBoardOpen(false); setGamesOpen(false) }} onGames={() => setBoardOpen(false)} />
+    return (
+      <LeaderboardScreen
+        onHome={() => { setBoardOpen(false); setGamesOpen(false) }}
+        onGames={() => setBoardOpen(false)}
+        onSettlePrize={cub.collectWeeklyPrize}
+      />
+    )
   }
 
   if (gamesOpen) {

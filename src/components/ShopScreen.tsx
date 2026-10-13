@@ -96,9 +96,13 @@ function DrinkCard({
         <strong>{item.label}</strong>
         <em>{item.restore}</em>
       </span>
-      <span className="shop-price">
-        <img src={coinUrl} alt="" />
-        {busy ? '...' : item.price}
+      <span className="shop-price" aria-label={`Special offer. Usual price ${item.usual} coins, now ${item.price}.`}>
+        <span className="shop-offer">Special offer</span>
+        <span className="shop-price-row">
+          <s className="shop-usual">{item.usual}</s>
+          <img src={coinUrl} alt="" />
+          {busy ? '...' : item.price}
+        </span>
       </span>
     </button>
   )

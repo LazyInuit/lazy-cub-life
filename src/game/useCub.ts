@@ -26,7 +26,7 @@ import { submitLeaderboardScore } from './leaderboard'
 import { readSave, writeSave } from './storage'
 import { reconcileCloudSave, scheduleCloudSave, flushCloudSave, flushCloudSaveNow, cloudBaseVisit, signInAccount, signOutAccount, signUpAccount, takeAdoptedSave, lockedCubCash, noteLockedCash, noteEarnedCash, ethFromUser, usernameFromUser, loadDisplayedUsername, loadUsernameChangedAt, updateAccountSettings, normalizeEthAddress } from './account'
 import { supabase } from './supabase'
-import { addDailyScore, applyWallet, buyDrinkOnServer, claimDailyTask, grantGameCoins, payoutGap, payoutParts, purchaseTraitOnServer, rollDailyBonus as rollServerBonus, touchDailyBoard, walletActive, type GameCoinSource } from './wallet'
+import { addDailyScore, applyWallet, buyDrinkOnServer, claimDailyTask, grantGameCoins, payoutGap, payoutParts, purchaseTraitOnServer, rollDailyBonus as rollServerBonus, settleWeeklyPrize, touchDailyBoard, walletActive, type GameCoinSource, type WalletPatch } from './wallet'
 import { isTraitUnlocked, sanitizeOwnedOutfits, traitKey, traitPrice, traitXpBonus } from './traitShop'
 import type { CareAction, CubOutfits, CubPose, CubSave, NeedKey } from './types'
 import type { TraitCategory } from './cubTraits'
@@ -77,6 +77,19 @@ export function useCub() {
     writeSave(safe)
     scheduleCloudSave(safe)
   }, [])
+
+  const collectWeeklyPrize = useCallback((patch?: WalletPatch | null) => {
+    const apply = (next: WalletPatch | null | undefined) => {
+      const latest = saveRef.current
+      if (!next?.granted || !latest) return
+      commit(applyWallet(latest, { cubCash: noteEarnedCash(next.cubCash) }))
+    }
+    if (patch !== undefined) {
+      apply(patch)
+      return
+    }
+    void settleWeeklyPrize().then((result) => apply(result))
+  }, [commit])
 
   const tuckIn = useCallback(() => {
     const current = saveRef.current
@@ -220,8 +233,9 @@ export function useCub() {
       presentedXpRef.current = next.xp
       setPresentedXp(next.xp)
       cloudSettled.current = true
+      collectWeeklyPrize()
     })
-  }, [commit, showAsleep])
+  }, [commit, collectWeeklyPrize, showAsleep])
   useEffect(() => {
     const catchUp = () => {
       const current = saveRef.current
@@ -235,6 +249,7 @@ export function useCub() {
         commit(next)
         sleepEnergyClock.current = 0
         showAsleep(false)
+        collectWeeklyPrize()
       })
     }
     const onVisible = () => {
@@ -275,7 +290,7 @@ export function useCub() {
       window.removeEventListener('pagehide', onHide, true)
       window.clearInterval(id)
     }
-  }, [commit, showAsleep, tuckIn])
+  }, [collectWeeklyPrize, commit, showAsleep, tuckIn])
 
   useEffect(() => {
     return () => {
@@ -765,6 +780,7 @@ export function useCub() {
     signUp,
     signOut,
     updateAccount,
+    collectWeeklyPrize,
   }
 }
 

@@ -24,6 +24,13 @@ type RpcRow = {
   energy?: unknown
   trait?: unknown
   coins?: unknown
+  winnerUsername?: unknown
+  winners?: unknown
+}
+
+export type WeeklyWinner = {
+  place: number
+  username: string
 }
 
 function asRecord(value: unknown): RpcRow | null {
@@ -143,6 +150,35 @@ export async function grantGameCoins(source: GameCoinSource, amount: number) {
     p_amount: Math.floor(amount),
     p_nonce: newNonce(),
   })
+}
+
+export type WeeklyPrize = WalletPatch & { winners: WeeklyWinner[] }
+
+function readWinners(value: unknown): WeeklyWinner[] {
+  if (!Array.isArray(value)) return []
+  const winners: WeeklyWinner[] = []
+  for (const item of value) {
+    if (!item || typeof item !== 'object') continue
+    const row = item as { place?: unknown; username?: unknown }
+    const place = row.place
+    const username = typeof row.username === 'string' ? row.username.trim() : ''
+    if (place !== 1 && place !== 2 && place !== 3) continue
+    if (username === '') continue
+    winners.push({ place, username })
+  }
+  return winners
+}
+
+/** Pay last week's top three overall scores, once. Also returns those names. */
+export async function settleWeeklyPrize(): Promise<WeeklyPrize | null> {
+  const result = await call('settle_weekly_overall_prize', {})
+  if (result.mode !== 'server' || !result.patch) return null
+  const winners = readWinners(result.row?.winners)
+  const legacy = result.row?.winnerUsername
+  if (winners.length === 0 && typeof legacy === 'string' && legacy.trim() !== '') {
+    winners.push({ place: 1, username: legacy.trim() })
+  }
+  return { ...result.patch, winners }
 }
 
 export async function touchDailyBoard() {

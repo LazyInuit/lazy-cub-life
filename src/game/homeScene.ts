@@ -121,12 +121,41 @@ export const homeScene: Record<HomeSlot, string> = {
 
 export type CharacterAge = 'old' | 'young'
 
+const HOME_AGE_KEY = 'lazy-lion-cub-age'
+
+function storedHomeAge(): CharacterAge | null {
+  try {
+    const value = localStorage.getItem(HOME_AGE_KEY)
+    if (value === 'old' || value === 'young') return value
+  } catch {
+    // Private browsing can block storage. The cub stays on the in-memory choice.
+  }
+  return null
+}
+
+function applyHomeCharacter(age: CharacterAge) {
+  homeScene.character = age === 'young' ? 'kovu-young' : 'kovu-old'
+}
+
+const rememberedAge = storedHomeAge()
+if (rememberedAge) applyHomeCharacter(rememberedAge)
+
 export function getHomeCharacterAge(): CharacterAge {
   return homeScene.character.includes('young') ? 'young' : 'old'
 }
 
 export function setHomeCharacter(age: CharacterAge) {
-  homeScene.character = age === 'young' ? 'kovu-young' : 'kovu-old'
+  applyHomeCharacter(age)
+  try {
+    localStorage.setItem(HOME_AGE_KEY, age)
+  } catch {
+    // The choice still applies for this visit.
+  }
+}
+
+/** Show another cub without replacing the one saved for the next visit. */
+export function previewHomeCharacter(age: CharacterAge) {
+  applyHomeCharacter(age)
 }
 
 export function homeItem(slot: HomeSlot, night = false): HomeItem {

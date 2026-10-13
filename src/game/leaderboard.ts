@@ -3,6 +3,15 @@ import { supabase } from './supabase'
 
 export const LEADERBOARD_PAGE = 20
 
+/** Cub Cash for the top three overall scores when the week ends. */
+export const WEEKLY_OVERALL_PRIZES = [
+  { place: 1, amount: 500, label: '1st place' },
+  { place: 2, amount: 200, label: '2nd place' },
+  { place: 3, amount: 100, label: '3rd place' },
+] as const
+
+export const WEEKLY_OVERALL_PRIZE = WEEKLY_OVERALL_PRIZES[0].amount
+
 export const LEADERBOARD_BOARDS: { id: LeaderboardBoard; label: string }[] = [
   { id: 'overall', label: 'Overall — All Games' },
   { id: 'flight', label: "Kovu's Space Dash" },

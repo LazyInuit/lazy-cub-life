@@ -5,7 +5,7 @@ import { STARTER_OUTFIT, TRAIT_CATEGORIES, tryOnFromPicks, type TraitCategory } 
 import type { BonusTrait } from '../game/dailyTasks'
 import { playPrizeWin } from '../game/diceAudio'
 import { playCoin } from '../game/flightAudio'
-import { setHomeCharacter, type CharacterAge } from '../game/homeScene'
+import { previewHomeCharacter, setHomeCharacter, type CharacterAge } from '../game/homeScene'
 import type { CubAppearance } from '../game/types'
 import type { CubController } from '../game/useCub'
 import { CubStage } from './CubStage'
@@ -50,7 +50,7 @@ export function DailyTraitRoll({ cub, appearance, homeAge, prize, coins, onDone 
       if (!alive || claimed.current) return
       claimed.current = true
       if (prize) {
-        setHomeCharacter(prize.age)
+        previewHomeCharacter(prize.age)
         setPhase('trait')
         playPrizeWin()
         claimBonus({ trait: prize, coins: 0 })
