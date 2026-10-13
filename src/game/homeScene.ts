@@ -1,3 +1,4 @@
+import { isStandalone, pageHeightForWidth } from './homeFrame'
 import background1 from '../assets/home/background-1.png'
 import backgroundNight from '../assets/home/background-2-night.png'
 import bedroom2 from '../assets/home/bedroom-2.png'
@@ -140,20 +141,50 @@ function referenceSize(slot: HomeSlot): { w: number; h: number } {
   return { w: scale.sourceWidth, h: scale.sourceHeight }
 }
 
+/**
+ * The room picture and the furniture share the game container.
+ * On a phone, the installed app is letterboxed to Safari's frame. The
+ * picture is placed on that frame and then moves with the container, so a
+ * taller box cannot slide the window away from the table.
+ * Safari already is that frame, so it keeps the container's own height.
+ * Wider layouts (the desktop column) do too.
+ */
+export function coverPlacement(
+  stageW: number,
+  stageH: number,
+  srcW: number,
+  srcH: number,
+  anchorY = 0.4,
+  focusY = 0.36,
+  anchorX = 0.5,
+): SceneBox {
+  const tieToFrame = stageW < 520 && stageW > 0 && srcW > 0 && srcH > 0 && isStandalone()
+  const frameH = tieToFrame ? pageHeightForWidth(stageW) : stageH
+  const cover = Math.max(stageW / srcW, frameH / srcH)
+  const w = srcW * cover
+  const h = srcH * cover
+  let x = stageW * 0.5 - w * anchorX
+  let y = frameH * focusY - h * anchorY
+  x = Math.min(0, Math.max(stageW - w, x))
+  y = Math.min(0, Math.max(frameH - h, y))
+  if (tieToFrame) y += stageH - frameH
+  return { x, y, w, h }
+}
+
+/** Cover scale of the room picture. This is the layout scale factor. */
+export function roomScale(stageW: number, stageH: number) {
+  const src = referenceSize('background')
+  const frameH = stageW < 520 && isStandalone() ? pageHeightForWidth(stageW) : stageH
+  if (src.w <= 0 || src.h <= 0) return 0
+  return Math.max(stageW / src.w, frameH / src.h)
+}
+
 /** The on-screen box for a slot. New art in that slot is fitted inside it. */
 export function slotBox(slot: HomeSlot, stageW: number, stageH: number): SceneBox {
   const scale = slotScale[slot]
   if (scale.fit === 'cover') {
     const src = referenceSize(slot)
-    const cover = Math.max(stageW / src.w, stageH / src.h)
-    const w = src.w * cover
-    const h = src.h * cover
-    const focusY = scale.focusY ?? 0.5
-    let x = stageW * 0.5 - w * scale.anchorX
-    let y = stageH * focusY - h * scale.anchorY
-    x = Math.min(0, Math.max(stageW - w, x))
-    y = Math.min(0, Math.max(stageH - h, y))
-    return { x, y, w, h }
+    return coverPlacement(stageW, stageH, src.w, src.h, scale.anchorY, scale.focusY ?? 0.5, scale.anchorX)
   }
 
   const src = referenceSize(slot)

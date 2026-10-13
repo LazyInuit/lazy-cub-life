@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { drawCubEffects, drawHomeBackground, drawHomeChair, drawHomeTable, homeCharacterBox } from '../game/drawCub'
 import { characterLayers, type TryOn } from '../game/cubTraits'
-import { artSize, fitInBox, homeArt, homeItem, slotBox, slotScale } from '../game/homeScene'
+import { artSize, coverPlacement, fitInBox, homeArt, homeItem, slotBox, slotScale } from '../game/homeScene'
 import { playPlantRuffle } from '../game/plantAudio'
 import { playTableKnock } from '../game/tableAudio'
 import { playWindowTap } from '../game/windowAudio'
@@ -44,12 +44,8 @@ function poseMotion(pose: CubPose, time: number): Motion {
 }
 
 function coverRoom(ctx: CanvasRenderingContext2D, image: CanvasImageSource, stageW: number, stageH: number, pixelW: number, pixelH: number) {
-  const cover = Math.max(stageW / pixelW, stageH / pixelH)
-  const w = pixelW * cover
-  const h = pixelH * cover
-  const x = Math.min(0, Math.max(stageW - w, stageW * 0.5 - w * 0.5))
-  const y = Math.min(0, Math.max(stageH - h, stageH * 0.36 - h * 0.4))
-  ctx.drawImage(image, x, y, w, h)
+  const placed = coverPlacement(stageW, stageH, pixelW, pixelH)
+  ctx.drawImage(image, placed.x, placed.y, placed.w, placed.h)
 }
 
 export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null, overPicture = false }: Props) {
@@ -78,7 +74,8 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
     let frame = 0
     const paint = (now: number) => {
       if (!alive) return
-      const rect = room.getBoundingClientRect()
+      const scene = (room.closest('.home-room') as HTMLElement | null) ?? room
+      const rect = scene.getBoundingClientRect()
       const dpr = Math.min(window.devicePixelRatio || 1, 2)
       const width = Math.max(1, Math.floor(rect.width * dpr))
       const height = Math.max(1, Math.floor(rect.height * dpr))
