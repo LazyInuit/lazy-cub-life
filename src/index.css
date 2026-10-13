@@ -1044,17 +1044,14 @@ h1 {
 .leaderboard-prize-head {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  padding: 3px 8px 0;
+  padding: 3px 0 0;
   color: #ffe7b0;
   font-size: 0.58rem;
   font-weight: 800;
   letter-spacing: 0.02em;
+  text-align: center;
   text-transform: uppercase;
   white-space: nowrap;
-}
-
-.leaderboard-prize-head span:last-child {
-  padding-left: 8px;
 }
 
 .leaderboard-prize-row > div {
