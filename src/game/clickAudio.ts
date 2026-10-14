@@ -24,7 +24,7 @@ export function playClick() {
   tick.type = 'highpass'
   tick.frequency.setValueAtTime(1400, when)
   const tickGain = current.createGain()
-  tickGain.gain.setValueAtTime(0.2, when)
+  tickGain.gain.setValueAtTime(0.1, when)
   tickGain.gain.exponentialRampToValueAtTime(0.001, when + 0.04)
   noise.connect(tick)
   tick.connect(tickGain)
@@ -38,7 +38,7 @@ export function playClick() {
   pop.frequency.exponentialRampToValueAtTime(280, when + 0.06)
   const popGain = current.createGain()
   popGain.gain.setValueAtTime(0.001, when)
-  popGain.gain.exponentialRampToValueAtTime(0.16, when + 0.006)
+  popGain.gain.exponentialRampToValueAtTime(0.08, when + 0.006)
   popGain.gain.exponentialRampToValueAtTime(0.001, when + 0.07)
   pop.connect(popGain)
   popGain.connect(current.destination)

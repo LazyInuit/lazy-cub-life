@@ -25,6 +25,8 @@ import { DRINKS, type DrinkId } from './drinks'
 import { submitLeaderboardScore } from './leaderboard'
 import { readSave, writeSave } from './storage'
 import { reconcileCloudSave, scheduleCloudSave, flushCloudSave, flushCloudSaveNow, cloudBaseVisit, signInAccount, signOutAccount, signUpAccount, takeAdoptedSave, lockedCubCash, noteLockedCash, noteEarnedCash, ethFromUser, usernameFromUser, loadDisplayedUsername, loadUsernameChangedAt, updateAccountSettings, normalizeEthAddress } from './account'
+import { pumpkinLit, setPumpkinLit } from './halloween'
+import { stopHalloweenBgm } from './halloweenBgm'
 import { supabase } from './supabase'
 import { addDailyScore, applyWallet, buyDrinkOnServer, claimDailyTask, grantGameCoins, payoutGap, payoutParts, purchaseTraitOnServer, rollDailyBonus as rollServerBonus, settleWeeklyPrize, touchDailyBoard, walletActive, type GameCoinSource, type WalletPatch } from './wallet'
 import { isTraitUnlocked, sanitizeOwnedOutfits, traitKey, traitPrice, traitXpBonus } from './traitShop'
@@ -71,6 +73,12 @@ export function useCub() {
   const commit = useCallback((next: CubSave) => {
     const locked = lockedCubCash()
     const safe = locked == null ? next : { ...next, cubCash: locked }
+    const wasLit = pumpkinLit()
+    if (safe.halloween) setPumpkinLit(true)
+    else if (wasLit) {
+      setPumpkinLit(false)
+      stopHalloweenBgm()
+    }
     saveRef.current = safe
     setNeedLooks(safe.energy, safe.hunger, safe.cleanliness)
     setSave(safe)
@@ -740,6 +748,14 @@ export function useCub() {
     return { ok: true as const }
   }, [commit, showAsleep])
 
+  const rememberHalloween = useCallback((on: boolean) => {
+    const current = saveRef.current
+    if (!current || current.halloween === on) return
+    const next = { ...current, halloween: on }
+    commit(next)
+    void flushCloudSaveNow(next)
+  }, [commit])
+
   const displayPose: CubPose = asleep
     ? 'sleep'
     : pose === 'idle' && save && isNeedy(save)
@@ -772,6 +788,7 @@ export function useCub() {
     addCubCash,
     purchaseTrait,
     buyDrink,
+    rememberHalloween,
     setLevelUiVisible,
     accountName,
     accountEth,

@@ -17,6 +17,7 @@ import { emptyDaily, sanitizeDaily } from './dailyTasks'
 const DAILY_BOARD_RESET = 2
 /** Bump this to clear purchased wardrobe traits once on the next load. */
 const WARDROBE_PURCHASE_RESET = 1
+import { pumpkinLit } from './halloween'
 import { sanitizeOwnedOutfits, starterUnlockedKeys } from './traitShop'
 
 const DECAY_PER_MIN: Record<Exclude<NeedKey, 'energy'>, number> = {
@@ -302,6 +303,7 @@ export function defaultSave(now = Date.now()): CubSave {
     daily: emptyDaily(),
     dailyBoardReset: DAILY_BOARD_RESET,
     wardrobePurchaseReset: WARDROBE_PURCHASE_RESET,
+    halloween: false,
   }
 }
 
@@ -343,6 +345,7 @@ export function sanitizeSave(value: unknown, now = Date.now()): CubSave {
       raw.dailyBoardReset === DAILY_BOARD_RESET ? sanitizeDaily(raw.daily, new Date(now)) : emptyDaily(),
     dailyBoardReset: DAILY_BOARD_RESET,
     wardrobePurchaseReset: WARDROBE_PURCHASE_RESET,
+    halloween: raw.halloween === true || (raw.halloween !== false && pumpkinLit()),
   })
   return { ...draft, outfits: sanitizeOwnedOutfits(draft, draft.outfits) }
 }

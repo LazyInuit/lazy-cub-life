@@ -71,6 +71,8 @@ export type CubSave = {
   dailyBoardReset: number
   /** Matches WARDROBE_PURCHASE_RESET after a one-time purchase clear. */
   wardrobePurchaseReset: number
+  /** Home Halloween theme. Stays lit across leaving and coming back. */
+  halloween: boolean
 }
 
 export const NEED_KEYS: NeedKey[] = ['hunger', 'happiness', 'energy', 'cleanliness']

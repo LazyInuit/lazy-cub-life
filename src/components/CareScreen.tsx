@@ -34,6 +34,8 @@ import {
   tasksComplete,
 } from '../game/dailyTasks'
 import { playDiceRattle } from '../game/diceAudio'
+import { startHalloweenBgm, stopHalloweenBgm } from '../game/halloweenBgm'
+import { pumpkinLit } from '../game/halloween'
 import { playCoin } from '../game/flightAudio'
 import { barIsFull, energyFillColor, levelProgress, PLAY_ENERGY_COST } from '../game/progress'
 import { formatCubCash } from '../game/formatCubCash'
@@ -88,6 +90,24 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
   useEffect(() => {
     setHomeCharacter(age)
   }, [age])
+
+  const onCubHome = !gamesOpen && !shopOpen && !wardrobeOpen && !boardOpen && !dailyOpen && !cub.asleep
+
+  useEffect(() => {
+    if (!onCubHome) {
+      stopHalloweenBgm()
+      return
+    }
+    const sync = () => {
+      if (pumpkinLit()) startHalloweenBgm()
+    }
+    sync()
+    window.addEventListener('pointerdown', sync)
+    return () => {
+      window.removeEventListener('pointerdown', sync)
+      stopHalloweenBgm()
+    }
+  }, [onCubHome])
 
   useEffect(() => {
     if (!dailyOpen) return
@@ -539,6 +559,7 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
         pose={cub.pose}
         dim={asleep}
         onPet={cub.pet}
+        onPumpkinChange={cub.rememberHalloween}
         tryOn={tryOnFromPicks(sanitizeOwnedOutfit(save, age, save.outfits[age]))}
       />
       <div className="room-ui">

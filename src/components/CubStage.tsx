@@ -1,8 +1,11 @@
-import { useEffect, useRef } from 'react'
-import { drawCubEffects, drawHomeBackground, drawHomeChair, drawHomeTable, homeCharacterBox } from '../game/drawCub'
+import { useEffect, useRef, useState } from 'react'
+import { drawCubEffects, drawHalloweenPumpkin, drawHomeBackground, drawHomeChair, drawHomeTable, homeCharacterBox } from '../game/drawCub'
+import { HALLOWEEN_THEME, pumpkinLit, togglePumpkin } from '../game/halloween'
 import { characterLayers, type TryOn } from '../game/cubTraits'
 import { artSize, coverPlacement, fitInBox, homeArt, homeItem, slotBox, slotScale } from '../game/homeScene'
 import { playPlantRuffle } from '../game/plantAudio'
+import { playPumpkinLight, playPumpkinOut } from '../game/pumpkinAudio'
+import { startHalloweenBgm, stopHalloweenBgm } from '../game/halloweenBgm'
 import { playTableKnock } from '../game/tableAudio'
 import { playWindowTap } from '../game/windowAudio'
 import type { CubAppearance, CubPose } from '../game/types'
@@ -16,6 +19,8 @@ type Props = {
   tryOn?: TryOn | null
   /** Paint the cub on the desk canvas, over the room picture. */
   overPicture?: boolean
+  /** Called after the pumpkin is toggled so the choice is saved with the cub. */
+  onPumpkinChange?: (on: boolean) => void
 }
 
 type Motion = {
@@ -48,7 +53,7 @@ function coverRoom(ctx: CanvasRenderingContext2D, image: CanvasImageSource, stag
   ctx.drawImage(image, placed.x, placed.y, placed.w, placed.h)
 }
 
-export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null, overPicture = false }: Props) {
+export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null, overPicture = false, onPumpkinChange }: Props) {
   const roomRef = useRef<HTMLCanvasElement>(null)
   const viewRef = useRef<HTMLCanvasElement>(null)
   const fxRef = useRef<HTMLCanvasElement>(null)
@@ -57,6 +62,7 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
   const modeRef = useRef(mode)
   const tryOnRef = useRef(tryOn)
   const overPictureRef = useRef(overPicture)
+  const [pumpkinOn, setPumpkinOn] = useState(pumpkinLit)
   poseRef.current = pose
   dimRef.current = dim
   modeRef.current = mode
@@ -157,6 +163,7 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
         const fittedTop = tableArt ? fitInBox(artSize(tableArt).w, artSize(tableArt).h, table).y : table.y
         const sitDrop = wardrobe && cub ? cub.y + cub.h - fittedTop - wardrobeLift : 0
         drawHomeTable(fxCtx, layoutW, layoutH, wardrobe ? 'chest-1' : 'table-1', sitDrop)
+        const pumpkin = wardrobe ? null : drawHalloweenPumpkin(fxCtx, layoutW, layoutH, time)
         if (!wardrobe) drawCubEffects(fxCtx, poseRef.current, time, layoutW, layoutH)
         const dockBottom = rect.height - (table.y + table.h) + 36
         const roomEl = room.closest('.home-room') as HTMLElement | null
@@ -190,6 +197,12 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
           stage.style.setProperty('--table-y', `${tableTop}px`)
           stage.style.setProperty('--table-w', `${layoutW}px`)
           stage.style.setProperty('--table-h', '32px')
+          if (pumpkin) {
+            stage.style.setProperty('--pumpkin-x', `${pumpkin.x}px`)
+            stage.style.setProperty('--pumpkin-y', `${pumpkin.y}px`)
+            stage.style.setProperty('--pumpkin-w', `${pumpkin.w}px`)
+            stage.style.setProperty('--pumpkin-h', `${pumpkin.h}px`)
+          }
         }
       }
       frame = requestAnimationFrame(paint)
@@ -213,6 +226,26 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
           <button type="button" className="window-hit" onClick={playWindowTap} aria-label="Tap the window" />
           <button type="button" className="plant-hit" onClick={playPlantRuffle} aria-label="Ruffle the plant" />
           <button type="button" className="table-hit" onClick={playTableKnock} aria-label="Knock the table" />
+          {HALLOWEEN_THEME ? (
+            <button
+              type="button"
+              className="pumpkin-hit"
+              onClick={() => {
+                togglePumpkin()
+                const on = pumpkinLit()
+                setPumpkinOn(on)
+                onPumpkinChange?.(on)
+                if (on) {
+                  playPumpkinLight()
+                  if (!dim) startHalloweenBgm()
+                } else {
+                  playPumpkinOut()
+                  stopHalloweenBgm()
+                }
+              }}
+              aria-label={pumpkinOn ? 'Turn the pumpkin off' : 'Light the pumpkin'}
+            />
+          ) : null}
           {onPet ? (
             <button type="button" className="pet-hit" onClick={onPet} aria-label="Pet your cub" />
           ) : null}

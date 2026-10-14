@@ -2,7 +2,8 @@ import bungalowUrl from '../../Lazy Bungalow.jpeg'
 import bungalowNightUrl from '../../bungalow night.jpeg'
 import cubUrl from '../assets/cub-generic.png'
 import crownUrl from '../../Galactic Dash Cub 1.png'
-import { artSize, fitInBox, homeArt, homeCatalog, homeItem, slotBox, type SceneBox } from './homeScene'
+import { HALLOWEEN_THEME, pumpkinLit, pumpkinPlacement } from './halloween'
+import { artSize, coverPlacement, fitInBox, homeArt, homeCatalog, homeItem, slotBox, type SceneBox } from './homeScene'
 import type { CubAppearance, CubPose } from './types'
 
 const bungalow = new Image()
@@ -229,10 +230,101 @@ export function drawHomeBackground(
 ) {
   ctx.fillStyle = night ? '#1a2744' : '#c4843e'
   ctx.fillRect(0, 0, width, height)
-  const item = homeItem('background', night)
-  const image = homeArt(item.id)
+  const halloween = pumpkinLit()
+  const item = halloween
+    ? homeCatalog.find((entry) => entry.id === (night ? 'halloween-night' : 'halloween-day'))
+    : homeItem('background', night)
+  const image = item ? homeArt(item.id) : null
   if (!image) return
+  if (halloween) {
+    const size = artSize(image)
+    const placed = coverPlacement(width, height, size.w, size.h, 0.4, 0.36, 0.5)
+    ctx.drawImage(image, placed.x, placed.y, placed.w, placed.h)
+    return
+  }
   drawFitted(ctx, image, slotBox('background', width, height))
+}
+
+/** Small glints on the pumpkin shell, as fractions of the picture. */
+const pumpkinSparkles = [
+  { x: 0.22, y: 0.36, size: 0.11 },
+  { x: 0.8, y: 0.42, size: 0.09 },
+  { x: 0.52, y: 0.24, size: 0.08 },
+]
+
+function drawPumpkinSparkle(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  pivotY: number,
+  glow: number,
+) {
+  ctx.save()
+  ctx.globalCompositeOperation = 'lighter'
+  ctx.fillStyle = '#fff6d2'
+  pumpkinSparkles.forEach((spark, index) => {
+    const twinkle = glow * (0.65 + 0.35 * Math.sin(glow * Math.PI + index))
+    ctx.save()
+    ctx.translate(w * (spark.x - 0.5), -pivotY + h * spark.y)
+    ctx.rotate(index * 0.5)
+    ctx.globalAlpha = twinkle
+    const arm = w * spark.size
+    const waist = arm * 0.18
+    ctx.beginPath()
+    ctx.moveTo(0, -arm)
+    ctx.lineTo(waist, -waist)
+    ctx.lineTo(arm, 0)
+    ctx.lineTo(waist, waist)
+    ctx.lineTo(0, arm)
+    ctx.lineTo(-waist, waist)
+    ctx.lineTo(-arm, 0)
+    ctx.lineTo(-waist, -waist)
+    ctx.closePath()
+    ctx.fill()
+    ctx.restore()
+  })
+  ctx.restore()
+}
+
+/** A short rock and sparkle, once every 5 seconds, while the pumpkin is unlit. */
+function pumpkinHint(time: number) {
+  const window = 0.8
+  const t = time % 5
+  if (t > window) return { rot: 0, glow: 0 }
+  const p = t / window
+  const settle = Math.sin(Math.PI * p)
+  return {
+    rot: Math.sin(p * Math.PI * 3) * settle * 0.14,
+    glow: settle,
+  }
+}
+
+/** Pumpkin on the right of the table. Returns the box so the tap target can match it. */
+export function drawHalloweenPumpkin(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  time = 0,
+): SceneBox | null {
+  if (!HALLOWEEN_THEME) return null
+  const lit = pumpkinLit()
+  const image = homeArt(lit ? 'halloween-pumpkin-on' : 'halloween-pumpkin-off')
+  if (!image) return null
+  const size = artSize(image)
+  const tableArt = homeArt('table-1')
+  const tableSlot = slotBox('table', width, height)
+  const fitted = tableArt ? fitInBox(artSize(tableArt).w, artSize(tableArt).h, tableSlot) : tableSlot
+  const edge = fitted.y + tableSlot.h * 0.072
+  const box = pumpkinPlacement(width, edge, size.w, size.h)
+  const hint = lit ? { rot: 0, glow: 0 } : pumpkinHint(time)
+  const pivotY = box.h * 0.82
+  ctx.save()
+  ctx.translate(box.x + box.w / 2, box.y + pivotY)
+  ctx.rotate(hint.rot)
+  ctx.drawImage(image, -box.w / 2, -pivotY, box.w, box.h)
+  if (hint.glow > 0) drawPumpkinSparkle(ctx, box.w, box.h, pivotY, hint.glow)
+  ctx.restore()
+  return box
 }
 
 export function drawHomeChair(
@@ -248,6 +340,15 @@ export function drawHomeChair(
   const box = slotBox('chair', width, height)
   const placed = { ...box, y: box.y + yOffset }
   if (part === 'back') {
+    const fitted = fitInBox(artSize(image).w, artSize(image).h, placed)
+    if (pumpkinLit()) {
+      const decorated = homeArt('halloween-chair')
+      if (decorated) {
+        const drop = fitted.h * 0.03
+        drawMappedArt(ctx, decorated, { ...fitted, y: fitted.y + drop }, plainChairBody, halloweenChairBody)
+        return
+      }
+    }
     drawFitted(ctx, image, placed)
     return
   }
@@ -261,6 +362,37 @@ export function homeCharacterBox(width: number, height: number): SceneBox | null
   return fitInBox(artSize(image).w, artSize(image).h, slotBox('character', width, height))
 }
 
+/**
+ * The chair and table bodies inside each picture. Decorations sit in the
+ * margin, so the body — not the whole file — is lined up with the plain piece.
+ */
+const plainTableWood = { x: 2 / 1748, y: 51 / 794, w: 1745 / 1748, h: 682 / 794 }
+const halloweenTableWood = { x: 5 / 1024, y: 76 / 512, w: 1016 / 1024, h: 415 / 512 }
+const plainChairBody = { x: 25 / 1342, y: 63 / 1172, w: 1292 / 1342, h: 1056 / 1172 }
+const halloweenChairBody = { x: 4 / 819, y: 4 / 715, w: 809 / 819, h: 699 / 715 }
+
+type ArtFrame = { x: number; y: number; w: number; h: number }
+
+/** Line the decorated furniture's body up with the plain piece. Webs can hang outside that. */
+function drawMappedArt(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement | HTMLCanvasElement,
+  fitted: SceneBox,
+  plain: ArtFrame,
+  decorated: ArtFrame,
+) {
+  const size = artSize(image)
+  const scaleX = (fitted.w * plain.w) / (decorated.w * size.w)
+  const scaleY = (fitted.h * plain.h) / (decorated.h * size.h)
+  ctx.drawImage(
+    image,
+    fitted.x + fitted.w * plain.x - decorated.x * size.w * scaleX,
+    fitted.y + fitted.h * plain.y - decorated.y * size.h * scaleY,
+    size.w * scaleX,
+    size.h * scaleY,
+  )
+}
+
 export function drawHomeTable(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -272,7 +404,15 @@ export function drawHomeTable(
   const image = item ? homeArt(item.id) : null
   if (!image) return
   const box = slotBox('table', width, height)
-  drawFitted(ctx, image, { ...box, y: box.y + yOffset })
+  const placed = { ...box, y: box.y + yOffset }
+  if (id === 'table-1' && pumpkinLit()) {
+    const decorated = homeArt('halloween-table')
+    if (decorated) {
+      drawMappedArt(ctx, decorated, fitInBox(artSize(image).w, artSize(image).h, placed), plainTableWood, halloweenTableWood)
+      return
+    }
+  }
+  drawFitted(ctx, image, placed)
 }
 
 export function drawCubEffects(

@@ -7,6 +7,12 @@ import kovuYoungUrl from '../assets/kovu-young.png'
 import chair1 from '../assets/home/chair-1.png'
 import table1 from '../assets/home/table-1.png'
 import chest1 from '../assets/home/chest-draws-1.png'
+import halloweenDay from '../assets/home/halloween-day.jpg'
+import halloweenNight from '../assets/home/halloween-night.jpg'
+import halloweenPumpkinOff from '../assets/home/halloween-pumpkin-off.png'
+import halloweenPumpkinOn from '../assets/home/halloween-pumpkin-on.png'
+import halloweenTable from '../assets/home/halloween-table.png'
+import halloweenChair from '../assets/home/halloween-chair.png'
 
 export type HomeSlot = 'background' | 'chair' | 'character' | 'table'
 
@@ -52,6 +58,8 @@ export type HomeItem = {
   seatCut?: number
   /** Table art: drop a solid white backdrop once, on load. */
   keyWhite?: boolean
+  /** Pumpkin art: drop a solid black backdrop once, on load. */
+  keyBlack?: boolean
 }
 
 export type SceneBox = {
@@ -109,6 +117,12 @@ export const homeCatalog: HomeItem[] = [
   { id: 'kovu-young', slot: 'character', src: kovuYoungUrl },
   { id: 'table-1', slot: 'table', src: table1, keyWhite: true },
   { id: 'chest-1', slot: 'table', src: chest1, keyWhite: true },
+  { id: 'halloween-day', slot: 'background', src: halloweenDay },
+  { id: 'halloween-night', slot: 'background', src: halloweenNight },
+  { id: 'halloween-chair', slot: 'chair', src: halloweenChair },
+  { id: 'halloween-table', slot: 'table', src: halloweenTable },
+  { id: 'halloween-pumpkin-off', slot: 'table', src: halloweenPumpkinOff, keyBlack: true },
+  { id: 'halloween-pumpkin-on', slot: 'table', src: halloweenPumpkinOn, keyBlack: true },
 ]
 
 /** Current room. Swap a piece by pointing its slot at another catalog id. */
@@ -259,7 +273,7 @@ export function artSize(image: Art): { w: number; h: number } {
   return { w: image.naturalWidth, h: image.naturalHeight }
 }
 
-function keyWhiteBackdrop(image: HTMLImageElement): HTMLCanvasElement {
+function keyBackdrop(image: HTMLImageElement, dark = false): HTMLCanvasElement {
   const w = image.naturalWidth
   const h = image.naturalHeight
   const canvas = document.createElement('canvas')
@@ -280,6 +294,7 @@ function keyWhiteBackdrop(image: HTMLImageElement): HTMLCanvasElement {
     const blue = px[index + 2]
     const max = Math.max(red, green, blue)
     const min = Math.min(red, green, blue)
+    if (dark) return max < 28 && max - min < 18
     return min > 170 && max - min < 18
   }
 
@@ -340,7 +355,7 @@ function keyWhiteBackdrop(image: HTMLImageElement): HTMLCanvasElement {
 function loadItem(item: HomeItem) {
   const image = new Image()
   image.onload = () => {
-    art.set(item.id, item.keyWhite ? keyWhiteBackdrop(image) : image)
+    art.set(item.id, item.keyWhite || item.keyBlack ? keyBackdrop(image, item.keyBlack) : image)
   }
   image.src = item.src
 }
