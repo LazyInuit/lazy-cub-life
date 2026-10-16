@@ -40,6 +40,18 @@ export function takeAdoptedSave() {
   return next
 }
 
+/** High scores only go up. Keeps a better board score if the other copy is newer. */
+export function keepGameBests(into: CubSave, from: CubSave): CubSave {
+  return {
+    ...into,
+    flightBest: Math.max(into.flightBest, from.flightBest),
+    matchBest: Math.max(into.matchBest, from.matchBest),
+    dojoBest: Math.max(into.dojoBest, from.dojoBest),
+    archerBest: Math.max(into.archerBest, from.archerBest),
+    hoopsBest: Math.max(into.hoopsBest, from.hoopsBest),
+  }
+}
+
 export function accountEmail(username: string) {
   return `${username}@${ACCOUNT_DOMAIN}`
 }
@@ -250,13 +262,25 @@ export async function reconcileCloudSave(local: CubSave, storedVisit = local.las
     const remote = withLockedCash(sanitizeSave(loaded.save), loaded.cubCash)
     if (remote.lastVisit > storedVisit) {
       noteSyncedVisit(remote.lastVisit)
-      return remote
+      // The newer visit wins the room, but a better score on this phone must stay.
+      return keepGameBests(remote, local)
     }
     noteSyncedVisit(remote.lastVisit)
-    pendingSave = local
+    const merged = keepGameBests(local, remote)
+    pendingSave = merged
     await enqueueCloudSave()
     if (loaded.cubCash != null) noteLockedCash(loaded.cubCash)
-    return null
+    // Local visit wins the upload. Still return the merge if the account had a higher best.
+    if (
+      merged.flightBest === local.flightBest &&
+      merged.matchBest === local.matchBest &&
+      merged.dojoBest === local.dojoBest &&
+      merged.archerBest === local.archerBest &&
+      merged.hoopsBest === local.hoopsBest
+    ) {
+      return null
+    }
+    return merged
   } finally {
     refreshing = false
     cloudReady = true
