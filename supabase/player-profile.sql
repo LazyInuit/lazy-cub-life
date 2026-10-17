@@ -1,7 +1,8 @@
 -- Safe to run again. Only adds player_profile. Do not run coins.sql or leaderboard.sql again.
 -- The leaderboard profile card and home visits read one player through this.
--- Returns level xp, the all-time overall score and place, and only the save
--- fields a visit draws: outfits, owned traits, and the Halloween pumpkin.
+-- Returns level xp, the all-time overall score and place, each game's best
+-- single score (for badges), and only the save fields a visit draws:
+-- outfits, owned traits, and the Halloween pumpkin.
 -- Cub Cash, needs, daily tasks and the rest of the save are never returned.
 
 create or replace function public.player_profile(p_username text)
@@ -67,6 +68,15 @@ begin
       end,
       'overall', coalesce((select r.score from ranked r where r.user_id = target.id), 0),
       'rank', (select r.place::integer from ranked r where r.user_id = target.id),
+      'bests', coalesce((
+        select jsonb_object_agg(g.game, g.best)
+        from (
+          select s.game, max(s.score) as best
+          from public.leaderboard_scores s
+          where s.user_id = target.id
+          group by s.game
+        ) g
+      ), '{}'::jsonb),
       'room', jsonb_build_object(
         'outfits', coalesce(target.save->'outfits', '{}'::jsonb),
         'unlockedTraits', coalesce(target.save->'unlockedTraits', '[]'::jsonb),

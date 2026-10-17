@@ -13,7 +13,7 @@ type Props = {
 export function PlayerProfileCard({ username, mine, onClose, onVisit }: Props) {
   const [profile, setProfile] = useState<PlayerProfile | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const look = profileLookFor(username)
+  const look = profileLookFor(profile?.bests ?? {})
   const picture = PROFILE_PICTURES[look.picture]
 
   useEffect(() => {
@@ -77,7 +77,9 @@ export function PlayerProfileCard({ username, mine, onClose, onVisit }: Props) {
           {error ? <p className="profile-error">{error}</p> : null}
           <div className="profile-badges">
             <span className="profile-section-label">Badges</span>
-            {look.badges.length > 0 ? (
+            {waiting ? (
+              <p className="profile-empty">Loading...</p>
+            ) : look.badges.length > 0 ? (
               <ul>
                 {look.badges.map((id) => (
                   <li key={id}>

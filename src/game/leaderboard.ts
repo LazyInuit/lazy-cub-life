@@ -100,6 +100,8 @@ export type PlayerProfile = {
   xp: number
   overall: number
   rank: number | null
+  /** Best single score ever in each game, for badges. */
+  bests: Partial<Record<DailyGame, number>>
   /** Only the parts of the save a visit draws: outfits, owned traits, and the pumpkin. */
   room: CubSave
 }
@@ -118,18 +120,34 @@ export async function loadPlayerProfile(username: string): Promise<PlayerProfile
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
     throw new Error('Player not found.')
   }
-  const entry = payload as { username?: unknown; xp?: unknown; overall?: unknown; rank?: unknown; room?: unknown }
+  const entry = payload as {
+    username?: unknown
+    xp?: unknown
+    overall?: unknown
+    rank?: unknown
+    bests?: unknown
+    room?: unknown
+  }
   if (typeof entry.username !== 'string' || entry.username === '') throw new Error('Player not found.')
   const xp = Math.max(0, readNumber(entry.xp))
   const rank = readCount(entry.rank)
   const room = entry.room && typeof entry.room === 'object' && !Array.isArray(entry.room)
     ? (entry.room as Record<string, unknown>)
     : {}
+  const rawBests = entry.bests && typeof entry.bests === 'object' && !Array.isArray(entry.bests)
+    ? (entry.bests as Record<string, unknown>)
+    : {}
+  const bests: Partial<Record<DailyGame, number>> = {}
+  for (const game of ['flight', 'match', 'dojo', 'archer', 'hoops'] as const) {
+    const best = readCount(rawBests[game])
+    if (best > 0) bests[game] = best
+  }
   return {
     username: entry.username,
     xp,
     overall: Math.max(0, readCount(entry.overall)),
     rank: rank > 0 ? rank : null,
+    bests,
     room: sanitizeSave({ ...room, version: 1, xp, halloween: room.halloween === true }),
   }
 }
