@@ -15,7 +15,8 @@ type Props = {
   pose: CubPose
   dim?: boolean
   onPet?: () => void
-  mode?: 'home' | 'wardrobe'
+  /** Visit draws another player's home: their room and outfit, no care looks, no pumpkin tap. */
+  mode?: 'home' | 'wardrobe' | 'visit'
   tryOn?: TryOn | null
   /** Paint the cub on the desk canvas, over the room picture. */
   overPicture?: boolean
@@ -128,7 +129,7 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
       const time = (now - started) / 1000
       const overPicture = overPictureRef.current
       const drawCharacter = (ctx: CanvasRenderingContext2D, yExtra = 0) => {
-        const layers = characterLayers(now, tryOnRef.current, { preview: wardrobe })
+        const layers = characterLayers(now, tryOnRef.current, { preview: wardrobe, visit: modeRef.current === 'visit' })
         const box = homeCharacterBox(layoutW, layoutH)
         if (!layers.length || !box) return
         const motion = poseMotion(poseRef.current, time)
@@ -163,7 +164,9 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
         const fittedTop = tableArt ? fitInBox(artSize(tableArt).w, artSize(tableArt).h, table).y : table.y
         const sitDrop = wardrobe && cub ? cub.y + cub.h - fittedTop - wardrobeLift : 0
         drawHomeTable(fxCtx, layoutW, layoutH, wardrobe ? 'chest-1' : 'table-1', sitDrop)
-        const pumpkin = wardrobe ? null : drawHalloweenPumpkin(fxCtx, layoutW, layoutH, time)
+        // A visitor cannot tap the pumpkin, so it never wobbles for attention there.
+        const pumpkinClock = modeRef.current === 'visit' ? 0 : time
+        const pumpkin = wardrobe ? null : drawHalloweenPumpkin(fxCtx, layoutW, layoutH, pumpkinClock)
         if (!wardrobe) drawCubEffects(fxCtx, poseRef.current, time, layoutW, layoutH)
         const dockBottom = rect.height - (table.y + table.h) + 36
         const roomEl = room.closest('.home-room') as HTMLElement | null
@@ -221,12 +224,12 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
       <canvas ref={viewRef} className="stage cub-3d" />
       <canvas ref={fxRef} className="stage cub-fx" />
       {dim && mode !== 'wardrobe' ? <div className="sleep-dim" /> : null}
-      {mode === 'home' ? (
+      {mode !== 'wardrobe' ? (
         <>
           <button type="button" className="window-hit" onClick={playWindowTap} aria-label="Tap the window" />
           <button type="button" className="plant-hit" onClick={playPlantRuffle} aria-label="Ruffle the plant" />
           <button type="button" className="table-hit" onClick={playTableKnock} aria-label="Knock the table" />
-          {HALLOWEEN_THEME ? (
+          {HALLOWEEN_THEME && mode === 'home' ? (
             <button
               type="button"
               className="pumpkin-hit"
@@ -247,7 +250,12 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
             />
           ) : null}
           {onPet ? (
-            <button type="button" className="pet-hit" onClick={onPet} aria-label="Pet your cub" />
+            <button
+              type="button"
+              className="pet-hit"
+              onClick={onPet}
+              aria-label={mode === 'visit' ? 'Pet this cub' : 'Pet your cub'}
+            />
           ) : null}
         </>
       ) : null}

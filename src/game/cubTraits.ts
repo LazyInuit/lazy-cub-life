@@ -158,12 +158,14 @@ export function showWashGear(ms = 1700) {
 export function characterLayers(
   now = performance.now(),
   tryOn?: TryOn | null,
-  opts?: { preview?: boolean },
+  opts?: { preview?: boolean; visit?: boolean },
 ): HTMLImageElement[] {
   const age = homeScene.character.includes('young') ? 'young' : 'old'
-  const preview = Boolean(opts?.preview)
+  const visit = Boolean(opts?.visit)
+  // A visited cub always wears exactly what its owner picked. Only the pet yell still shows.
+  const preview = Boolean(opts?.preview) || visit
   const meat = !preview && now < meatMouthUntil
-  const yelling = !preview && now < yellMouthUntil
+  const yelling = (!preview || visit) && now < yellMouthUntil
   const washing = !preview && now < washUntil
   const layers: HTMLImageElement[] = []
   for (const part of ORDER) {

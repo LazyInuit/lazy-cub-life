@@ -1,5 +1,7 @@
 import type { DailyGame } from './dailyTasks'
+import { sanitizeSave } from './progress'
 import { supabase } from './supabase'
+import type { CubSave } from './types'
 
 export const LEADERBOARD_PAGE = 20
 
@@ -91,6 +93,50 @@ export async function loadLeaderboard(
     resetsAt: typeof page.resetsAt === 'string' ? page.resetsAt : null,
     serverNow: typeof page.serverNow === 'string' ? page.serverNow : null,
   }
+}
+
+export type PlayerProfile = {
+  username: string
+  xp: number
+  overall: number
+  rank: number | null
+  /** Only the parts of the save a visit draws: outfits, owned traits, and the pumpkin. */
+  room: CubSave
+}
+
+export async function loadPlayerProfile(username: string): Promise<PlayerProfile> {
+  if (!supabase) throw new Error('Accounts are not connected.')
+  const { data, error } = await supabase.rpc('player_profile', { p_username: username })
+  if (error) {
+    const message = error.message.toLowerCase()
+    if (message.includes('could not find the function') || message.includes('schema cache')) {
+      throw new Error('Profiles need a database update.')
+    }
+    throw new Error('Could not load this player.')
+  }
+  const payload = typeof data === 'string' ? parseJson(data) : data
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    throw new Error('Player not found.')
+  }
+  const entry = payload as { username?: unknown; xp?: unknown; overall?: unknown; rank?: unknown; room?: unknown }
+  if (typeof entry.username !== 'string' || entry.username === '') throw new Error('Player not found.')
+  const xp = Math.max(0, readNumber(entry.xp))
+  const rank = readCount(entry.rank)
+  const room = entry.room && typeof entry.room === 'object' && !Array.isArray(entry.room)
+    ? (entry.room as Record<string, unknown>)
+    : {}
+  return {
+    username: entry.username,
+    xp,
+    overall: Math.max(0, readCount(entry.overall)),
+    rank: rank > 0 ? rank : null,
+    room: sanitizeSave({ ...room, version: 1, xp, halloween: room.halloween === true }),
+  }
+}
+
+function readNumber(value: unknown) {
+  const number = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN
+  return Number.isFinite(number) ? number : 0
 }
 
 export function nextEasternReset(now = new Date()) {

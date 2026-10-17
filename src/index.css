@@ -1274,6 +1274,317 @@ h1 {
   opacity: 0.7;
 }
 
+.game-screen.leaderboard-screen {
+  position: relative;
+}
+
+.leaderboard-name-btn {
+  display: flex;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.leaderboard-name-btn strong {
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 231, 168, 0.55);
+  text-underline-offset: 3px;
+}
+
+.profile-pop {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  padding: 20px 16px;
+  background: rgba(8, 6, 4, 0.66);
+}
+
+.profile-card {
+  position: relative;
+  width: min(100%, 320px);
+  max-height: 100%;
+  padding: 3px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #fff6d4 0%, #f0c56a 18%, #c48a2e 46%, #7a4a14 78%, #e8c56a 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 220, 0.95),
+    0 10px 24px rgba(12, 6, 2, 0.5);
+}
+
+.profile-card-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-height: calc(100dvh - 60px);
+  overflow: auto;
+  padding: 54px 16px 16px;
+  border-radius: 19px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 214, 120, 0.22), transparent 55%),
+    linear-gradient(180deg, #3b2618 0%, #1d120a 62%, #140c08 100%);
+  color: #fff6d8;
+  text-align: center;
+}
+
+.profile-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 2px solid #ffe7a8;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #3b2618, #140c08);
+  color: #ffe7b0;
+  font: inherit;
+  font-size: 1.3rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.profile-picture {
+  position: absolute;
+  top: -46px;
+  left: 50%;
+  width: 104px;
+  height: 104px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  padding: 4px;
+  background: linear-gradient(180deg, #fff6d4, #f0c56a 30%, #a8701e 70%, #e8c56a);
+  box-shadow: 0 6px 14px rgba(12, 6, 2, 0.55);
+}
+
+.profile-picture img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: contain;
+  background: #1d120a;
+}
+
+.profile-card {
+  margin-top: 46px;
+}
+
+.profile-name-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.profile-name-line h2 {
+  margin: 0;
+  overflow: hidden;
+  color: #fffaf2;
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 0 #1a0c06;
+  white-space: nowrap;
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 8px;
+  width: 100%;
+}
+
+.profile-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 10px 6px;
+  border: 2px solid rgba(255, 231, 168, 0.55);
+  border-radius: 14px;
+  background: rgba(255, 246, 216, 0.06);
+}
+
+.profile-stat-label,
+.profile-section-label {
+  color: #ffe7b0;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.profile-stat strong {
+  color: #fffaf2;
+  font-size: 1.45rem;
+  font-weight: 900;
+  line-height: 1.1;
+  text-shadow: 0 2px 0 #1a0c06;
+}
+
+.profile-rank {
+  color: #ffe08a;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.profile-error,
+.profile-empty {
+  margin: 0;
+  color: #fff6d8;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.profile-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 8px 12px;
+  border-radius: 14px;
+  background: rgba(255, 246, 216, 0.06);
+}
+
+.profile-badges ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.profile-badges li {
+  width: 58px;
+  height: 58px;
+}
+
+.profile-badges img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45));
+}
+
+.profile-visit {
+  width: 100%;
+  padding: 11px 12px;
+  border: 2px solid #7a4a14;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fff0b8, #f0c14a 45%, #b67a1e);
+  color: #3a2010;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 0 #5c3416;
+}
+
+.profile-visit:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #5c3416;
+}
+
+.profile-visit:disabled {
+  opacity: 0.6;
+}
+
+.visit-return {
+  pointer-events: auto;
+  position: absolute;
+  top: calc(10px + var(--safe-top));
+  left: 12px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+}
+
+.visit-return .wood-btn {
+  width: 46px;
+  height: 46px;
+}
+
+.visit-return .wood-btn svg {
+  stroke-width: 3;
+}
+
+.visit-return-label {
+  color: #fffaf2;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 2px rgba(20, 10, 4, 0.85);
+}
+
+.visit-name {
+  pointer-events: none;
+  position: absolute;
+  top: calc(10px + var(--safe-top));
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: calc(100% - 250px);
+  min-width: 96px;
+  padding: 5px 14px 6px;
+  transform: translateX(-50%);
+  border: 2px solid #ffe7a8;
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 236, 190, 0.2), transparent 46%),
+    linear-gradient(180deg, #3b2618 0%, #140c08 100%);
+  box-shadow: 0 3px 0 #120a06;
+  color: #fff6d8;
+  text-align: center;
+}
+
+.visit-name-kicker {
+  color: #ffe7b0;
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.visit-name strong {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-ui > .level-badge.visit-level {
+  top: calc(78px + var(--safe-top));
+}
+
 
 .game-picks-screen .game-picks {
   margin-top: auto;

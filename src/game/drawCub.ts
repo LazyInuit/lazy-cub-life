@@ -2,7 +2,7 @@ import bungalowUrl from '../../Lazy Bungalow.jpeg'
 import bungalowNightUrl from '../../bungalow night.jpeg'
 import cubUrl from '../assets/cub-generic.png'
 import crownUrl from '../../Galactic Dash Cub 1.png'
-import { HALLOWEEN_THEME, pumpkinLit, pumpkinPlacement } from './halloween'
+import { HALLOWEEN_THEME, pumpkinPlacement, roomPumpkinLit } from './halloween'
 import { artSize, coverPlacement, fitInBox, homeArt, homeCatalog, homeItem, slotBox, type SceneBox } from './homeScene'
 import type { CubAppearance, CubPose } from './types'
 
@@ -230,7 +230,7 @@ export function drawHomeBackground(
 ) {
   ctx.fillStyle = night ? '#1a2744' : '#c4843e'
   ctx.fillRect(0, 0, width, height)
-  const halloween = pumpkinLit()
+  const halloween = roomPumpkinLit()
   const item = halloween
     ? homeCatalog.find((entry) => entry.id === (night ? 'halloween-night' : 'halloween-day'))
     : homeItem('background', night)
@@ -307,7 +307,7 @@ export function drawHalloweenPumpkin(
   time = 0,
 ): SceneBox | null {
   if (!HALLOWEEN_THEME) return null
-  const lit = pumpkinLit()
+  const lit = roomPumpkinLit()
   const image = homeArt(lit ? 'halloween-pumpkin-on' : 'halloween-pumpkin-off')
   if (!image) return null
   const size = artSize(image)
@@ -341,7 +341,7 @@ export function drawHomeChair(
   const placed = { ...box, y: box.y + yOffset }
   if (part === 'back') {
     const fitted = fitInBox(artSize(image).w, artSize(image).h, placed)
-    if (pumpkinLit()) {
+    if (roomPumpkinLit()) {
       const decorated = homeArt('halloween-chair')
       if (decorated) {
         const drop = fitted.h * 0.03
@@ -405,7 +405,7 @@ export function drawHomeTable(
   if (!image) return
   const box = slotBox('table', width, height)
   const placed = { ...box, y: box.y + yOffset }
-  if (id === 'table-1' && pumpkinLit()) {
+  if (id === 'table-1' && roomPumpkinLit()) {
     const decorated = homeArt('halloween-table')
     if (decorated) {
       drawMappedArt(ctx, decorated, fitInBox(artSize(image).w, artSize(image).h, placed), plainTableWood, halloweenTableWood)

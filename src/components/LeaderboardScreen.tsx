@@ -9,10 +9,14 @@ import {
   type LeaderboardBoard,
   type LeaderboardPeriod,
   type LeaderboardRow,
+  type PlayerProfile,
 } from '../game/leaderboard'
+import { hasProfileCard } from '../game/profileArt'
 import { settleWeeklyPrize, type WeeklyWinner } from '../game/wallet'
 import type { WalletPatch } from '../game/wallet'
 import { GamesButton, HomeButton } from './HomeButton'
+import { PlayerProfileCard } from './PlayerProfileCard'
+import { VisitHome } from './VisitHome'
 
 type Props = {
   onHome: () => void
@@ -33,7 +37,11 @@ export function LeaderboardScreen({ onHome, onGames, onSettlePrize }: Props) {
   const [loadingMore, setLoadingMore] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [lastWinners, setLastWinners] = useState<WeeklyWinner[]>([])
+  const [profileOpen, setProfileOpen] = useState<{ username: string; mine: boolean } | null>(null)
+  const [visiting, setVisiting] = useState<PlayerProfile | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const scrollTop = useRef(0)
   const countdown = useCountdown(resetsAt, serverNow)
   const board = LEADERBOARD_BOARDS.find((item) => item.id === game)
   const more = !loading && !note && rows.length < total
@@ -110,6 +118,16 @@ export function LeaderboardScreen({ onHome, onGames, onSettlePrize }: Props) {
     setRows([])
     setNote(null)
     setLoading(true)
+  }
+
+  useEffect(() => {
+    if (visiting) return
+    const list = scrollRef.current
+    if (list) list.scrollTop = scrollTop.current
+  }, [visiting])
+
+  if (visiting) {
+    return <VisitHome profile={visiting} onReturn={() => setVisiting(null)} />
   }
 
   return (
@@ -195,7 +213,7 @@ export function LeaderboardScreen({ onHome, onGames, onSettlePrize }: Props) {
         </div>
       ) : null}
 
-      <div className="leaderboard-scroll">
+      <div className="leaderboard-scroll" ref={scrollRef}>
         <div className="leaderboard-heading">
           <h2>{game === 'overall' ? 'Overall Rankings' : board?.label}</h2>
           <p>
@@ -218,7 +236,18 @@ export function LeaderboardScreen({ onHome, onGames, onSettlePrize }: Props) {
                 <span className="leaderboard-rank">{row.rank}</span>
                 <span className="leaderboard-player">
                   <span className="leaderboard-name-line">
-                    <strong>{row.username}</strong>
+                    {hasProfileCard(row.username) ? (
+                      <button
+                        type="button"
+                        className="leaderboard-name-btn"
+                        aria-label={`View ${row.username}'s profile`}
+                        onClick={() => setProfileOpen({ username: row.username, mine: row.mine })}
+                      >
+                        <strong>{row.username}</strong>
+                      </button>
+                    ) : (
+                      <strong>{row.username}</strong>
+                    )}
                     {row.mine ? <span className="leaderboard-you">You</span> : null}
                   </span>
                 </span>
@@ -238,6 +267,18 @@ export function LeaderboardScreen({ onHome, onGames, onSettlePrize }: Props) {
           </button>
         ) : null}
       </div>
+      {profileOpen ? (
+        <PlayerProfileCard
+          username={profileOpen.username}
+          mine={profileOpen.mine}
+          onClose={() => setProfileOpen(null)}
+          onVisit={(profile) => {
+            scrollTop.current = scrollRef.current?.scrollTop ?? 0
+            setProfileOpen(null)
+            setVisiting(profile)
+          }}
+        />
+      ) : null}
     </section>
   )
 }

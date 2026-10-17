@@ -33,6 +33,19 @@ export function setPumpkinLit(on: boolean) {
   }
 }
 
+let visitLit: boolean | null = null
+
+/** While visiting another home, draw that player's pumpkin instead of this one. Null puts this one back. */
+export function setVisitHalloween(on: boolean | null) {
+  visitLit = on
+}
+
+/** The pumpkin state for the room on screen: the visited home's, or this player's own. */
+export function roomPumpkinLit() {
+  if (!HALLOWEEN_THEME) return false
+  return visitLit ?? lit
+}
+
 /** Light the pumpkin, or put it out if it is already lit. */
 export function togglePumpkin() {
   setPumpkinLit(!lit)
