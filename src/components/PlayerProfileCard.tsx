@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { loadPlayerProfile, type PlayerProfile } from '../game/leaderboard'
-import { BADGES, PROFILE_PICTURES, profileLookFor } from '../game/profileArt'
+import { BADGES, PROFILE_PICTURES, profileLookFor, type BadgeId } from '../game/profileArt'
 import { levelFromXp } from '../game/progress'
 
 type Props = {
@@ -13,6 +13,7 @@ type Props = {
 export function PlayerProfileCard({ username, mine, onClose, onVisit }: Props) {
   const [profile, setProfile] = useState<PlayerProfile | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [shownBadge, setShownBadge] = useState<BadgeId | null>(null)
   const look = profileLookFor(profile?.bests ?? {})
   const picture = PROFILE_PICTURES[look.picture]
 
@@ -34,11 +35,13 @@ export function PlayerProfileCard({ username, mine, onClose, onVisit }: Props) {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key !== 'Escape') return
+      if (shownBadge) setShownBadge(null)
+      else onClose()
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [onClose, shownBadge])
 
   const name = profile?.username ?? username
   const waiting = !profile && !error
@@ -83,7 +86,14 @@ export function PlayerProfileCard({ username, mine, onClose, onVisit }: Props) {
               <ul>
                 {look.badges.map((id) => (
                   <li key={id}>
-                    <img src={BADGES[id].src} alt={BADGES[id].label} title={BADGES[id].label} />
+                    <button
+                      type="button"
+                      className="profile-badge-btn"
+                      onClick={() => setShownBadge(id)}
+                      aria-label={`Show ${BADGES[id].label}`}
+                    >
+                      <img src={BADGES[id].src} alt="" />
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -104,6 +114,15 @@ export function PlayerProfileCard({ username, mine, onClose, onVisit }: Props) {
             </button>
           ) : null}
         </div>
+        {shownBadge ? (
+          <button type="button" className="badge-zoom" onClick={() => setShownBadge(null)} aria-label="Close badge">
+            <img src={BADGES[shownBadge].src} alt="" />
+            <strong>{BADGES[shownBadge].name}</strong>
+            <span className="badge-zoom-tier">{BADGES[shownBadge].tier}</span>
+            <span className="badge-zoom-game">{BADGES[shownBadge].game}</span>
+            <span className="badge-zoom-hint">Tap to close</span>
+          </button>
+        ) : null}
       </div>
     </div>
   )

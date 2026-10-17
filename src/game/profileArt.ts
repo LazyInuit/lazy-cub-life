@@ -14,17 +14,23 @@ export const PROFILE_PICTURES = {
   paw: { src: pawUrl, label: 'Paw' },
 } as const
 
+type Badge = { src: string; name: string; tier: string; game: string; label: string }
+
+function badge(src: string, name: string, tier: string, game: string): Badge {
+  return { src, name, tier, game, label: `${name} ${tier}` }
+}
+
 /** Every badge that can appear on a profile card. */
 export const BADGES = {
-  'space-bronze': { src: spaceBronzeUrl, label: "Kovu's Space Dash Bronze" },
-  'space-silver': { src: spaceSilverUrl, label: "Kovu's Space Dash Silver" },
-  'space-gold': { src: spaceGoldUrl, label: "Kovu's Space Dash Gold" },
-  'space-platinum': { src: spacePlatinumUrl, label: "Kovu's Space Dash Platinum" },
-  'pride-bronze': { src: prideBronzeUrl, label: 'Pride Pairs Bronze' },
-  'ninja-bronze': { src: ninjaBronzeUrl, label: 'Ninja Cub Dojo Bronze' },
-  'archer-bronze': { src: archerBronzeUrl, label: 'Cupid Archery Bronze' },
-  'baller-bronze': { src: ballerBronzeUrl, label: 'Lazy Hoops Bronze' },
-} as const
+  'space-bronze': badge(spaceBronzeUrl, 'Space Badge', 'Bronze', "Kovu's Space Dash"),
+  'space-silver': badge(spaceSilverUrl, 'Space Badge', 'Silver', "Kovu's Space Dash"),
+  'space-gold': badge(spaceGoldUrl, 'Space Badge', 'Gold', "Kovu's Space Dash"),
+  'space-platinum': badge(spacePlatinumUrl, 'Space Badge', 'Platinum', "Kovu's Space Dash"),
+  'pride-bronze': badge(prideBronzeUrl, 'Pride Badge', 'Bronze', 'Pride Pairs'),
+  'ninja-bronze': badge(ninjaBronzeUrl, 'Ninja Badge', 'Bronze', 'Ninja Cub Dojo'),
+  'archer-bronze': badge(archerBronzeUrl, 'Archer Badge', 'Bronze', 'Cupid Archery'),
+  'baller-bronze': badge(ballerBronzeUrl, 'Baller Badge', 'Bronze', 'Lazy Hoops'),
+} satisfies Record<string, Badge>
 
 export type ProfilePictureId = keyof typeof PROFILE_PICTURES
 export type BadgeId = keyof typeof BADGES
