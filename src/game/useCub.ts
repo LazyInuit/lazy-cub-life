@@ -27,6 +27,7 @@ import { readSave, writeSave } from './storage'
 import { reconcileCloudSave, scheduleCloudSave, flushCloudSave, flushCloudSaveNow, cloudBaseVisit, signInAccount, signOutAccount, signUpAccount, takeAdoptedSave, lockedCubCash, noteLockedCash, noteEarnedCash, ethFromUser, usernameFromUser, loadDisplayedUsername, loadUsernameChangedAt, updateAccountSettings, normalizeEthAddress } from './account'
 import { pumpkinLit, setPumpkinLit } from './halloween'
 import { stopHalloweenBgm } from './halloweenBgm'
+import { earnedBadges, hasProfileCard, type BadgeId } from './profileArt'
 import { supabase } from './supabase'
 import { addDailyScore, applyWallet, buyDrinkOnServer, claimDailyTask, grantGameCoins, payoutGap, payoutParts, purchaseTraitOnServer, rollDailyBonus as rollServerBonus, settleWeeklyPrize, touchDailyBoard, walletActive, type GameCoinSource, type WalletPatch } from './wallet'
 import { isTraitUnlocked, sanitizeOwnedOutfits, traitKey, traitPrice, traitXpBonus } from './traitShop'
@@ -59,6 +60,9 @@ export function useCub() {
   const [accountName, setAccountName] = useState<string | null>(null)
   const [accountEth, setAccountEth] = useState<string | null>(null)
   const [usernameChangedAt, setUsernameChangedAt] = useState<string | null>(null)
+  const [earnedBadge, setEarnedBadge] = useState<BadgeId | null>(null)
+  const accountNameRef = useRef<string | null>(null)
+  accountNameRef.current = accountName
   const busyRef = useRef(false)
   const asleepRef = useRef(false)
   const poseTimer = useRef<number | null>(null)
@@ -378,13 +382,24 @@ export function useCub() {
     holdPose('react', 700)
   }, [commit, holdPose, noteLevel])
 
+  /** Pop up the badge a new best just reached, if it is a tier the old best had not. */
+  const announceBadge = useCallback((game: DailyGame, before: number, after: number) => {
+    if (!hasProfileCard(accountNameRef.current)) return
+    const had = earnedBadges({ [game]: before })
+    const fresh = earnedBadges({ [game]: after }).find((id) => !had.includes(id))
+    if (fresh) setEarnedBadge(fresh)
+  }, [])
+
+  const dismissEarnedBadge = useCallback(() => setEarnedBadge(null), [])
+
   const recordFlightBest = useCallback((score: number) => {
     const current = saveRef.current
     if (!current) return
     const nextBest = Math.max(0, Math.floor(score))
     if (nextBest <= current.flightBest) return
     commit({ ...current, flightBest: nextBest })
-  }, [commit])
+    announceBadge('flight', current.flightBest, nextBest)
+  }, [announceBadge, commit])
 
   const recordMatchBest = useCallback((score: number) => {
     const current = saveRef.current
@@ -392,7 +407,8 @@ export function useCub() {
     const nextBest = Math.max(0, Math.floor(score))
     if (nextBest <= current.matchBest) return
     commit({ ...current, matchBest: nextBest })
-  }, [commit])
+    announceBadge('match', current.matchBest, nextBest)
+  }, [announceBadge, commit])
 
   const recordDojoBest = useCallback((score: number) => {
     const current = saveRef.current
@@ -400,7 +416,8 @@ export function useCub() {
     const nextBest = Math.max(0, Math.floor(score))
     if (nextBest <= current.dojoBest) return
     commit({ ...current, dojoBest: nextBest })
-  }, [commit])
+    announceBadge('dojo', current.dojoBest, nextBest)
+  }, [announceBadge, commit])
 
   const recordArcherBest = useCallback((score: number) => {
     const current = saveRef.current
@@ -408,7 +425,8 @@ export function useCub() {
     const nextBest = Math.max(0, Math.floor(score))
     if (nextBest <= current.archerBest) return
     commit({ ...current, archerBest: nextBest })
-  }, [commit])
+    announceBadge('archer', current.archerBest, nextBest)
+  }, [announceBadge, commit])
 
   const recordHoopsBest = useCallback((score: number) => {
     const current = saveRef.current
@@ -416,7 +434,8 @@ export function useCub() {
     const nextBest = Math.max(0, Math.floor(score))
     if (nextBest <= current.hoopsBest) return
     commit({ ...current, hoopsBest: nextBest })
-  }, [commit])
+    announceBadge('hoops', current.hoopsBest, nextBest)
+  }, [announceBadge, commit])
 
   const setOutfits = useCallback((outfits: CubOutfits) => {
     const current = saveRef.current
@@ -789,6 +808,8 @@ export function useCub() {
     purchaseTrait,
     buyDrink,
     rememberHalloween,
+    earnedBadge,
+    dismissEarnedBadge,
     setLevelUiVisible,
     accountName,
     accountEth,

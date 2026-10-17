@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { loadPlayerProfile, type PlayerProfile } from '../game/leaderboard'
 import { BADGES, PROFILE_PICTURES, profileLookFor, type BadgeId } from '../game/profileArt'
 import { levelFromXp } from '../game/progress'
+import { BadgeShowcase } from './BadgeShowcase'
 
 type Props = {
   username: string
@@ -114,15 +115,7 @@ export function PlayerProfileCard({ username, mine, onClose, onVisit }: Props) {
             </button>
           ) : null}
         </div>
-        {shownBadge ? (
-          <button type="button" className="badge-zoom" onClick={() => setShownBadge(null)} aria-label="Close badge">
-            <img src={BADGES[shownBadge].src} alt="" />
-            <strong>{BADGES[shownBadge].name}</strong>
-            <span className="badge-zoom-tier">{BADGES[shownBadge].tier}</span>
-            <span className="badge-zoom-game">{BADGES[shownBadge].game}</span>
-            <span className="badge-zoom-hint">Tap to close</span>
-          </button>
-        ) : null}
+        {shownBadge ? <BadgeShowcase id={shownBadge} onClose={() => setShownBadge(null)} /> : null}
       </div>
     </div>
   )

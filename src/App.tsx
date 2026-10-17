@@ -6,6 +6,7 @@ import landingPlayUrl from './assets/home/landing-play.png'
 import { setActivityArea } from './game/activity'
 import { AccountGate } from './components/AccountGate'
 import { AdminScreen } from './components/AdminScreen'
+import { BadgeEarnedPop } from './components/BadgeShowcase'
 import { CareScreen } from './components/CareScreen'
 import { CupidArcher } from './components/CupidArcher'
 import { LazyHoops } from './components/LazyHoops'
@@ -337,6 +338,7 @@ function Game() {
           onShop={goShop}
         />
       ) : null}
+      {cub.earnedBadge ? <BadgeEarnedPop id={cub.earnedBadge} onClose={cub.dismissEarnedBadge} /> : null}
     </main>
   )
 }

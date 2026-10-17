@@ -73,11 +73,15 @@ export function earnedBadges(bests: GameBests): BadgeId[] {
   return earned
 }
 
-/** Only these leaderboard names open a profile card for now. */
+/**
+ * Profiles and badges are only switched on for these accounts for now. This one check
+ * decides both whose leaderboard name opens a card and who sees a badge pop up after a run.
+ * Remove it to switch both on for everyone.
+ */
 const PROFILE_PREVIEW_NAMES = ['lazycublife']
 
-export function hasProfileCard(username: string) {
-  return PROFILE_PREVIEW_NAMES.includes(username.trim().toLowerCase())
+export function hasProfileCard(username: string | null | undefined) {
+  return PROFILE_PREVIEW_NAMES.includes((username ?? '').trim().toLowerCase())
 }
 
 export function profileLookFor(bests: GameBests): ProfileLook {
