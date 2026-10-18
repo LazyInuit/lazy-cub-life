@@ -13,6 +13,7 @@ import {
   TIME_GOLD,
   TIME_RED,
   TIME_WHITE,
+  UNPAID_OPENING_SHOTS,
 } from './config'
 import { headAim } from './layout'
 import type { ArcherRound, ArcherTarget } from './types'
@@ -257,6 +258,7 @@ export function createRound(w: number, h: number): ArcherRound {
     hits: 0,
     shots: 0,
     bullseyes: 0,
+    paidBullseyes: 0,
     target: { x: w * 0.7, y: h * 0.38, r: 48, vx: 0, vy: 0 },
     arrow: null,
     aiming: false,
@@ -468,7 +470,11 @@ export function stepRound(round: ArcherRound, dt: number): Shot {
         if (bonus > 0) round.timeLeft += bonus
         if (hitBase === RING_RED) {
           round.bullseyes += 1
-          round.coins.push({ x: tipX, y: tipY, life: 0.9, maxLife: 0.9 })
+          // round.shots already counts this arrow, so shot 1 is the first one fired.
+          if (round.shots > UNPAID_OPENING_SHOTS) {
+            round.paidBullseyes += 1
+            round.coins.push({ x: tipX, y: tipY, life: 0.9, maxLife: 0.9 })
+          }
           // Same as Dojo golden fruit — restore one life, capped at max.
           if (round.lives < LIVES) {
             round.lives += 1

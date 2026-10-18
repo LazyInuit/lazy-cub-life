@@ -55,6 +55,8 @@ export type ArcherRound = {
   hits: number
   shots: number
   bullseyes: number
+  /** Bullseyes that pay 1 Cub Cash. Hits in the opening shots, while targets stand still, do not. */
+  paidBullseyes: number
   target: ArcherTarget
   arrow: ArcherArrow | null
   aiming: boolean
@@ -62,7 +64,7 @@ export type ArcherRound = {
   pullY: number
   pops: PopText[]
   bursts: BullBurst[]
-  /** One floating coin per bullseye. Each is worth 1 Cub Cash. */
+  /** One floating coin per paid bullseye. Each is worth 1 Cub Cash. */
   coins: CoinPop[]
   flash: number
   /** Stronger red-gold screen flash for perfect center hits. */

@@ -174,7 +174,7 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onC
       { flat: true },
     )
     const accuracy = round.shots > 0 ? Math.round((round.hits / round.shots) * 100) : 0
-    const coins = round.bullseyes
+    const coins = round.paidBullseyes
     if (coins > 0) onCoinsRef.current(coins)
     setSummary({
       score,

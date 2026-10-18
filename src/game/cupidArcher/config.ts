@@ -14,6 +14,9 @@ export const MOVE_AXIS_SCORE = 250
 /** At/above this: free 2D roam. Between AXIS and FREE: left-right or up-down only. */
 export const MOVE_FREE_SCORE = 650
 
+/** Bullseyes on this many opening shots, while targets stand still, pay no Cub Cash. */
+export const UNPAID_OPENING_SHOTS = 5
+
 export const RING_RED = 100
 export const RING_GOLD = 40
 export const RING_BLUE = 20
