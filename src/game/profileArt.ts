@@ -120,6 +120,26 @@ const BADGE_RULES: { game: DailyGame; tiers: BadgeTier[] }[] = [
   },
 ]
 
+export type AchievementGame = {
+  game: DailyGame
+  title: string
+  best: number
+  tiers: { badge: BadgeId; at: number; earned: boolean }[]
+}
+
+/** Every game and every tier, marking which ones the best score has reached. */
+export function achievementLadder(bests: GameBests): AchievementGame[] {
+  return BADGE_RULES.map((rule) => {
+    const best = bests[rule.game] ?? 0
+    return {
+      game: rule.game,
+      title: BADGES[rule.tiers[0].badge].game,
+      best,
+      tiers: rule.tiers.map((tier) => ({ ...tier, earned: best >= tier.at })),
+    }
+  })
+}
+
 export function earnedBadges(bests: GameBests): BadgeId[] {
   const earned: BadgeId[] = []
   for (const rule of BADGE_RULES) {
