@@ -13,6 +13,7 @@ import {
   type LedgerEntry,
 } from '../game/admin'
 import { ACTIVITY_AREAS, formatActivityMinutes } from '../game/activity'
+import { removeProfilePhoto } from '../game/profilePhoto'
 import { levelFromXp } from '../game/progress'
 import { supabase } from '../game/supabase'
 
@@ -157,6 +158,21 @@ export function AdminScreen() {
       setMessage('Energy filled. They should close the game and open it again.')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Could not fill energy')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const takeDownPhoto = async () => {
+    if (!selected) return
+    setBusy(true)
+    setError(null)
+    setMessage(null)
+    try {
+      const removed = await removeProfilePhoto(selected.id)
+      setMessage(removed ? `${selected.username}'s profile photo was removed.` : `${selected.username} has no profile photo.`)
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Could not remove the photo')
     } finally {
       setBusy(false)
     }
@@ -321,6 +337,10 @@ where email = '${signedInAs ?? 'yourname'}@users.lazycub.life';`}
 
               <button type="button" disabled={busy} onClick={() => void restoreEnergy()}>
                 Fill energy
+              </button>
+
+              <button type="button" disabled={busy} onClick={() => void takeDownPhoto()}>
+                Remove profile photo
               </button>
 
               <label>

@@ -83,7 +83,7 @@ export function AccountPanel({ cub, onClose }: Props) {
   }
 
   if (profileOpen && cub.accountName) {
-    return <PlayerProfileCard username={cub.accountName} mine onClose={() => setProfileOpen(false)} />
+    return <PlayerProfileCard username={cub.accountName} mine editable onClose={() => setProfileOpen(false)} />
   }
 
   return (

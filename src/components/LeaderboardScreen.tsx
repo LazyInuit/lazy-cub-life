@@ -269,6 +269,7 @@ export function LeaderboardScreen({ onHome, onGames, onSettlePrize }: Props) {
       </div>
       {profileOpen ? (
         <PlayerProfileCard
+          key={profileOpen.username}
           username={profileOpen.username}
           mine={profileOpen.mine}
           onClose={() => setProfileOpen(null)}

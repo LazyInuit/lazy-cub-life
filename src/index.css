@@ -1381,6 +1381,154 @@ h1 {
   margin-top: 46px;
 }
 
+.profile-picture img.profile-photo {
+  object-fit: cover;
+}
+
+.profile-photo-edit {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 2px solid #ffe7a8;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #fff0b8, #f0c14a 45%, #b67a1e);
+  color: #3a2010;
+  box-shadow: 0 3px 0 #5c3416;
+}
+
+.profile-photo-edit svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.profile-photo-edit:disabled {
+  opacity: 0.6;
+}
+
+.profile-photo-input {
+  display: none;
+}
+
+.profile-photo-links {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: -6px;
+}
+
+.profile-photo-links button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #ffe14a;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-decoration: underline;
+}
+
+.profile-photo-links button:disabled {
+  opacity: 0.6;
+}
+
+.photo-cropper {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px 18px;
+  background: #140c08;
+  color: #fff6d8;
+  text-align: center;
+}
+
+.photo-cropper h2 {
+  margin: 0;
+  color: #fffaf2;
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+
+.photo-cropper-tip {
+  margin: -4px 0 4px;
+  color: #ffe7b0;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.photo-cropper-frame {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #1d120a;
+  box-shadow:
+    0 0 0 5px #f0c56a,
+    0 0 0 8px #a8701e,
+    0 8px 20px rgba(0, 0, 0, 0.55);
+  touch-action: none;
+  cursor: grab;
+}
+
+.photo-cropper-frame img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+.photo-cropper-wait {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.photo-cropper-zoom {
+  width: min(100%, 240px);
+  accent-color: #f0c14a;
+}
+
+.photo-cropper-actions {
+  display: flex;
+  gap: 10px;
+  width: min(100%, 280px);
+}
+
+.photo-cropper-actions .profile-visit {
+  flex: 1.4;
+}
+
+.photo-cropper-cancel {
+  flex: 1;
+  padding: 11px 12px;
+  border: 2px solid #ffe7a8;
+  border-radius: 14px;
+  background: transparent;
+  color: #ffe7b0;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
 .profile-name-line {
   display: flex;
   align-items: center;

@@ -1,4 +1,5 @@
 import type { DailyGame } from './dailyTasks'
+import { profilePhotoUrl } from './profilePhoto'
 import { sanitizeSave } from './progress'
 import { supabase } from './supabase'
 import type { CubSave } from './types'
@@ -102,6 +103,8 @@ export type PlayerProfile = {
   rank: number | null
   /** Best single score ever in each game, for badges. */
   bests: Partial<Record<DailyGame, number>>
+  /** The player's uploaded photo, or null to show the default picture. */
+  photoUrl: string | null
   /** Only the parts of the save a visit draws: outfits, owned traits, and the pumpkin. */
   room: CubSave
 }
@@ -126,6 +129,7 @@ export async function loadPlayerProfile(username: string): Promise<PlayerProfile
     overall?: unknown
     rank?: unknown
     bests?: unknown
+    avatar?: unknown
     room?: unknown
   }
   if (typeof entry.username !== 'string' || entry.username === '') throw new Error('Player not found.')
@@ -142,12 +146,19 @@ export async function loadPlayerProfile(username: string): Promise<PlayerProfile
     const best = readCount(rawBests[game])
     if (best > 0) bests[game] = best
   }
+  const avatar = entry.avatar && typeof entry.avatar === 'object' && !Array.isArray(entry.avatar)
+    ? (entry.avatar as { path?: unknown; version?: unknown })
+    : null
+  const photoUrl = avatar && typeof avatar.path === 'string' && avatar.path !== ''
+    ? profilePhotoUrl(avatar.path, readCount(avatar.version))
+    : null
   return {
     username: entry.username,
     xp,
     overall: Math.max(0, readCount(entry.overall)),
     rank: rank > 0 ? rank : null,
     bests,
+    photoUrl,
     room: sanitizeSave({ ...room, version: 1, xp, halloween: room.halloween === true }),
   }
 }

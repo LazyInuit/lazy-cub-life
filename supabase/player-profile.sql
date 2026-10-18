@@ -1,9 +1,46 @@
--- Safe to run again. Only adds player_profile. Do not run coins.sql or leaderboard.sql again.
+-- Safe to run again. Do not run coins.sql or leaderboard.sql again.
 -- The leaderboard profile card and home visits read one player through this.
 -- Returns level xp, the all-time overall score and place, each game's best
--- single score (for badges), and only the save fields a visit draws:
--- outfits, owned traits, and the Halloween pumpkin.
+-- single score (for badges), the profile photo, and only the save fields a
+-- visit draws: outfits, owned traits, and the Halloween pumpkin.
 -- Cub Cash, needs, daily tasks and the rest of the save are never returned.
+
+-- Profile photos: one small JPEG per player at avatars/<user id>/avatar.jpg.
+-- Anyone can view them. Only that player can add, replace, or delete theirs.
+-- Admins can delete any photo.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', true, 307200, array['image/jpeg'])
+on conflict (id) do update
+set public = excluded.public,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "avatars own read" on storage.objects;
+create policy "avatars own read" on storage.objects
+for select to authenticated
+using (
+  bucket_id = 'avatars'
+  and (name = auth.uid()::text || '/avatar.jpg' or public.admin_is_admin())
+);
+
+drop policy if exists "avatars own insert" on storage.objects;
+create policy "avatars own insert" on storage.objects
+for insert to authenticated
+with check (bucket_id = 'avatars' and name = auth.uid()::text || '/avatar.jpg');
+
+drop policy if exists "avatars own update" on storage.objects;
+create policy "avatars own update" on storage.objects
+for update to authenticated
+using (bucket_id = 'avatars' and name = auth.uid()::text || '/avatar.jpg')
+with check (bucket_id = 'avatars' and name = auth.uid()::text || '/avatar.jpg');
+
+drop policy if exists "avatars own or admin delete" on storage.objects;
+create policy "avatars own or admin delete" on storage.objects
+for delete to authenticated
+using (
+  bucket_id = 'avatars'
+  and (name = auth.uid()::text || '/avatar.jpg' or public.admin_is_admin())
+);
 
 create or replace function public.player_profile(p_username text)
 returns jsonb
@@ -77,6 +114,16 @@ begin
           group by s.game
         ) g
       ), '{}'::jsonb),
+      'avatar', (
+        select jsonb_build_object(
+          'path', o.name,
+          'version', floor(extract(epoch from coalesce(o.updated_at, o.created_at)))::bigint
+        )
+        from storage.objects o
+        where o.bucket_id = 'avatars'
+          and o.name = target.id::text || '/avatar.jpg'
+        limit 1
+      ),
       'room', jsonb_build_object(
         'outfits', coalesce(target.save->'outfits', '{}'::jsonb),
         'unlockedTraits', coalesce(target.save->'unlockedTraits', '[]'::jsonb),
