@@ -73,6 +73,43 @@ export async function playerHistory(playerId: string): Promise<LedgerEntry[]> {
   return Array.isArray(data) ? (data as LedgerEntry[]) : []
 }
 
+export type CoinTotals = {
+  shopCoins: number
+  shopCount: number
+  wardrobeCoins: number
+  wardrobeCount: number
+  /** Coins handed out by source: flight, match, dojo, archer, hoops, weekly-overall. */
+  grants: Record<string, number>
+  dailyCoins: number
+  /** When labelled spending records begin. Shop and wardrobe totals start here. */
+  labelsSince: string | null
+}
+
+/** Coins spent and earned across every player. Days limits it to recent days. */
+export async function coinTotals(days: number | null): Promise<CoinTotals> {
+  if (!supabase) throw new Error('Accounts are not connected.')
+  const { data, error } = await supabase.rpc('admin_coin_totals', { p_days: days })
+  if (error) {
+    if (missingFunction(error)) throw new Error('Coin totals need a database update.')
+    throw new Error(error.message)
+  }
+  const row = (data && typeof data === 'object' && !Array.isArray(data) ? data : {}) as Record<string, unknown>
+  const count = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? value : Number(value) || 0)
+  const grants: Record<string, number> = {}
+  if (row.grants && typeof row.grants === 'object' && !Array.isArray(row.grants)) {
+    for (const [source, total] of Object.entries(row.grants as Record<string, unknown>)) grants[source] = count(total)
+  }
+  return {
+    shopCoins: count(row.shopCoins),
+    shopCount: count(row.shopCount),
+    wardrobeCoins: count(row.wardrobeCoins),
+    wardrobeCount: count(row.wardrobeCount),
+    grants,
+    dailyCoins: count(row.dailyCoins),
+    labelsSince: typeof row.labelsSince === 'string' ? row.labelsSince : null,
+  }
+}
+
 export async function adjustCoins(playerId: string, amount: number, note: string) {
   if (!supabase) throw new Error('Accounts are not connected.')
   const { data, error } = await supabase.rpc('admin_adjust_coins', {

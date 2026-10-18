@@ -15,6 +15,7 @@ import {
 import { ACTIVITY_AREAS, formatActivityMinutes } from '../game/activity'
 import { removeProfilePhoto } from '../game/profilePhoto'
 import { AdminCoinHistory } from './AdminCoinHistory'
+import { AdminCoinTotals } from './AdminCoinTotals'
 import { levelFromXp } from '../game/progress'
 import { supabase } from '../game/supabase'
 
@@ -275,6 +276,8 @@ where email = '${signedInAs ?? 'yourname'}@users.lazycub.life';`}
           </button>
         </section>
       ) : null}
+
+      {gate === 'admin' ? <AdminCoinTotals /> : null}
 
       {gate === 'admin' ? (
         <div className="admin-layout">
