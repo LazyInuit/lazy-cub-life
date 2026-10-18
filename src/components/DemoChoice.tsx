@@ -16,6 +16,9 @@ export function DemoChoice({ notice = null, onCreate, onSignIn, onDemo }: Props)
       <div className="demo-choice-card">
         <h1>Welcome to Lazy Cub Life</h1>
         {notice ? <p className="account-error">{notice}</p> : null}
+        <button type="button" className="demo-choice-login" onClick={onSignIn}>
+          Existing user login
+        </button>
         <button type="button" className="demo-choice-create" onClick={onCreate}>
           Create an account
           <span>Save your cub, earn Cub Cash, and climb the leaderboards</span>
@@ -23,9 +26,6 @@ export function DemoChoice({ notice = null, onCreate, onSignIn, onDemo }: Props)
         <button type="button" className="demo-choice-demo" onClick={onDemo}>
           Play demo version
           <span>Try everything with {DEMO_CASH.toLocaleString('en-US')} demo coins. Nothing is saved.</span>
-        </button>
-        <button type="button" className="account-switch demo-choice-signin" onClick={onSignIn}>
-          I already have an account
         </button>
       </div>
     </main>
