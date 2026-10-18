@@ -9,6 +9,8 @@ import type { CubController } from '../game/useCub'
 import { isDemo } from '../game/demo'
 import { DemoLockBanner } from './DemoLockBanner'
 import { EnergyBar } from './EnergyBar'
+import { NftGallery } from './NftGallery'
+import { SHOP_NFTS } from '../game/nfts'
 import { GamesButton, HomeButton } from './HomeButton'
 
 type Props = {
@@ -21,7 +23,9 @@ export function ShopScreen({ cub, onBack, onGames }: Props) {
   const save = cub.save
   const [note, setNote] = useState<string | null>(null)
   const [buying, setBuying] = useState<DrinkId | null>(null)
+  const [nftsOpen, setNftsOpen] = useState(false)
   if (!save) return null
+  if (nftsOpen) return <NftGallery onBack={() => setNftsOpen(false)} />
   const full = barIsFull(save.energy)
   const demo = isDemo()
 
@@ -74,6 +78,20 @@ export function ShopScreen({ cub, onBack, onGames }: Props) {
           onBuy={() => buy('juice')}
         />
       </div>
+      {SHOP_NFTS.length > 0 ? (
+        <button type="button" className="shop-nft-open" onClick={() => setNftsOpen(true)}>
+          <span className="shop-nft-stack" aria-hidden="true">
+            {SHOP_NFTS.slice(0, 3).map((nft) => (
+              <img key={nft.number} src={nft.src} alt="" />
+            ))}
+          </span>
+          <span className="shop-nft-copy">
+            <strong>Lazy Cubs NFT's</strong>
+            <em>Play &amp; Earn Real NFT's!</em>
+          </span>
+          <span className="nft-soon">Coming soon</span>
+        </button>
+      ) : null}
       <p className="shop-note">{note ?? 'Tip: Put your cub to sleep to recover energy'}</p>
     </section>
   )
