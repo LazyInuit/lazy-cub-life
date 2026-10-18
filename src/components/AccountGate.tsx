@@ -13,10 +13,13 @@ import { supabase } from '../game/supabase'
 type Props = {
   onEnter: () => void
   notice?: string | null
+  startMode?: 'in' | 'up'
+  /** Back to the screen with Create an account and Play demo. */
+  onBack?: () => void
 }
 
-export function AccountGate({ onEnter, notice = null }: Props) {
-  const [mode, setMode] = useState<'in' | 'up'>('up')
+export function AccountGate({ onEnter, notice = null, startMode = 'up', onBack }: Props) {
+  const [mode, setMode] = useState<'in' | 'up'>(startMode)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -204,6 +207,11 @@ export function AccountGate({ onEnter, notice = null }: Props) {
               >
                 {mode === 'up' ? 'I already have an account' : 'Create a new account'}
               </button>
+              {onBack ? (
+                <button type="button" className="account-switch" onClick={onBack}>
+                  Back
+                </button>
+              ) : null}
             </>
           )}
         </form>

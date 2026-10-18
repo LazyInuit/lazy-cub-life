@@ -13,10 +13,13 @@ import { LazyHoops } from './components/LazyHoops'
 import { LazyDojo } from './components/LazyDojo'
 import { SafariFlight } from './components/SafariFlight'
 import { TraitMatch } from './components/TraitMatch'
-import { accountIsBanned, signOutAccount } from './game/account'
+import { accountIsBanned, clearLockedCash, signOutAccount } from './game/account'
 import { playClick } from './game/clickAudio'
 import { startLandingBgm, stopLandingBgm } from './game/landingAudio'
-import { wakeStoredCub } from './game/storage'
+import { endDemo, isDemo, onSignUpRequest, requestSignUp, startDemo } from './game/demo'
+import { openDemoCub, wakeStoredCub } from './game/storage'
+import { DemoChoice } from './components/DemoChoice'
+import { DemoScorePop } from './components/DemoScorePop'
 import { useCub } from './game/useCub'
 import { supabase } from './game/supabase'
 
@@ -70,12 +73,25 @@ function LandingScreen({ onPlay }: { onPlay: () => void }) {
 
 const IN_APP_KEY = 'lazy-cub-in-app'
 
+type Phase = 'splash' | 'choice' | 'gate' | 'play' | 'demo'
+
 function PlayGate() {
   const returning = useRef(sessionStorage.getItem(IN_APP_KEY) === '1')
-  const [phase, setPhase] = useState<'splash' | 'gate' | 'play'>('splash')
+  const [phase, setPhase] = useState<Phase>('splash')
+  const [gateMode, setGateMode] = useState<'in' | 'up'>('up')
   const [notice, setNotice] = useState<string | null>(null)
-  const next = useRef<'gate' | 'play' | null>(null)
+  const next = useRef<Phase | null>(null)
   const pressed = useRef(false)
+
+  useEffect(
+    () =>
+      onSignUpRequest(() => {
+        endDemo()
+        setGateMode('up')
+        setPhase('gate')
+      }),
+    [],
+  )
 
   const openNext = () => {
     if (pressed.current && next.current) setPhase(next.current)
@@ -93,7 +109,7 @@ function PlayGate() {
   useEffect(() => {
     const client = supabase
     if (!client) {
-      next.current = 'gate'
+      next.current = 'choice'
       openNext()
       return
     }
@@ -104,19 +120,21 @@ function PlayGate() {
       if (returning.current) pressed.current = true
       if (!userId) {
         if (!ignore) {
-          next.current = 'gate'
-          if (returning.current) setPhase('gate')
+          // A refresh during the demo stays in the demo.
+          next.current = isDemo() ? 'demo' : 'choice'
+          if (returning.current) setPhase(next.current)
           else openNext()
         }
         return
       }
+      endDemo()
       if (await accountIsBanned(userId)) {
         await signOutAccount()
         if (!ignore) {
           setNotice('This account is banned.')
           sessionStorage.removeItem(IN_APP_KEY)
-          next.current = 'gate'
-          if (returning.current) setPhase('gate')
+          next.current = 'choice'
+          if (returning.current) setPhase('choice')
           else openNext()
         }
         return
@@ -141,9 +159,9 @@ function PlayGate() {
           } catch {
             // The session is gone. Leave the game below.
           }
-          if (ignore) return
+          if (ignore || isDemo()) return
           sessionStorage.removeItem(IN_APP_KEY)
-          setPhase('gate')
+          setPhase('choice')
         })
       }, 0)
     })
@@ -165,7 +183,7 @@ function PlayGate() {
         await signOutAccount()
         if (!stop) {
           setNotice('This account is banned.')
-          setPhase('gate')
+          setPhase('choice')
         }
       }
     }
@@ -189,18 +207,44 @@ function PlayGate() {
     )
   }
   if (phase === 'splash') return <LandingScreen onPlay={play} />
+  if (phase === 'choice') {
+    return (
+      <DemoChoice
+        notice={notice}
+        onCreate={() => {
+          setGateMode('up')
+          setPhase('gate')
+        }}
+        onSignIn={() => {
+          setGateMode('in')
+          setPhase('gate')
+        }}
+        onDemo={() => {
+          setNotice(null)
+          clearLockedCash()
+          startDemo()
+          openDemoCub()
+          setPhase('demo')
+        }}
+      />
+    )
+  }
   if (phase === 'gate') {
     return (
       <AccountGate
+        key={gateMode}
         notice={notice}
+        startMode={gateMode}
+        onBack={() => setPhase('choice')}
         onEnter={() => {
+          endDemo()
           setNotice(null)
           setPhase('play')
         }}
       />
     )
   }
-  return <Game />
+  return <Game key={phase} />
 }
 
 function Game() {
@@ -241,8 +285,11 @@ function Game() {
     setScreen('home')
   }
 
+  // Runs in the demo never cost energy, so play buttons always stay on.
+  const playEnergy = isDemo() ? 100 : cub.save.energy
+
   return (
-    <main className="phone">
+    <main className={isDemo() ? 'phone demo-mode' : 'phone'}>
       {screen === 'home' ? (
         <CareScreen
           cub={cub}
@@ -281,7 +328,7 @@ function Game() {
           onCoins={(amount) => cub.addCubCash(amount, 'flight')}
           onExit={goHome}
           onGames={goGames}
-          energy={cub.save.energy}
+          energy={playEnergy}
           onShop={goShop}
         />
       ) : null}
@@ -295,7 +342,7 @@ function Game() {
           onCoins={(amount) => cub.addCubCash(amount, 'match')}
           onExit={goHome}
           onGames={goGames}
-          energy={cub.save.energy}
+          energy={playEnergy}
           onShop={goShop}
         />
       ) : null}
@@ -309,7 +356,7 @@ function Game() {
           onCoins={(amount) => cub.addCubCash(amount, 'dojo')}
           onExit={goHome}
           onGames={goGames}
-          energy={cub.save.energy}
+          energy={playEnergy}
           onShop={goShop}
         />
       ) : null}
@@ -323,7 +370,7 @@ function Game() {
           onCoins={(amount) => cub.addCubCash(amount, 'archer')}
           onExit={goHome}
           onGames={goGames}
-          energy={cub.save.energy}
+          energy={playEnergy}
           onShop={goShop}
         />
       ) : null}
@@ -337,7 +384,7 @@ function Game() {
           onCoins={(amount) => cub.addCubCash(amount, 'hoops')}
           onExit={goHome}
           onGames={goGames}
-          energy={cub.save.energy}
+          energy={playEnergy}
           onShop={goShop}
         />
       ) : null}
@@ -351,6 +398,17 @@ function Game() {
             setOpenShop(false)
             setOpenAchievements(true)
             setScreen('home')
+          }}
+        />
+      ) : null}
+      {cub.demoScore ? (
+        <DemoScorePop
+          game={cub.demoScore.game}
+          score={cub.demoScore.score}
+          onClose={cub.dismissDemoScore}
+          onSignUp={() => {
+            cub.dismissDemoScore()
+            requestSignUp()
           }}
         />
       ) : null}

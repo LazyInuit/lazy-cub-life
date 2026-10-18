@@ -96,6 +96,38 @@ export async function loadLeaderboard(
   }
 }
 
+/** Last week's overall top three, readable without signing in. */
+export async function loadLastWeeklyWinners(): Promise<{ place: number; username: string }[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.rpc('last_weekly_winners')
+  if (error) return []
+  const list = typeof data === 'string' ? parseJson(data) : data
+  if (!Array.isArray(list)) return []
+  const winners: { place: number; username: string }[] = []
+  for (const item of list) {
+    if (!item || typeof item !== 'object') continue
+    const row = item as { place?: unknown; username?: unknown }
+    const place = readCount(row.place)
+    const username = typeof row.username === 'string' ? row.username.trim() : ''
+    if (place >= 1 && place <= 3 && username) winners.push({ place, username })
+  }
+  return winners
+}
+
+/** Where a score would sit on one game's boards, this week and all time. */
+export async function loadScorePlace(game: DailyGame, score: number): Promise<{ week: number; all: number } | null> {
+  if (!supabase || score <= 0) return null
+  const { data, error } = await supabase.rpc('leaderboard_place', { p_game: game, p_score: Math.floor(score) })
+  if (error) return null
+  const payload = typeof data === 'string' ? parseJson(data) : data
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null
+  const entry = payload as { week?: unknown; all?: unknown }
+  const week = readCount(entry.week)
+  const all = readCount(entry.all)
+  if (week <= 0 || all <= 0) return null
+  return { week, all }
+}
+
 export type PlayerProfile = {
   username: string
   xp: number

@@ -4,6 +4,7 @@ import {
   LEADERBOARD_BOARDS,
   WEEKLY_OVERALL_PRIZES,
   formatCountdown,
+  loadLastWeeklyWinners,
   loadLeaderboard,
   nextEasternReset,
   type LeaderboardBoard,
@@ -12,6 +13,7 @@ import {
   type PlayerProfile,
 } from '../game/leaderboard'
 import { hasProfileCard } from '../game/profileArt'
+import { isDemo } from '../game/demo'
 import { settleWeeklyPrize, type WeeklyWinner } from '../game/wallet'
 import type { WalletPatch } from '../game/wallet'
 import { GamesButton, HomeButton } from './HomeButton'
@@ -48,6 +50,15 @@ export function LeaderboardScreen({ onHome, onGames, onSettlePrize }: Props) {
 
   useEffect(() => {
     let cancel = false
+    if (isDemo()) {
+      // Demo players cannot settle prizes, so only read last week's winners.
+      void loadLastWeeklyWinners().then((winners) => {
+        if (!cancel) setLastWinners(winners)
+      })
+      return () => {
+        cancel = true
+      }
+    }
     void settleWeeklyPrize().then((prize) => {
       if (cancel) return
       setLastWinners(prize?.winners ?? [])

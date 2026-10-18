@@ -53,9 +53,7 @@ declare
   needle text := lower(btrim(coalesce(p_username, '')));
   target public.profiles%rowtype;
 begin
-  if auth.uid() is null then
-    raise exception 'Sign in required';
-  end if;
+  -- Demo players are not signed in, and can still open profile cards and visit.
   if needle = '' then
     return null;
   end if;
@@ -136,4 +134,4 @@ end;
 $$;
 
 revoke all on function public.player_profile(text) from public, anon, authenticated;
-grant execute on function public.player_profile(text) to authenticated;
+grant execute on function public.player_profile(text) to anon, authenticated;

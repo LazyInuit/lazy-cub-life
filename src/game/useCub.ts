@@ -28,6 +28,7 @@ import { reconcileCloudSave, scheduleCloudSave, flushCloudSave, flushCloudSaveNo
 import { pumpkinLit, setPumpkinLit } from './halloween'
 import { stopHalloweenBgm } from './halloweenBgm'
 import { earnedBadges, hasProfileCard, type BadgeId } from './profileArt'
+import { isDemo } from './demo'
 import { supabase } from './supabase'
 import { addDailyScore, applyWallet, buyDrinkOnServer, claimDailyTask, grantGameCoins, payoutGap, payoutParts, purchaseTraitOnServer, rollDailyBonus as rollServerBonus, settleWeeklyPrize, touchDailyBoard, walletActive, type GameCoinSource, type WalletPatch } from './wallet'
 import { isTraitUnlocked, sanitizeOwnedOutfits, traitKey, traitPrice, traitXpBonus } from './traitShop'
@@ -61,6 +62,7 @@ export function useCub() {
   const [accountEth, setAccountEth] = useState<string | null>(null)
   const [usernameChangedAt, setUsernameChangedAt] = useState<string | null>(null)
   const [earnedBadge, setEarnedBadge] = useState<BadgeId | null>(null)
+  const [demoScore, setDemoScore] = useState<{ game: DailyGame; score: number } | null>(null)
   const accountNameRef = useRef<string | null>(null)
   accountNameRef.current = accountName
   const pendingBadges = useRef<Partial<Record<DailyGame, BadgeId>>>({})
@@ -76,7 +78,8 @@ export function useCub() {
   const cashQueue = useRef(Promise.resolve())
 
   const commit = useCallback((next: CubSave) => {
-    const locked = lockedCubCash()
+    // The demo spends its own coins on this phone. A server balance never applies to it.
+    const locked = isDemo() ? null : lockedCubCash()
     const safe = locked == null ? next : { ...next, cubCash: locked }
     const wasLit = pumpkinLit()
     if (safe.halloween) setPumpkinLit(true)
@@ -92,6 +95,7 @@ export function useCub() {
   }, [])
 
   const collectWeeklyPrize = useCallback((patch?: WalletPatch | null) => {
+    if (isDemo()) return
     const apply = (next: WalletPatch | null | undefined) => {
       const latest = saveRef.current
       if (!next?.granted || !latest) return
@@ -395,6 +399,7 @@ export function useCub() {
   }, [])
 
   const dismissEarnedBadge = useCallback(() => setEarnedBadge(null), [])
+  const dismissDemoScore = useCallback(() => setDemoScore(null), [])
 
   const recordFlightBest = useCallback((score: number) => {
     const current = saveRef.current
@@ -456,7 +461,10 @@ export function useCub() {
 
   const startDaily = useCallback(() => {
     const current = saveRef.current
-    if (!current || current.energy < PLAY_ENERGY_COST) return false
+    if (!current) return false
+    // Demo players cannot buy drinks, so a run never costs energy.
+    if (isDemo()) return true
+    if (current.energy < PLAY_ENERGY_COST) return false
     const next: CubSave = { ...current, energy: current.energy - PLAY_ENERGY_COST }
     const daily = dailyView(next.daily)
     if (daily.startedAt == null) {
@@ -486,6 +494,11 @@ export function useCub() {
     const current = saveRef.current
     if (!current) return
     const gained = Math.max(0, Math.floor(score))
+    if (isDemo()) {
+      // Nothing is saved in the demo. Show where this run would have placed instead.
+      if (gained > 0) setDemoScore({ game, score: gained })
+      return
+    }
     if (gained > 0) void submitLeaderboardScore(game, gained)
     if (gained === 0) return
     const daily = dailyView(current.daily)
@@ -507,7 +520,7 @@ export function useCub() {
 
   const claimDaily = useCallback(async (taskId: string) => {
     const current = saveRef.current
-    if (!current) return false
+    if (!current || isDemo()) return false
     if (await walletActive()) {
       const result = await claimDailyTask(taskId)
       if (result.mode === 'local') {
@@ -535,7 +548,7 @@ export function useCub() {
 
   const claimDailyBonus = useCallback((prize: { trait: BonusTrait | null; coins: number }) => {
     const current = saveRef.current
-    if (!current) return false
+    if (!current || isDemo()) return false
     const daily = dailyView(current.daily)
     if (!bonusReady(daily)) return false
     if (lockedCubCash() != null) return false
@@ -556,7 +569,7 @@ export function useCub() {
 
   const rollDailyBonus = useCallback(async () => {
     const current = saveRef.current
-    if (!current) return null
+    if (!current || isDemo()) return null
     const spun = await rollServerBonus()
     const latest = saveRef.current
     if (spun.mode === 'local' || !latest) return null
@@ -568,7 +581,7 @@ export function useCub() {
 
   const addCubCash = useCallback((amount: number, source: GameCoinSource) => {
     const gain = Math.floor(amount)
-    if (gain <= 0) return
+    if (gain <= 0 || isDemo()) return
     cashQueue.current = cashQueue.current.then(async () => {
       if (await walletActive()) {
         const parts = payoutParts(source, gain)
@@ -741,7 +754,7 @@ export function useCub() {
   const buyDrink = useCallback(async (drink: DrinkId) => {
     const spec = DRINKS[drink]
     const opened = saveRef.current
-    if (!opened) return { ok: false as const, reason: 'missing' as const }
+    if (!opened || isDemo()) return { ok: false as const, reason: 'missing' as const }
     if (barIsFull(opened.energy)) return { ok: false as const, reason: 'full' as const }
     if (await walletActive()) {
       // The shop checks the saved energy. Upload the bar on the phone first,
@@ -820,6 +833,8 @@ export function useCub() {
     rememberHalloween,
     earnedBadge,
     dismissEarnedBadge,
+    demoScore,
+    dismissDemoScore,
     setLevelUiVisible,
     accountName,
     accountEth,

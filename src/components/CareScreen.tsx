@@ -47,6 +47,8 @@ import { AccountPanel } from './AccountPanel'
 import { AchievementsPanel } from './AchievementsPanel'
 import { PROFILE_PICTURES } from '../game/profileArt'
 import { useOwnProfile } from '../game/useOwnProfile'
+import { isDemo, requestSignUp } from '../game/demo'
+import { DemoLockBanner } from './DemoLockBanner'
 import { LeaderboardScreen } from './LeaderboardScreen'
 import { WardrobeScreen } from './WardrobeScreen'
 import { ShopScreen } from './ShopScreen'
@@ -173,8 +175,10 @@ export function CareScreen({
 
   if (!save) return null
 
+  const demo = isDemo()
+
   const tryGame = (start: () => void) => {
-    if (save.energy < PLAY_ENERGY_COST) {
+    if (!demo && save.energy < PLAY_ENERGY_COST) {
       setEnergyWarn(true)
       return
     }
@@ -393,13 +397,14 @@ export function CareScreen({
         })()
       }
     return (
-      <section className="game-screen game-picks-screen daily-screen">
+      <section className={demo ? 'game-screen game-picks-screen daily-screen demo-locked' : 'game-screen game-picks-screen daily-screen'}>
         <header className="top">
           <HomeButton className="game-home" onClick={() => setDailyOpen(false)} />
           <h1>Daily Tasks</h1>
           <DailyResetClock startedAt={daily.startedAt} now={now} />
         </header>
         <div className="daily-list">
+          {demo ? <DemoLockBanner text="Create an account to complete daily challenges and win their prizes." /> : null}
           <article className="daily-task daily-bonus">
             <h2>Daily Bonus Prize</h2>
             <p>Complete any 3 challenges</p>
@@ -433,8 +438,8 @@ export function CareScreen({
                 <button
                   type="button"
                   className="daily-dice"
-                  aria-label={canSpin ? 'Spin the bonus dice' : 'Complete any 3 challenges to spin'}
-                  disabled={!canSpin}
+                  aria-label={canSpin && !demo ? 'Spin the bonus dice' : 'Complete any 3 challenges to spin'}
+                  disabled={!canSpin || demo}
                   onClick={spinBonus}
                 >
                   <span className="wood-btn">
@@ -491,6 +496,7 @@ export function CareScreen({
                     <button
                       type="button"
                       className="daily-claim"
+                      disabled={demo}
                       onClick={() => {
                         void (async () => {
                           if (!(await cub.claimDaily(task.id))) return
@@ -502,7 +508,7 @@ export function CareScreen({
                       Claim
                     </button>
                   ) : (
-                    <button type="button" className="daily-play" onClick={play}>
+                    <button type="button" className="daily-play" onClick={play} disabled={demo}>
                       Play
                     </button>
                   )}
@@ -606,22 +612,31 @@ export function CareScreen({
           </button>
         </div>
         <div className="top-stats">
-          <button
-            type="button"
-            className={own.enabled ? 'account-open account-open-profile' : 'account-open'}
-            onClick={() => setAccountOpen(true)}
-            aria-label={
-              own.unseen > 0
-                ? `${cub.accountName ?? 'Account'}, profile and ${own.unseen} new badge${own.unseen === 1 ? '' : 's'}`
-                : undefined
-            }
-          >
-            {own.enabled ? (
-              <img className="account-open-photo" src={own.photoUrl ?? PROFILE_PICTURES.paw.src} alt="" />
-            ) : null}
-            <span className="account-open-name">{cub.accountName ?? 'Account'}</span>
-            {own.unseen > 0 ? <span className="account-open-dot" aria-hidden="true" /> : null}
-          </button>
+          {demo ? (
+            <div className="demo-account">
+              <button type="button" className="account-open demo-signup" onClick={requestSignUp}>
+                Create account
+              </button>
+              <span className="demo-ribbon">Demo</span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className={own.enabled ? 'account-open account-open-profile' : 'account-open'}
+              onClick={() => setAccountOpen(true)}
+              aria-label={
+                own.unseen > 0
+                  ? `${cub.accountName ?? 'Account'}, profile and ${own.unseen} new badge${own.unseen === 1 ? '' : 's'}`
+                  : undefined
+              }
+            >
+              {own.enabled ? (
+                <img className="account-open-photo" src={own.photoUrl ?? PROFILE_PICTURES.paw.src} alt="" />
+              ) : null}
+              <span className="account-open-name">{cub.accountName ?? 'Account'}</span>
+              {own.unseen > 0 ? <span className="account-open-dot" aria-hidden="true" /> : null}
+            </button>
+          )}
           <div className="cub-cash" aria-label={`${formatCubCash(save.cubCash)} Cub Cash`}>
             <span className="cub-cash-inner">
               <img src={coinUrl} alt="" />

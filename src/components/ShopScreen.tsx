@@ -6,6 +6,8 @@ import { DRINKS, type DrinkId } from '../game/drinks'
 import { formatCubCash } from '../game/formatCubCash'
 import { barIsFull } from '../game/progress'
 import type { CubController } from '../game/useCub'
+import { isDemo } from '../game/demo'
+import { DemoLockBanner } from './DemoLockBanner'
 import { EnergyBar } from './EnergyBar'
 import { GamesButton, HomeButton } from './HomeButton'
 
@@ -21,6 +23,7 @@ export function ShopScreen({ cub, onBack, onGames }: Props) {
   const [buying, setBuying] = useState<DrinkId | null>(null)
   if (!save) return null
   const full = barIsFull(save.energy)
+  const demo = isDemo()
 
   const buy = (drink: DrinkId) => {
     if (buying) return
@@ -39,7 +42,7 @@ export function ShopScreen({ cub, onBack, onGames }: Props) {
   }
 
   return (
-    <section className="game-screen shop-screen">
+    <section className={demo ? 'game-screen shop-screen demo-locked' : 'game-screen shop-screen'}>
       <header className="top shop-top">
         <div className="shop-nav">
           <HomeButton className="game-home" onClick={onBack} />
@@ -54,18 +57,19 @@ export function ShopScreen({ cub, onBack, onGames }: Props) {
         </div>
       </header>
       <EnergyBar energy={save.energy} />
+      {demo ? <DemoLockBanner text="Create an account to use the shop." /> : null}
       <div className="shop-drinks">
         <DrinkCard
           image={milkUrl}
           drink="milk"
-          disabled={full || buying !== null || save.cubCash < DRINKS.milk.price}
+          disabled={demo || full || buying !== null || save.cubCash < DRINKS.milk.price}
           busy={buying === 'milk'}
           onBuy={() => buy('milk')}
         />
         <DrinkCard
           image={juiceUrl}
           drink="juice"
-          disabled={full || buying !== null || save.cubCash < DRINKS.juice.price}
+          disabled={demo || full || buying !== null || save.cubCash < DRINKS.juice.price}
           busy={buying === 'juice'}
           onBuy={() => buy('juice')}
         />
