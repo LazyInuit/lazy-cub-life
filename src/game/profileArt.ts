@@ -1,5 +1,8 @@
 import pawUrl from '../assets/player-profile/pictures/paw.png'
 import archerBronzeUrl from '../assets/player-profile/badges/archer-bronze.png'
+import archerGoldUrl from '../assets/player-profile/badges/archer-gold.png'
+import archerPlatinumUrl from '../assets/player-profile/badges/archer-platinum.png'
+import archerSilverUrl from '../assets/player-profile/badges/archer-silver.png'
 import ballerBronzeUrl from '../assets/player-profile/badges/baller-bronze.png'
 import ninjaBronzeUrl from '../assets/player-profile/badges/ninja-bronze.png'
 import prideBronzeUrl from '../assets/player-profile/badges/pride-bronze.png'
@@ -35,6 +38,9 @@ export const BADGES = {
   'pride-platinum': badge(pridePlatinumUrl, 'Pride Badge', 'Platinum', 'Pride Pairs'),
   'ninja-bronze': badge(ninjaBronzeUrl, 'Ninja Badge', 'Bronze', 'Ninja Cub Dojo'),
   'archer-bronze': badge(archerBronzeUrl, 'Archer Badge', 'Bronze', 'Cupid Archery'),
+  'archer-silver': badge(archerSilverUrl, 'Archer Badge', 'Silver', 'Cupid Archery'),
+  'archer-gold': badge(archerGoldUrl, 'Archer Badge', 'Gold', 'Cupid Archery'),
+  'archer-platinum': badge(archerPlatinumUrl, 'Archer Badge', 'Platinum', 'Cupid Archery'),
   'baller-bronze': badge(ballerBronzeUrl, 'Baller Badge', 'Bronze', 'Lazy Hoops'),
 } satisfies Record<string, Badge>
 
@@ -71,6 +77,15 @@ const BADGE_RULES: { game: DailyGame; tiers: BadgeTier[] }[] = [
       { badge: 'pride-silver', at: 150 },
       { badge: 'pride-gold', at: 180 },
       { badge: 'pride-platinum', at: 200 },
+    ],
+  },
+  {
+    game: 'archer',
+    tiers: [
+      { badge: 'archer-bronze', at: 2500 },
+      { badge: 'archer-silver', at: 5000 },
+      { badge: 'archer-gold', at: 15000 },
+      { badge: 'archer-platinum', at: 30000 },
     ],
   },
 ]
