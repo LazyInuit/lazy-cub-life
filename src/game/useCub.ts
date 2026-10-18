@@ -76,10 +76,12 @@ export function useCub() {
   const sleepEnergyClock = useRef(0)
   const cloudSettled = useRef(false)
   const cashQueue = useRef(Promise.resolve())
+  /** Whether this cub is the demo cub, fixed when it opens so its saves never switch slots. */
+  const demoCub = useRef(isDemo()).current
 
   const commit = useCallback((next: CubSave) => {
     // The demo spends its own coins on this phone. A server balance never applies to it.
-    const locked = isDemo() ? null : lockedCubCash()
+    const locked = demoCub ? null : lockedCubCash()
     const safe = locked == null ? next : { ...next, cubCash: locked }
     const wasLit = pumpkinLit()
     if (safe.halloween) setPumpkinLit(true)
@@ -90,12 +92,12 @@ export function useCub() {
     saveRef.current = safe
     setNeedLooks(safe.energy, safe.hunger, safe.cleanliness)
     setSave(safe)
-    writeSave(safe)
-    scheduleCloudSave(safe)
+    writeSave(safe, demoCub)
+    if (!demoCub) scheduleCloudSave(safe)
   }, [])
 
   const collectWeeklyPrize = useCallback((patch?: WalletPatch | null) => {
-    if (isDemo()) return
+    if (demoCub) return
     const apply = (next: WalletPatch | null | undefined) => {
       const latest = saveRef.current
       if (!next?.granted || !latest) return
@@ -233,7 +235,7 @@ export function useCub() {
   }, [])
 
   useEffect(() => {
-    const stored = readSave()
+    const stored = readSave(Date.now(), demoCub)
     const storedVisit = stored.lastVisit
     const awake = { ...stored, asleep: false }
     if (new URLSearchParams(window.location.search).has('lvl1')) awake.xp = 0
@@ -463,7 +465,7 @@ export function useCub() {
     const current = saveRef.current
     if (!current) return false
     // Demo players cannot buy drinks, so a run never costs energy.
-    if (isDemo()) return true
+    if (demoCub) return true
     if (current.energy < PLAY_ENERGY_COST) return false
     const next: CubSave = { ...current, energy: current.energy - PLAY_ENERGY_COST }
     const daily = dailyView(next.daily)
@@ -494,7 +496,7 @@ export function useCub() {
     const current = saveRef.current
     if (!current) return
     const gained = Math.max(0, Math.floor(score))
-    if (isDemo()) {
+    if (demoCub) {
       // Nothing is saved in the demo. Show where this run would have placed instead.
       if (gained > 0) setDemoScore({ game, score: gained })
       return
@@ -520,7 +522,7 @@ export function useCub() {
 
   const claimDaily = useCallback(async (taskId: string) => {
     const current = saveRef.current
-    if (!current || isDemo()) return false
+    if (!current || demoCub) return false
     if (await walletActive()) {
       const result = await claimDailyTask(taskId)
       if (result.mode === 'local') {
@@ -548,7 +550,7 @@ export function useCub() {
 
   const claimDailyBonus = useCallback((prize: { trait: BonusTrait | null; coins: number }) => {
     const current = saveRef.current
-    if (!current || isDemo()) return false
+    if (!current || demoCub) return false
     const daily = dailyView(current.daily)
     if (!bonusReady(daily)) return false
     if (lockedCubCash() != null) return false
@@ -569,7 +571,7 @@ export function useCub() {
 
   const rollDailyBonus = useCallback(async () => {
     const current = saveRef.current
-    if (!current || isDemo()) return null
+    if (!current || demoCub) return null
     const spun = await rollServerBonus()
     const latest = saveRef.current
     if (spun.mode === 'local' || !latest) return null
@@ -581,7 +583,7 @@ export function useCub() {
 
   const addCubCash = useCallback((amount: number, source: GameCoinSource) => {
     const gain = Math.floor(amount)
-    if (gain <= 0 || isDemo()) return
+    if (gain <= 0 || demoCub) return
     cashQueue.current = cashQueue.current.then(async () => {
       if (await walletActive()) {
         const parts = payoutParts(source, gain)
@@ -754,7 +756,7 @@ export function useCub() {
   const buyDrink = useCallback(async (drink: DrinkId) => {
     const spec = DRINKS[drink]
     const opened = saveRef.current
-    if (!opened || isDemo()) return { ok: false as const, reason: 'missing' as const }
+    if (!opened || demoCub) return { ok: false as const, reason: 'missing' as const }
     if (barIsFull(opened.energy)) return { ok: false as const, reason: 'full' as const }
     if (await walletActive()) {
       // The shop checks the saved energy. Upload the bar on the phone first,

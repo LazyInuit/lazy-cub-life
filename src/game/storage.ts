@@ -6,14 +6,13 @@ const SAVE_KEY = 'lazy-lion-cub-save-v1'
 /** The demo cub is kept apart so it never mixes with a real account's cub. */
 const DEMO_SAVE_KEY = 'lazy-lion-cub-demo-v1'
 
-function saveKey() {
-  return isDemo() ? DEMO_SAVE_KEY : SAVE_KEY
+function saveKey(demo = isDemo()) {
+  return demo ? DEMO_SAVE_KEY : SAVE_KEY
 }
 
-export function readSave(now = Date.now()): CubSave {
-  const demo = isDemo()
+export function readSave(now = Date.now(), demo = isDemo()): CubSave {
   try {
-    const raw = localStorage.getItem(saveKey())
+    const raw = localStorage.getItem(saveKey(demo))
     if (!raw) return demo ? { ...defaultSave(now), cubCash: DEMO_CASH } : defaultSave(now)
     const parsed = JSON.parse(raw) as { cubCash?: unknown }
     const save = sanitizeSave(parsed, now)
@@ -27,8 +26,9 @@ export function readSave(now = Date.now()): CubSave {
   }
 }
 
-export function writeSave(save: CubSave): void {
-  localStorage.setItem(saveKey(), JSON.stringify(save))
+/** Pass demo when the caller knows which cub it holds, so a late save never lands in the wrong slot. */
+export function writeSave(save: CubSave, demo = isDemo()): void {
+  localStorage.setItem(saveKey(demo), JSON.stringify(save))
 }
 
 /** Apply away-time energy, then leave the stored cub awake. */

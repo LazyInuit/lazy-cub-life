@@ -79,6 +79,8 @@ function PlayGate() {
   const returning = useRef(sessionStorage.getItem(IN_APP_KEY) === '1')
   const [phase, setPhase] = useState<Phase>('splash')
   const [gateMode, setGateMode] = useState<'in' | 'up'>('up')
+  /** Where Back on the account screen goes: the choice screen, or the demo cub it was opened from. */
+  const [gateFrom, setGateFrom] = useState<'choice' | 'demo'>('choice')
   const [notice, setNotice] = useState<string | null>(null)
   const next = useRef<Phase | null>(null)
   const pressed = useRef(false)
@@ -88,6 +90,7 @@ function PlayGate() {
       onSignUpRequest(() => {
         endDemo()
         setGateMode('up')
+        setGateFrom('demo')
         setPhase('gate')
       }),
     [],
@@ -213,10 +216,12 @@ function PlayGate() {
         notice={notice}
         onCreate={() => {
           setGateMode('up')
+          setGateFrom('choice')
           setPhase('gate')
         }}
         onSignIn={() => {
           setGateMode('in')
+          setGateFrom('choice')
           setPhase('gate')
         }}
         onDemo={() => {
@@ -235,7 +240,15 @@ function PlayGate() {
         key={gateMode}
         notice={notice}
         startMode={gateMode}
-        onBack={() => setPhase('choice')}
+        onBack={() => {
+          if (gateFrom === 'demo') {
+            // Back to the same demo cub, keeping its coins and wardrobe as they were.
+            startDemo()
+            setPhase('demo')
+            return
+          }
+          setPhase('choice')
+        }}
         onEnter={() => {
           endDemo()
           setNotice(null)
