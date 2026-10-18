@@ -140,6 +140,60 @@ export function achievementLadder(bests: GameBests): AchievementGame[] {
   })
 }
 
+/** Higher of two sets of bests, game by game. */
+export function mergeBests(a: GameBests, b: GameBests): GameBests {
+  const merged: GameBests = { ...a }
+  for (const [game, best] of Object.entries(b) as [keyof GameBests, number][]) {
+    merged[game] = Math.max(merged[game] ?? 0, best)
+  }
+  return merged
+}
+
+/** Every tier reached in every game, Bronze through Platinum. */
+export function allEarnedTiers(bests: GameBests): BadgeId[] {
+  return achievementLadder(bests).flatMap((game) => game.tiers.filter((tier) => tier.earned).map((tier) => tier.badge))
+}
+
+const SEEN_EVENT = 'lazy-cub-badges-seen'
+
+function seenKey(username: string) {
+  return `lazy-cub-seen-badges:${username.trim().toLowerCase()}`
+}
+
+export function seenBadges(username: string): Set<string> {
+  try {
+    const raw = localStorage.getItem(seenKey(username))
+    const list = raw ? (JSON.parse(raw) as unknown) : []
+    return new Set(Array.isArray(list) ? list.filter((id): id is string => typeof id === 'string') : [])
+  } catch {
+    return new Set()
+  }
+}
+
+/** Remember these badges as looked at, so the new-badge dot clears. */
+export function markBadgesSeen(username: string, ids: BadgeId[]) {
+  const seen = seenBadges(username)
+  let changed = false
+  for (const id of ids) {
+    if (!seen.has(id)) {
+      seen.add(id)
+      changed = true
+    }
+  }
+  if (!changed) return
+  try {
+    localStorage.setItem(seenKey(username), JSON.stringify([...seen]))
+  } catch {
+    // The dot comes back next visit, which is harmless.
+  }
+  window.dispatchEvent(new Event(SEEN_EVENT))
+}
+
+export function onBadgesSeen(listener: () => void) {
+  window.addEventListener(SEEN_EVENT, listener)
+  return () => window.removeEventListener(SEEN_EVENT, listener)
+}
+
 export function earnedBadges(bests: GameBests): BadgeId[] {
   const earned: BadgeId[] = []
   for (const rule of BADGE_RULES) {

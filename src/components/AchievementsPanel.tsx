@@ -1,24 +1,35 @@
 import { useEffect, useState } from 'react'
 import { loadPlayerProfile } from '../game/leaderboard'
-import { BADGES, achievementLadder, type BadgeId, type GameBests } from '../game/profileArt'
+import {
+  BADGES,
+  achievementLadder,
+  allEarnedTiers,
+  markBadgesSeen,
+  mergeBests,
+  type BadgeId,
+  type GameBests,
+} from '../game/profileArt'
 import { BadgeShowcase } from './BadgeShowcase'
 
 type Props = {
   username: string
+  /** Bests saved on this phone, which can be ahead of the leaderboard right after a run. */
+  localBests?: GameBests
   onClose: () => void
 }
 
 /** Every badge from Bronze to Platinum for each game, with the score still needed for the rest. */
-export function AchievementsPanel({ username, onClose }: Props) {
-  const [bests, setBests] = useState<GameBests | null>(null)
+export function AchievementsPanel({ username, localBests, onClose }: Props) {
+  const [boardBests, setBoardBests] = useState<GameBests | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [shownBadge, setShownBadge] = useState<BadgeId | null>(null)
+  const bests = boardBests ? mergeBests(boardBests, localBests ?? {}) : null
 
   useEffect(() => {
     let cancel = false
     void loadPlayerProfile(username)
       .then((profile) => {
-        if (!cancel) setBests(profile.bests)
+        if (!cancel) setBoardBests(profile.bests)
       })
       .catch((reason: unknown) => {
         if (!cancel) setError(reason instanceof Error ? reason.message : 'Could not load your achievements.')
@@ -27,6 +38,12 @@ export function AchievementsPanel({ username, onClose }: Props) {
       cancel = true
     }
   }, [username])
+
+  const earnedKey = bests ? allEarnedTiers(bests).join(',') : ''
+  useEffect(() => {
+    if (!earnedKey) return
+    markBadgesSeen(username, earnedKey.split(',') as BadgeId[])
+  }, [earnedKey, username])
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {

@@ -23,12 +23,15 @@ export function BadgeShowcase({ id, onClose, kicker }: Props) {
 }
 
 /** Full-screen pop-up for a badge just earned at the end of a run. */
-export function BadgeEarnedPop({ id, onClose }: { id: BadgeId; onClose: () => void }) {
+export function BadgeEarnedPop({ id, onClose, onView }: { id: BadgeId; onClose: () => void; onView: () => void }) {
   return (
     <div className="badge-earned-pop" role="dialog" aria-modal="true" aria-label="Badge earned">
       <div className="badge-earned-card">
         <BadgeShowcase id={id} onClose={onClose} kicker="Badge earned!" />
       </div>
+      <button type="button" className="profile-visit badge-earned-view" onClick={onView}>
+        View achievements
+      </button>
     </div>
   )
 }

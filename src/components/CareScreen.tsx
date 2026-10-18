@@ -44,6 +44,9 @@ import { CubStage } from './CubStage'
 import { HomeButton } from './HomeButton'
 import { DailyTraitRoll, ageCubLabel, traitsFromManifest } from './DailyTraitRoll'
 import { AccountPanel } from './AccountPanel'
+import { AchievementsPanel } from './AchievementsPanel'
+import { PROFILE_PICTURES } from '../game/profileArt'
+import { useOwnProfile } from '../game/useOwnProfile'
 import { LeaderboardScreen } from './LeaderboardScreen'
 import { WardrobeScreen } from './WardrobeScreen'
 import { ShopScreen } from './ShopScreen'
@@ -57,6 +60,8 @@ type Props = {
   onHoops: () => void
   startInGames?: boolean
   startInShop?: boolean
+  /** Open the Achievements list straight away, from the badge-earned pop-up. */
+  startInAchievements?: boolean
 }
 
 function DailyResetClock({ startedAt, now }: { startedAt: number | null; now: number }) {
@@ -71,7 +76,17 @@ function DailyResetClock({ startedAt, now }: { startedAt: number | null; now: nu
   )
 }
 
-export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, startInGames = false, startInShop = false }: Props) {
+export function CareScreen({
+  cub,
+  onFlight,
+  onMatch,
+  onDojo,
+  onArcher,
+  onHoops,
+  startInGames = false,
+  startInShop = false,
+  startInAchievements = false,
+}: Props) {
   const [gamesOpen, setGamesOpen] = useState(startInGames && !startInShop)
   const [boardOpen, setBoardOpen] = useState(false)
   const [boardPressed, setBoardPressed] = useState(false)
@@ -82,10 +97,13 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
   const [shopOpen, setShopOpen] = useState(startInShop)
   const [energyWarn, setEnergyWarn] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
+  const [achievementsOpen, setAchievementsOpen] = useState(startInAchievements)
   const [bonusRoll, setBonusRoll] = useState<{ prize: BonusTrait | null; coins: number } | null>(null)
   const [diceShake, setDiceShake] = useState(false)
   const [age, setAge] = useState<CharacterAge>(() => getHomeCharacterAge())
   const save = cub.save
+  const [profileRefresh, setProfileRefresh] = useState(0)
+  const own = useOwnProfile(cub.accountName, save, profileRefresh)
 
   useEffect(() => {
     setHomeCharacter(age)
@@ -590,10 +608,19 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
         <div className="top-stats">
           <button
             type="button"
-            className="account-open"
+            className={own.enabled ? 'account-open account-open-profile' : 'account-open'}
             onClick={() => setAccountOpen(true)}
+            aria-label={
+              own.unseen > 0
+                ? `${cub.accountName ?? 'Account'}, profile and ${own.unseen} new badge${own.unseen === 1 ? '' : 's'}`
+                : undefined
+            }
           >
-            {cub.accountName ?? 'Account'}
+            {own.enabled ? (
+              <img className="account-open-photo" src={own.photoUrl ?? PROFILE_PICTURES.paw.src} alt="" />
+            ) : null}
+            <span className="account-open-name">{cub.accountName ?? 'Account'}</span>
+            {own.unseen > 0 ? <span className="account-open-dot" aria-hidden="true" /> : null}
           </button>
           <div className="cub-cash" aria-label={`${formatCubCash(save.cubCash)} Cub Cash`}>
             <span className="cub-cash-inner">
@@ -625,7 +652,24 @@ export function CareScreen({ cub, onFlight, onMatch, onDojo, onArcher, onHoops, 
           </span>
         </div>
         {cub.toast ? <p className="home-toast">{cub.toast}</p> : null}
-        {accountOpen ? <AccountPanel cub={cub} onClose={() => setAccountOpen(false)} /> : null}
+        {accountOpen ? (
+          <AccountPanel
+            cub={cub}
+            unseenBadges={own.unseen}
+            localBests={own.bests}
+            onClose={() => {
+              setAccountOpen(false)
+              setProfileRefresh((value) => value + 1)
+            }}
+          />
+        ) : null}
+        {achievementsOpen && cub.accountName ? (
+          <AchievementsPanel
+            username={cub.accountName}
+            localBests={own.bests}
+            onClose={() => setAchievementsOpen(false)}
+          />
+        ) : null}
         <button
           type="button"
           className="daily-open"

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { ACCOUNT_CREATED_SIGN_IN, usernameChangeNote } from '../game/account'
-import { hasProfileCard } from '../game/profileArt'
+import { hasProfileCard, type GameBests } from '../game/profileArt'
 import type { CubController } from '../game/useCub'
 import { AchievementsPanel } from './AchievementsPanel'
 import { PlayerProfileCard } from './PlayerProfileCard'
@@ -8,9 +8,12 @@ import { PlayerProfileCard } from './PlayerProfileCard'
 type Props = {
   cub: CubController
   onClose: () => void
+  /** Earned badges not looked at yet, for the dot on Achievements. */
+  unseenBadges?: number
+  localBests?: GameBests
 }
 
-export function AccountPanel({ cub, onClose }: Props) {
+export function AccountPanel({ cub, onClose, unseenBadges = 0, localBests }: Props) {
   const [mode, setMode] = useState<'in' | 'up'>('in')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -89,7 +92,9 @@ export function AccountPanel({ cub, onClose }: Props) {
   }
 
   if (achievementsOpen && cub.accountName) {
-    return <AchievementsPanel username={cub.accountName} onClose={() => setAchievementsOpen(false)} />
+    return (
+      <AchievementsPanel username={cub.accountName} localBests={localBests} onClose={() => setAchievementsOpen(false)} />
+    )
   }
 
   return (
@@ -209,8 +214,13 @@ export function AccountPanel({ cub, onClose }: Props) {
                 <button type="button" className="account-submit" onClick={() => setProfileOpen(true)}>
                   My Profile
                 </button>
-                <button type="button" className="account-submit" onClick={() => setAchievementsOpen(true)}>
+                <button type="button" className="account-submit account-achievements" onClick={() => setAchievementsOpen(true)}>
                   Achievements
+                  {unseenBadges > 0 ? (
+                    <span className="account-new" aria-label={`${unseenBadges} new`}>
+                      {unseenBadges} new
+                    </span>
+                  ) : null}
                 </button>
               </>
             ) : null}

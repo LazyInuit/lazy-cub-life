@@ -208,9 +208,11 @@ function Game() {
   const [screen, setScreen] = useState<Screen>('home')
   const [openGames, setOpenGames] = useState(false)
   const [openShop, setOpenShop] = useState(false)
+  const [openAchievements, setOpenAchievements] = useState(false)
 
   useEffect(() => {
     setActivityArea(screen)
+    if (screen !== 'home') setOpenAchievements(false)
   }, [screen])
 
   if (!cub.save) {
@@ -246,6 +248,7 @@ function Game() {
           cub={cub}
           startInGames={openGames}
           startInShop={openShop}
+          startInAchievements={openAchievements}
           onFlight={() => {
             setOpenGames(false)
             setScreen('flight')
@@ -338,7 +341,19 @@ function Game() {
           onShop={goShop}
         />
       ) : null}
-      {cub.earnedBadge ? <BadgeEarnedPop id={cub.earnedBadge} onClose={cub.dismissEarnedBadge} /> : null}
+      {cub.earnedBadge ? (
+        <BadgeEarnedPop
+          id={cub.earnedBadge}
+          onClose={cub.dismissEarnedBadge}
+          onView={() => {
+            cub.dismissEarnedBadge()
+            setOpenGames(false)
+            setOpenShop(false)
+            setOpenAchievements(true)
+            setScreen('home')
+          }}
+        />
+      ) : null}
     </main>
   )
 }

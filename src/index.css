@@ -1829,17 +1829,24 @@ h1 {
   position: absolute;
   inset: 0;
   z-index: 60;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
   padding: 24px 18px;
   background: rgba(8, 6, 4, 0.7);
+}
+
+.badge-earned-view {
+  width: min(100%, 260px);
 }
 
 .badge-earned-card {
   position: relative;
   width: min(100%, 320px);
   aspect-ratio: 4 / 5;
-  max-height: 100%;
+  max-height: calc(100% - 70px);
   padding: 3px;
   border-radius: 22px;
   background: linear-gradient(180deg, #fff6d4 0%, #f0c56a 18%, #c48a2e 46%, #7a4a14 78%, #e8c56a 100%);
@@ -5686,6 +5693,81 @@ h1 {
     0 0 0 2px #6a3e18,
     0 4px 0 #120a06,
     0 0 14px rgba(255, 196, 90, 0.45);
+}
+
+.account-open.account-open-profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 124px;
+  padding: 0 10px 0 4px;
+  overflow: visible;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+}
+
+.account-open-photo {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #1d120a;
+  box-shadow: 0 0 0 2px #f0c56a;
+}
+
+.account-open-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-open-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 13px;
+  height: 13px;
+  border: 2px solid #3a2010;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff6c0, #ffd23a 50%, #d48a10);
+  box-shadow: 0 0 8px rgba(255, 210, 60, 0.85);
+  animation: account-dot-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes account-dot-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.18);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-open-dot {
+    animation: none;
+  }
+}
+
+.account-achievements {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.account-new {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #ffd23a;
+  color: #3a2010;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .account-open:active {
