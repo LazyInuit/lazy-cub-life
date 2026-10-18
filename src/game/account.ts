@@ -419,6 +419,26 @@ export async function updateAccountSettings(usernameInput: string, ethInput: str
   return null
 }
 
+/** Check the current password, then set the new one. Returns an error to show, or null. */
+export async function changeAccountPassword(current: string, next: string, confirm: string) {
+  if (!supabase) return 'Accounts are not connected.'
+  if (!current) return 'Enter your current password.'
+  if (next.length < 6) return 'Use at least 6 characters for the new password.'
+  if (next !== confirm) return 'The new passwords do not match.'
+  if (next === current) return 'Choose a new password that is different from your current one.'
+  const { data } = await supabase.auth.getSession()
+  const email = data.session?.user.email
+  if (!email) return 'Sign in again to change your password.'
+  const check = await supabase.auth.signInWithPassword({ email, password: current })
+  if (check.error) return 'Current password is wrong.'
+  const { error } = await supabase.auth.updateUser({ password: next })
+  if (!error) return null
+  const lower = error.message.toLowerCase()
+  if (lower.includes('different')) return 'Choose a new password that is different from your current one.'
+  if (lower.includes('weak') || lower.includes('characters')) return 'That password is too weak. Try a longer one.'
+  return 'Could not change your password. Try again.'
+}
+
 const USERNAME_CHANGE_WAIT_MS = 7 * 24 * 60 * 60 * 1000
 
 /** Shown in Settings. A blank date means the next change is available now. */

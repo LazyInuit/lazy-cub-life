@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ACCOUNT_CREATED_SIGN_IN, usernameChangeNote } from '../game/account'
+import { ACCOUNT_CREATED_SIGN_IN, changeAccountPassword, usernameChangeNote } from '../game/account'
 import { hasProfileCard, type GameBests } from '../game/profileArt'
 import type { CubController } from '../game/useCub'
 import { AchievementsPanel } from './AchievementsPanel'
@@ -22,7 +22,10 @@ export function AccountPanel({ cub, onClose, unseenBadges = 0, localBests }: Pro
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [created, setCreated] = useState<'ready' | 'signin' | null>(null)
-  const [view, setView] = useState<'account' | 'settings'>('account')
+  const [view, setView] = useState<'account' | 'settings' | 'password'>('account')
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [repeatPassword, setRepeatPassword] = useState('')
   const [settingsName, setSettingsName] = useState('')
   const [settingsEth, setSettingsEth] = useState('')
   const [settingsPassword, setSettingsPassword] = useState('')
@@ -87,6 +90,33 @@ export function AccountPanel({ cub, onClose, unseenBadges = 0, localBests }: Pro
     setSaved(true)
   }
 
+  const openPassword = () => {
+    setCurrentPassword('')
+    setNewPassword('')
+    setRepeatPassword('')
+    setError(null)
+    setSaved(false)
+    setView('password')
+    formRef.current?.scrollTo({ top: 0 })
+  }
+
+  const savePassword = async () => {
+    setError(null)
+    setSaved(false)
+    setBusy(true)
+    const message = await changeAccountPassword(currentPassword, newPassword, repeatPassword)
+    setBusy(false)
+    formRef.current?.scrollTo({ top: 0 })
+    if (message) {
+      setError(message)
+      return
+    }
+    setCurrentPassword('')
+    setNewPassword('')
+    setRepeatPassword('')
+    setSaved(true)
+  }
+
   if (profileOpen && cub.accountName) {
     return <PlayerProfileCard username={cub.accountName} mine editable onClose={() => setProfileOpen(false)} />
   }
@@ -105,6 +135,7 @@ export function AccountPanel({ cub, onClose, unseenBadges = 0, localBests }: Pro
           event.preventDefault()
           if (busy) return
           if (view === 'settings') void saveSettings()
+          else if (view === 'password') void savePassword()
           else void submit()
         }}
       >
@@ -113,7 +144,9 @@ export function AccountPanel({ cub, onClose, unseenBadges = 0, localBests }: Pro
             ? 'Account created'
             : view === 'settings'
               ? 'Settings'
-              : cub.accountName
+              : view === 'password'
+                ? 'Reset password'
+                : cub.accountName
                 ? cub.accountName
                 : mode === 'up'
                   ? 'Create account'
@@ -193,11 +226,61 @@ export function AccountPanel({ cub, onClose, unseenBadges = 0, localBests }: Pro
             <button type="button" className="account-submit" disabled={busy} onClick={() => void saveSettings()}>
               {busy ? 'Please wait' : 'Save'}
             </button>
+            <button type="button" className="account-submit" disabled={busy} onClick={openPassword}>
+              Reset password
+            </button>
             <button
               type="button"
               className="account-switch"
               onClick={() => {
                 setView('account')
+                setError(null)
+                setSaved(false)
+              }}
+            >
+              Back
+            </button>
+          </>
+        ) : cub.accountName && view === 'password' ? (
+          <>
+            <label>
+              Current password
+              <input
+                type="password"
+                value={currentPassword}
+                autoComplete="current-password"
+                onChange={(event) => setCurrentPassword(event.target.value)}
+              />
+            </label>
+            <label>
+              New password
+              <input
+                type="password"
+                value={newPassword}
+                autoComplete="new-password"
+                onChange={(event) => setNewPassword(event.target.value)}
+              />
+            </label>
+            <label>
+              Type the new password again
+              <input
+                type="password"
+                value={repeatPassword}
+                autoComplete="new-password"
+                onChange={(event) => setRepeatPassword(event.target.value)}
+              />
+            </label>
+            <p className="account-eth">Use at least 6 characters.</p>
+            {error ? <p className="account-error">{error}</p> : null}
+            {saved ? <p className="account-success">Password changed. Use your new password next time you sign in.</p> : null}
+            <button type="submit" className="account-submit" disabled={busy}>
+              {busy ? 'Please wait' : 'Change password'}
+            </button>
+            <button
+              type="button"
+              className="account-switch"
+              onClick={() => {
+                setView('settings')
                 setError(null)
                 setSaved(false)
               }}
