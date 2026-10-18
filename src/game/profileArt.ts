@@ -4,6 +4,9 @@ import archerGoldUrl from '../assets/player-profile/badges/archer-gold.png'
 import archerPlatinumUrl from '../assets/player-profile/badges/archer-platinum.png'
 import archerSilverUrl from '../assets/player-profile/badges/archer-silver.png'
 import ballerBronzeUrl from '../assets/player-profile/badges/baller-bronze.png'
+import ballerGoldUrl from '../assets/player-profile/badges/baller-gold.png'
+import ballerPlatinumUrl from '../assets/player-profile/badges/baller-platinum.png'
+import ballerSilverUrl from '../assets/player-profile/badges/baller-silver.png'
 import ninjaBronzeUrl from '../assets/player-profile/badges/ninja-bronze.png'
 import ninjaGoldUrl from '../assets/player-profile/badges/ninja-gold.png'
 import ninjaPlatinumUrl from '../assets/player-profile/badges/ninja-platinum.png'
@@ -48,6 +51,9 @@ export const BADGES = {
   'archer-gold': badge(archerGoldUrl, 'Archer Badge', 'Gold', 'Cupid Archery'),
   'archer-platinum': badge(archerPlatinumUrl, 'Archer Badge', 'Platinum', 'Cupid Archery'),
   'baller-bronze': badge(ballerBronzeUrl, 'Baller Badge', 'Bronze', 'Lazy Hoops'),
+  'baller-silver': badge(ballerSilverUrl, 'Baller Badge', 'Silver', 'Lazy Hoops'),
+  'baller-gold': badge(ballerGoldUrl, 'Baller Badge', 'Gold', 'Lazy Hoops'),
+  'baller-platinum': badge(ballerPlatinumUrl, 'Baller Badge', 'Platinum', 'Lazy Hoops'),
 } satisfies Record<string, Badge>
 
 export type ProfilePictureId = keyof typeof PROFILE_PICTURES
@@ -101,6 +107,15 @@ const BADGE_RULES: { game: DailyGame; tiers: BadgeTier[] }[] = [
       { badge: 'ninja-silver', at: 10000 },
       { badge: 'ninja-gold', at: 25000 },
       { badge: 'ninja-platinum', at: 50000 },
+    ],
+  },
+  {
+    game: 'hoops',
+    tiers: [
+      { badge: 'baller-bronze', at: 5000 },
+      { badge: 'baller-silver', at: 15000 },
+      { badge: 'baller-gold', at: 40000 },
+      { badge: 'baller-platinum', at: 80000 },
     ],
   },
 ]
