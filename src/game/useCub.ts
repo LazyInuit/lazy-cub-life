@@ -63,6 +63,7 @@ export function useCub() {
   const [earnedBadge, setEarnedBadge] = useState<BadgeId | null>(null)
   const accountNameRef = useRef<string | null>(null)
   accountNameRef.current = accountName
+  const pendingBadges = useRef<Partial<Record<DailyGame, BadgeId>>>({})
   const busyRef = useRef(false)
   const asleepRef = useRef(false)
   const poseTimer = useRef<number | null>(null)
@@ -382,12 +383,15 @@ export function useCub() {
     holdPose('react', 700)
   }, [commit, holdPose, noteLevel])
 
-  /** Pop up the badge a new best just reached, if it is a tier the old best had not. */
+  /**
+   * Hold the badge a new best just reached, if it is a tier the old best had not.
+   * Some games save a best mid-run, so it pops up when that run ends (see noteDaily).
+   */
   const announceBadge = useCallback((game: DailyGame, before: number, after: number) => {
     if (!hasProfileCard(accountNameRef.current)) return
     const had = earnedBadges({ [game]: before })
     const fresh = earnedBadges({ [game]: after }).find((id) => !had.includes(id))
-    if (fresh) setEarnedBadge(fresh)
+    if (fresh) pendingBadges.current[game] = fresh
   }, [])
 
   const dismissEarnedBadge = useCallback(() => setEarnedBadge(null), [])
@@ -473,6 +477,12 @@ export function useCub() {
   }, [commit])
 
   const noteDaily = useCallback((game: DailyGame, score: number) => {
+    // Every game reports here once its run is over, so this is when a badge earned in it pops up.
+    const badge = pendingBadges.current[game]
+    if (badge) {
+      delete pendingBadges.current[game]
+      setEarnedBadge(badge)
+    }
     const current = saveRef.current
     if (!current) return
     const gained = Math.max(0, Math.floor(score))

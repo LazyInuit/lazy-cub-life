@@ -3,6 +3,9 @@ import archerBronzeUrl from '../assets/player-profile/badges/archer-bronze.png'
 import ballerBronzeUrl from '../assets/player-profile/badges/baller-bronze.png'
 import ninjaBronzeUrl from '../assets/player-profile/badges/ninja-bronze.png'
 import prideBronzeUrl from '../assets/player-profile/badges/pride-bronze.png'
+import prideGoldUrl from '../assets/player-profile/badges/pride-gold.png'
+import pridePlatinumUrl from '../assets/player-profile/badges/pride-platinum.png'
+import prideSilverUrl from '../assets/player-profile/badges/pride-silver.png'
 import spaceBronzeUrl from '../assets/player-profile/badges/space-bronze.png'
 import spaceGoldUrl from '../assets/player-profile/badges/space-gold.png'
 import spacePlatinumUrl from '../assets/player-profile/badges/space-platinum.png'
@@ -27,6 +30,9 @@ export const BADGES = {
   'space-gold': badge(spaceGoldUrl, 'Space Badge', 'Gold', "Kovu's Space Dash"),
   'space-platinum': badge(spacePlatinumUrl, 'Space Badge', 'Platinum', "Kovu's Space Dash"),
   'pride-bronze': badge(prideBronzeUrl, 'Pride Badge', 'Bronze', 'Pride Pairs'),
+  'pride-silver': badge(prideSilverUrl, 'Pride Badge', 'Silver', 'Pride Pairs'),
+  'pride-gold': badge(prideGoldUrl, 'Pride Badge', 'Gold', 'Pride Pairs'),
+  'pride-platinum': badge(pridePlatinumUrl, 'Pride Badge', 'Platinum', 'Pride Pairs'),
   'ninja-bronze': badge(ninjaBronzeUrl, 'Ninja Badge', 'Bronze', 'Ninja Cub Dojo'),
   'archer-bronze': badge(archerBronzeUrl, 'Archer Badge', 'Bronze', 'Cupid Archery'),
   'baller-bronze': badge(ballerBronzeUrl, 'Baller Badge', 'Bronze', 'Lazy Hoops'),
@@ -56,6 +62,15 @@ const BADGE_RULES: { game: DailyGame; tiers: BadgeTier[] }[] = [
       { badge: 'space-silver', at: 50 },
       { badge: 'space-gold', at: 100 },
       { badge: 'space-platinum', at: 150 },
+    ],
+  },
+  {
+    game: 'match',
+    tiers: [
+      { badge: 'pride-bronze', at: 130 },
+      { badge: 'pride-silver', at: 150 },
+      { badge: 'pride-gold', at: 180 },
+      { badge: 'pride-platinum', at: 200 },
     ],
   },
 ]
