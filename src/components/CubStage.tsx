@@ -15,7 +15,7 @@ type Props = {
   pose: CubPose
   dim?: boolean
   onPet?: () => void
-  /** Visit draws another player's home: their room and outfit, no care looks, no pumpkin tap. */
+  /** Visit draws another player's home: the plain room and their outfit, with no care looks or seasonal items. */
   mode?: 'home' | 'wardrobe' | 'visit'
   tryOn?: TryOn | null
   /** Paint the cub on the desk canvas, over the room picture. */
@@ -164,9 +164,8 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
         const fittedTop = tableArt ? fitInBox(artSize(tableArt).w, artSize(tableArt).h, table).y : table.y
         const sitDrop = wardrobe && cub ? cub.y + cub.h - fittedTop - wardrobeLift : 0
         drawHomeTable(fxCtx, layoutW, layoutH, wardrobe ? 'chest-1' : 'table-1', sitDrop)
-        // A visitor cannot tap the pumpkin, so it never wobbles for attention there.
-        const pumpkinClock = modeRef.current === 'visit' ? 0 : time
-        const pumpkin = wardrobe ? null : drawHalloweenPumpkin(fxCtx, layoutW, layoutH, pumpkinClock)
+        const visit = modeRef.current === 'visit'
+        const pumpkin = wardrobe || visit ? null : drawHalloweenPumpkin(fxCtx, layoutW, layoutH, time)
         if (!wardrobe) drawCubEffects(fxCtx, poseRef.current, time, layoutW, layoutH)
         const dockBottom = rect.height - (table.y + table.h) + 36
         const roomEl = room.closest('.home-room') as HTMLElement | null

@@ -25,13 +25,14 @@ export function VisitHome({ profile, onReturn }: Props) {
 
   useEffect(() => {
     const ownAge = getHomeCharacterAge()
-    setVisitHalloween(room.halloween)
+    // Visits always show the plain room, with no seasonal theme.
+    setVisitHalloween(false)
     return () => {
       if (petTimer.current !== null) window.clearTimeout(petTimer.current)
       setVisitHalloween(null)
       previewHomeCharacter(ownAge)
     }
-  }, [room.halloween])
+  }, [])
 
   useEffect(() => {
     previewHomeCharacter(age)
