@@ -14,6 +14,7 @@ import {
 } from '../game/admin'
 import { ACTIVITY_AREAS, formatActivityMinutes } from '../game/activity'
 import { removeProfilePhoto } from '../game/profilePhoto'
+import { AdminCoinHistory } from './AdminCoinHistory'
 import { levelFromXp } from '../game/progress'
 import { supabase } from '../game/supabase'
 
@@ -387,17 +388,7 @@ where email = '${signedInAs ?? 'yourname'}@users.lazycub.life';`}
                 ))}
               </ul>
 
-              <h3>Coin history</h3>
-              {history.length === 0 ? <p>No coin changes yet.</p> : null}
-              <ul className="admin-history">
-                {history.map((entry) => (
-                  <li key={`${entry.created_at}-${entry.reason}-${entry.amount}`}>
-                    <strong>{entry.amount > 0 ? `+${entry.amount}` : entry.amount}</strong>
-                    <span>{entry.reason}</span>
-                    <span>Balance {entry.balance_after}</span>
-                  </li>
-                ))}
-              </ul>
+              <AdminCoinHistory history={history} />
             </section>
           ) : (
             <section className="admin-card">

@@ -6025,9 +6025,101 @@ h1 {
 
 .admin-history li {
   display: grid;
-  grid-template-columns: 72px 1fr auto;
+  grid-template-columns: 56px 1fr auto;
   gap: 8px;
+  align-items: start;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 246, 216, 0.12);
   font-size: 0.85rem;
+}
+
+.admin-history li span small {
+  display: block;
+  margin-top: 2px;
+  color: rgba(255, 246, 216, 0.6);
+  font-size: 0.72rem;
+}
+
+.admin-coins {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-coins h3 {
+  margin: 6px 0 0;
+}
+
+.admin-coins-totals {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.admin-coins-totals div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 2px solid rgba(255, 231, 168, 0.4);
+  border-radius: 12px;
+}
+
+.admin-coins-totals span {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-coins-totals strong {
+  font-size: 1.3rem;
+}
+
+.admin-coins-out {
+  color: #ffb4a8;
+}
+
+.admin-coins-in {
+  color: #b8f0a8;
+}
+
+.admin-coins-groups {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.admin-coins-groups li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-coins-filter {
+  display: flex;
+  gap: 6px;
+}
+
+.admin-coins-filter button {
+  flex: 1;
+  padding: 6px 8px;
+  border: 2px solid rgba(255, 231, 168, 0.5);
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.admin-coins-filter button.on {
+  background: #f0c14a;
+  color: #3a2010;
 }
 
 .admin-eth {
