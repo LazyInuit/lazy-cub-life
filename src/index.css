@@ -1297,6 +1297,7 @@ h1 {
 }
 
 .profile-pop {
+  pointer-events: auto;
   position: absolute;
   inset: 0;
   z-index: 6;

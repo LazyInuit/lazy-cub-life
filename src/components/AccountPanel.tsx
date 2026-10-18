@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
 import { ACCOUNT_CREATED_SIGN_IN, usernameChangeNote } from '../game/account'
+import { hasProfileCard } from '../game/profileArt'
 import type { CubController } from '../game/useCub'
+import { PlayerProfileCard } from './PlayerProfileCard'
 
 type Props = {
   cub: CubController
@@ -21,6 +23,7 @@ export function AccountPanel({ cub, onClose }: Props) {
   const [settingsEth, setSettingsEth] = useState('')
   const [settingsPassword, setSettingsPassword] = useState('')
   const [saved, setSaved] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
 
   const submit = async () => {
@@ -77,6 +80,10 @@ export function AccountPanel({ cub, onClose }: Props) {
     }
     setSettingsPassword('')
     setSaved(true)
+  }
+
+  if (profileOpen && cub.accountName) {
+    return <PlayerProfileCard username={cub.accountName} mine onClose={() => setProfileOpen(false)} />
   }
 
   return (
@@ -191,6 +198,11 @@ export function AccountPanel({ cub, onClose }: Props) {
           <>
             <p>This cub is saved to your account.</p>
             {cub.accountEth ? <p className="account-eth">Rewards address {cub.accountEth}</p> : null}
+            {hasProfileCard(cub.accountName) ? (
+              <button type="button" className="account-submit" onClick={() => setProfileOpen(true)}>
+                My Profile
+              </button>
+            ) : null}
             <button type="button" className="account-submit" onClick={openSettings}>
               Settings
             </button>

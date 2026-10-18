@@ -8,7 +8,8 @@ type Props = {
   username: string
   mine: boolean
   onClose: () => void
-  onVisit: (profile: PlayerProfile) => void
+  /** Leave out to hide the Visit button. Your own card never shows it. */
+  onVisit?: (profile: PlayerProfile) => void
 }
 
 export function PlayerProfileCard({ username, mine, onClose, onVisit }: Props) {
@@ -102,7 +103,7 @@ export function PlayerProfileCard({ username, mine, onClose, onVisit }: Props) {
               <p className="profile-empty">No badges yet</p>
             )}
           </div>
-          {!mine ? (
+          {!mine && onVisit ? (
             <button
               type="button"
               className="profile-visit"
