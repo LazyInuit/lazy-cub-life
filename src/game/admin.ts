@@ -85,10 +85,10 @@ export type CoinTotals = {
   labelsSince: string | null
 }
 
-/** Coins spent and earned across every player. Days limits it to recent days. */
-export async function coinTotals(days: number | null): Promise<CoinTotals> {
+/** Coins spent and earned across every player, or one player. Days limits it to recent days. */
+export async function coinTotals(days: number | null, playerId: string | null = null): Promise<CoinTotals> {
   if (!supabase) throw new Error('Accounts are not connected.')
-  const { data, error } = await supabase.rpc('admin_coin_totals', { p_days: days })
+  const { data, error } = await supabase.rpc('admin_coin_totals', { p_days: days, p_player: playerId })
   if (error) {
     if (missingFunction(error)) throw new Error('Coin totals need a database update.')
     throw new Error(error.message)

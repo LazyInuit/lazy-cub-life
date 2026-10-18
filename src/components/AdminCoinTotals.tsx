@@ -19,8 +19,13 @@ function coins(value: number) {
   return value.toLocaleString('en-US')
 }
 
-/** Coins spent in the shop and wardrobe, and earned in each game, across every player. */
-export function AdminCoinTotals() {
+type Props = {
+  /** Leave out for every player. */
+  playerId?: string | null
+}
+
+/** Coins spent in the shop and wardrobe, and earned in each game, for every player or one. */
+export function AdminCoinTotals({ playerId = null }: Props) {
   const [range, setRange] = useState<(typeof RANGES)[number]['id']>('all')
   const [totals, setTotals] = useState<CoinTotals | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -29,7 +34,8 @@ export function AdminCoinTotals() {
     let cancel = false
     const days = RANGES.find((item) => item.id === range)?.days ?? null
     setError(null)
-    void coinTotals(days)
+    setTotals(null)
+    void coinTotals(days, playerId)
       .then((next) => {
         if (!cancel) setTotals(next)
       })
@@ -39,14 +45,15 @@ export function AdminCoinTotals() {
     return () => {
       cancel = true
     }
-  }, [range])
+  }, [range, playerId])
 
   const gameTotal = totals ? GAMES.reduce((sum, game) => sum + (totals.grants[game.source] ?? 0), 0) : 0
   const since = totals?.labelsSince ? new Date(totals.labelsSince) : null
 
-  return (
-    <section className="admin-card admin-economy">
-      <h2>Coin economy</h2>
+  const player = playerId !== null
+  const content = (
+    <>
+      {player ? <h3>Coin economy</h3> : <h2>Coin economy</h2>}
       <div className="admin-coins-filter" role="tablist" aria-label="Time range">
         {RANGES.map((item) => (
           <button
@@ -107,6 +114,9 @@ export function AdminCoinTotals() {
           </ul>
         </>
       ) : null}
-    </section>
+    </>
   )
+
+  if (player) return <div className="admin-coins admin-economy-player">{content}</div>
+  return <section className="admin-card admin-economy">{content}</section>
 }

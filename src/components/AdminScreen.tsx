@@ -391,6 +391,8 @@ where email = '${signedInAs ?? 'yourname'}@users.lazycub.life';`}
                 ))}
               </ul>
 
+              <AdminCoinTotals key={selected.id} playerId={selected.id} />
+
               <AdminCoinHistory history={history} />
             </section>
           ) : (
