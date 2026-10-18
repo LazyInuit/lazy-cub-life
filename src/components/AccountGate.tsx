@@ -10,6 +10,20 @@ import { defaultSave } from '../game/progress'
 import { writeSave } from '../game/storage'
 import { supabase } from '../game/supabase'
 
+const SUPPORT_URL = 'https://x.com/lazyinuit?s=11&t=Uu1nn2ISeprcwO8HUVWq4A'
+
+export function ForgotPasswordNote() {
+  return (
+    <p className="account-forgot">
+      Forgot your password? Message{' '}
+      <a href={SUPPORT_URL} target="_blank" rel="noopener noreferrer">
+        LazyInuit on X
+      </a>
+      .
+    </p>
+  )
+}
+
 type Props = {
   onEnter: () => void
   notice?: string | null
@@ -212,6 +226,7 @@ export function AccountGate({ onEnter, notice = null, startMode = 'up', onBack }
                   Back
                 </button>
               ) : null}
+              {mode === 'in' ? <ForgotPasswordNote /> : null}
             </>
           )}
         </form>

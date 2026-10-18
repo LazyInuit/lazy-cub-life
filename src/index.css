@@ -6174,6 +6174,19 @@ h1 {
   transform: translateY(2px);
 }
 
+.account-forgot {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.account-forgot a {
+  color: #ffe14a;
+  font-weight: 900;
+  text-decoration: underline;
+}
+
 .demo-account {
   position: relative;
 }
