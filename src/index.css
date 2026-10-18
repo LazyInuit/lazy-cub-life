@@ -2667,6 +2667,11 @@ h1 {
   height: 100%;
 }
 
+/* Keep the room's tap areas (window, plant, table, pumpkin, cub) under every home pop-up. */
+.home-room .stage-wrap {
+  z-index: 1;
+}
+
 .room-ui {
   position: absolute;
   inset: 0;
