@@ -159,7 +159,7 @@ as $$
 begin
   perform public.admin_guard();
   return (
-    select coalesce(jsonb_agg(to_jsonb(found)), '[]'::jsonb)
+    select coalesce(jsonb_agg(to_jsonb(entries) order by entries.created_at desc), '[]'::jsonb)
     from (
       select
         ledger.amount,
@@ -172,7 +172,7 @@ begin
       where ledger.user_id = p_player
       order by ledger.created_at desc
       limit 40
-    ) found
+    ) entries
   );
 end;
 $$;

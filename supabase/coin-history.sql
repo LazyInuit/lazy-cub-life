@@ -96,7 +96,8 @@ create trigger log_cub_cash
   after update of cub_cash on public.profiles
   for each row execute function public.log_cub_cash();
 
--- The admin history now returns up to 200 entries.
+-- The admin history now returns up to 200 entries. The subquery is named
+-- "entries" because "found" is a built-in PL/pgSQL variable and clashes with it.
 create or replace function public.admin_history(p_player uuid)
 returns jsonb
 language plpgsql
@@ -107,7 +108,7 @@ as $$
 begin
   perform public.admin_guard();
   return (
-    select coalesce(jsonb_agg(to_jsonb(found)), '[]'::jsonb)
+    select coalesce(jsonb_agg(to_jsonb(entries) order by entries.created_at desc), '[]'::jsonb)
     from (
       select
         ledger.amount,
@@ -120,7 +121,7 @@ begin
       where ledger.user_id = p_player
       order by ledger.created_at desc, ledger.id desc
       limit 200
-    ) found
+    ) entries
   );
 end;
 $$;
