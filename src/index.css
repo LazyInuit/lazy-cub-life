@@ -1278,22 +1278,48 @@ h1 {
   position: relative;
 }
 
-.leaderboard-name-btn {
-  display: flex;
-  min-width: 0;
+.leaderboard-list li.has-profile {
+  display: block;
   padding: 0;
+  overflow: hidden;
+}
+
+.leaderboard-row-btn {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 8px 10px;
   border: 0;
   background: none;
   color: inherit;
   font: inherit;
   text-align: left;
   cursor: pointer;
+  transition: background-color 0.12s ease;
 }
 
-.leaderboard-name-btn strong {
-  text-decoration: underline;
-  text-decoration-color: rgba(255, 231, 168, 0.55);
-  text-underline-offset: 3px;
+.leaderboard-row-btn:active {
+  background: rgba(255, 246, 216, 0.12);
+}
+
+.leaderboard-visit {
+  flex: none;
+  padding: 1px 5px;
+  border: 2px solid rgba(150, 220, 140, 0.75);
+  border-radius: 6px;
+  background: rgba(120, 200, 110, 0.12);
+  color: #c4f0b8;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.leaderboard-row-btn:active .leaderboard-visit {
+  background: rgba(120, 200, 110, 0.28);
 }
 
 .profile-pop {

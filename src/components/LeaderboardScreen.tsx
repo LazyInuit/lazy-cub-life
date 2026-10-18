@@ -231,29 +231,40 @@ export function LeaderboardScreen({ onHome, onGames, onSettlePrize }: Props) {
         ) : null}
         {!loading && !note && rows.length > 0 ? (
           <ol className="leaderboard-list">
-            {rows.map((row) => (
-              <li key={row.username} className={rowClass(row)}>
-                <span className="leaderboard-rank">{row.rank}</span>
-                <span className="leaderboard-player">
-                  <span className="leaderboard-name-line">
-                    {hasProfileCard(row.username) ? (
-                      <button
-                        type="button"
-                        className="leaderboard-name-btn"
-                        aria-label={`View ${row.username}'s profile`}
-                        onClick={() => setProfileOpen({ username: row.username, mine: row.mine })}
-                      >
-                        <strong>{row.username}</strong>
-                      </button>
-                    ) : (
+            {rows.map((row) => {
+              const cells = (
+                <>
+                  <span className="leaderboard-rank">{row.rank}</span>
+                  <span className="leaderboard-player">
+                    <span className="leaderboard-name-line">
                       <strong>{row.username}</strong>
-                    )}
-                    {row.mine ? <span className="leaderboard-you">You</span> : null}
+                      {row.mine ? <span className="leaderboard-you">You</span> : null}
+                      {!row.mine && hasProfileCard(row.username) ? <span className="leaderboard-visit">Visit</span> : null}
+                    </span>
                   </span>
-                </span>
-                <span className="leaderboard-score">{row.score.toLocaleString('en-US')}</span>
-              </li>
-            ))}
+                  <span className="leaderboard-score">{row.score.toLocaleString('en-US')}</span>
+                </>
+              )
+              if (!hasProfileCard(row.username)) {
+                return (
+                  <li key={row.username} className={rowClass(row)}>
+                    {cells}
+                  </li>
+                )
+              }
+              return (
+                <li key={row.username} className={`${rowClass(row)} has-profile`.trim()}>
+                  <button
+                    type="button"
+                    className="leaderboard-row-btn"
+                    aria-label={row.mine ? 'View your profile' : `View ${row.username}'s profile`}
+                    onClick={() => setProfileOpen({ username: row.username, mine: row.mine })}
+                  >
+                    {cells}
+                  </button>
+                </li>
+              )
+            })}
           </ol>
         ) : null}
         {more ? (
