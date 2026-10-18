@@ -40,16 +40,59 @@ export function takeAdoptedSave() {
   return next
 }
 
-/** High scores only go up. Keeps a better board score if the other copy is newer. */
-export function keepGameBests(into: CubSave, from: CubSave): CubSave {
-  return {
-    ...into,
-    flightBest: Math.max(into.flightBest, from.flightBest),
-    matchBest: Math.max(into.matchBest, from.matchBest),
-    dojoBest: Math.max(into.dojoBest, from.dojoBest),
-    archerBest: Math.max(into.archerBest, from.archerBest),
-    hoopsBest: Math.max(into.hoopsBest, from.hoopsBest),
+type BoardBests = { flight: number; match: number; dojo: number; archer: number; hoops: number }
+
+/**
+ * This account's best ever score in each game, from the leaderboard. Every run is sent
+ * there, so it is the true best. A phone save can be lower (a newer copy won) or higher
+ * (another account was signed in on this phone), so the save follows the board.
+ */
+async function loadBoardBests(username: string | null): Promise<BoardBests | null> {
+  if (!supabase || !username) return null
+  try {
+    const { data, error } = await supabase.rpc('player_profile', { p_username: username })
+    if (error || !data || typeof data !== 'object' || Array.isArray(data)) return null
+    const entry = data as { username?: unknown; bests?: unknown }
+    if (typeof entry.username !== 'string' || entry.username.toLowerCase() !== username.toLowerCase()) return null
+    const raw = entry.bests && typeof entry.bests === 'object' && !Array.isArray(entry.bests)
+      ? (entry.bests as Record<string, unknown>)
+      : {}
+    const read = (value: unknown) => {
+      const number = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN
+      return Number.isFinite(number) ? Math.max(0, Math.floor(number)) : 0
+    }
+    return {
+      flight: read(raw.flight),
+      match: read(raw.match),
+      dojo: read(raw.dojo),
+      archer: read(raw.archer),
+      hoops: read(raw.hoops),
+    }
+  } catch {
+    return null
   }
+}
+
+function withBoardBests(save: CubSave, board: BoardBests | null): CubSave {
+  if (!board) return save
+  return {
+    ...save,
+    flightBest: board.flight,
+    matchBest: board.match,
+    dojoBest: board.dojo,
+    archerBest: board.archer,
+    hoopsBest: board.hoops,
+  }
+}
+
+function sameBests(a: CubSave, b: CubSave) {
+  return (
+    a.flightBest === b.flightBest &&
+    a.matchBest === b.matchBest &&
+    a.dojoBest === b.dojoBest &&
+    a.archerBest === b.archerBest &&
+    a.hoopsBest === b.hoopsBest
+  )
 }
 
 export function accountEmail(username: string) {
@@ -260,27 +303,18 @@ export async function reconcileCloudSave(local: CubSave, storedVisit = local.las
       return null
     }
     const remote = withLockedCash(sanitizeSave(loaded.save), loaded.cubCash)
+    const board = await loadBoardBests(usernameFromUser(session.user))
     if (remote.lastVisit > storedVisit) {
       noteSyncedVisit(remote.lastVisit)
-      // The newer visit wins the room, but a better score on this phone must stay.
-      return keepGameBests(remote, local)
+      return withBoardBests(remote, board)
     }
     noteSyncedVisit(remote.lastVisit)
-    const merged = keepGameBests(local, remote)
-    pendingSave = merged
+    const fixed = withBoardBests(local, board)
+    pendingSave = fixed
     await enqueueCloudSave()
     if (loaded.cubCash != null) noteLockedCash(loaded.cubCash)
-    // Local visit wins the upload. Still return the merge if the account had a higher best.
-    if (
-      merged.flightBest === local.flightBest &&
-      merged.matchBest === local.matchBest &&
-      merged.dojoBest === local.dojoBest &&
-      merged.archerBest === local.archerBest &&
-      merged.hoopsBest === local.hoopsBest
-    ) {
-      return null
-    }
-    return merged
+    // This copy wins the upload. Still hand back the bests if the board changed them.
+    return sameBests(fixed, local) ? null : fixed
   } finally {
     refreshing = false
     cloudReady = true
