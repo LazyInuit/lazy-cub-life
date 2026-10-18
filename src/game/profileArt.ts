@@ -5,6 +5,9 @@ import archerPlatinumUrl from '../assets/player-profile/badges/archer-platinum.p
 import archerSilverUrl from '../assets/player-profile/badges/archer-silver.png'
 import ballerBronzeUrl from '../assets/player-profile/badges/baller-bronze.png'
 import ninjaBronzeUrl from '../assets/player-profile/badges/ninja-bronze.png'
+import ninjaGoldUrl from '../assets/player-profile/badges/ninja-gold.png'
+import ninjaPlatinumUrl from '../assets/player-profile/badges/ninja-platinum.png'
+import ninjaSilverUrl from '../assets/player-profile/badges/ninja-silver.png'
 import prideBronzeUrl from '../assets/player-profile/badges/pride-bronze.png'
 import prideGoldUrl from '../assets/player-profile/badges/pride-gold.png'
 import pridePlatinumUrl from '../assets/player-profile/badges/pride-platinum.png'
@@ -37,6 +40,9 @@ export const BADGES = {
   'pride-gold': badge(prideGoldUrl, 'Pride Badge', 'Gold', 'Pride Pairs'),
   'pride-platinum': badge(pridePlatinumUrl, 'Pride Badge', 'Platinum', 'Pride Pairs'),
   'ninja-bronze': badge(ninjaBronzeUrl, 'Ninja Badge', 'Bronze', 'Ninja Cub Dojo'),
+  'ninja-silver': badge(ninjaSilverUrl, 'Ninja Badge', 'Silver', 'Ninja Cub Dojo'),
+  'ninja-gold': badge(ninjaGoldUrl, 'Ninja Badge', 'Gold', 'Ninja Cub Dojo'),
+  'ninja-platinum': badge(ninjaPlatinumUrl, 'Ninja Badge', 'Platinum', 'Ninja Cub Dojo'),
   'archer-bronze': badge(archerBronzeUrl, 'Archer Badge', 'Bronze', 'Cupid Archery'),
   'archer-silver': badge(archerSilverUrl, 'Archer Badge', 'Silver', 'Cupid Archery'),
   'archer-gold': badge(archerGoldUrl, 'Archer Badge', 'Gold', 'Cupid Archery'),
@@ -86,6 +92,15 @@ const BADGE_RULES: { game: DailyGame; tiers: BadgeTier[] }[] = [
       { badge: 'archer-silver', at: 5000 },
       { badge: 'archer-gold', at: 15000 },
       { badge: 'archer-platinum', at: 30000 },
+    ],
+  },
+  {
+    game: 'dojo',
+    tiers: [
+      { badge: 'ninja-bronze', at: 5000 },
+      { badge: 'ninja-silver', at: 10000 },
+      { badge: 'ninja-gold', at: 25000 },
+      { badge: 'ninja-platinum', at: 50000 },
     ],
   },
 ]
