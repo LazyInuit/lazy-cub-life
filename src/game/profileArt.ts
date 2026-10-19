@@ -1,22 +1,27 @@
 import pawUrl from '../assets/player-profile/pictures/paw.png'
 import archerBronzeUrl from '../assets/player-profile/badges/archer-bronze.png'
 import archerGoldUrl from '../assets/player-profile/badges/archer-gold.png'
+import archerDiamondUrl from '../assets/player-profile/badges/archer-diamond.png'
 import archerPlatinumUrl from '../assets/player-profile/badges/archer-platinum.png'
 import archerSilverUrl from '../assets/player-profile/badges/archer-silver.png'
 import ballerBronzeUrl from '../assets/player-profile/badges/baller-bronze.png'
 import ballerGoldUrl from '../assets/player-profile/badges/baller-gold.png'
+import ballerDiamondUrl from '../assets/player-profile/badges/baller-diamond.png'
 import ballerPlatinumUrl from '../assets/player-profile/badges/baller-platinum.png'
 import ballerSilverUrl from '../assets/player-profile/badges/baller-silver.png'
 import ninjaBronzeUrl from '../assets/player-profile/badges/ninja-bronze.png'
 import ninjaGoldUrl from '../assets/player-profile/badges/ninja-gold.png'
+import ninjaDiamondUrl from '../assets/player-profile/badges/ninja-diamond.png'
 import ninjaPlatinumUrl from '../assets/player-profile/badges/ninja-platinum.png'
 import ninjaSilverUrl from '../assets/player-profile/badges/ninja-silver.png'
 import prideBronzeUrl from '../assets/player-profile/badges/pride-bronze.png'
 import prideGoldUrl from '../assets/player-profile/badges/pride-gold.png'
+import prideDiamondUrl from '../assets/player-profile/badges/pride-diamond.png'
 import pridePlatinumUrl from '../assets/player-profile/badges/pride-platinum.png'
 import prideSilverUrl from '../assets/player-profile/badges/pride-silver.png'
 import spaceBronzeUrl from '../assets/player-profile/badges/space-bronze.png'
 import spaceGoldUrl from '../assets/player-profile/badges/space-gold.png'
+import spaceDiamondUrl from '../assets/player-profile/badges/space-diamond.png'
 import spacePlatinumUrl from '../assets/player-profile/badges/space-platinum.png'
 import spaceSilverUrl from '../assets/player-profile/badges/space-silver.png'
 import type { DailyGame } from './dailyTasks'
@@ -38,22 +43,27 @@ export const BADGES = {
   'space-silver': badge(spaceSilverUrl, 'Space Badge', 'Silver', "Kovu's Space Dash"),
   'space-gold': badge(spaceGoldUrl, 'Space Badge', 'Gold', "Kovu's Space Dash"),
   'space-platinum': badge(spacePlatinumUrl, 'Space Badge', 'Platinum', "Kovu's Space Dash"),
+  'space-diamond': badge(spaceDiamondUrl, 'Space Badge', 'Diamond', "Kovu's Space Dash"),
   'pride-bronze': badge(prideBronzeUrl, 'Pride Badge', 'Bronze', 'Pride Pairs'),
   'pride-silver': badge(prideSilverUrl, 'Pride Badge', 'Silver', 'Pride Pairs'),
   'pride-gold': badge(prideGoldUrl, 'Pride Badge', 'Gold', 'Pride Pairs'),
   'pride-platinum': badge(pridePlatinumUrl, 'Pride Badge', 'Platinum', 'Pride Pairs'),
+  'pride-diamond': badge(prideDiamondUrl, 'Pride Badge', 'Diamond', 'Pride Pairs'),
   'ninja-bronze': badge(ninjaBronzeUrl, 'Ninja Badge', 'Bronze', 'Ninja Cub Dojo'),
   'ninja-silver': badge(ninjaSilverUrl, 'Ninja Badge', 'Silver', 'Ninja Cub Dojo'),
   'ninja-gold': badge(ninjaGoldUrl, 'Ninja Badge', 'Gold', 'Ninja Cub Dojo'),
   'ninja-platinum': badge(ninjaPlatinumUrl, 'Ninja Badge', 'Platinum', 'Ninja Cub Dojo'),
+  'ninja-diamond': badge(ninjaDiamondUrl, 'Ninja Badge', 'Diamond', 'Ninja Cub Dojo'),
   'archer-bronze': badge(archerBronzeUrl, 'Archer Badge', 'Bronze', 'Cupid Archery'),
   'archer-silver': badge(archerSilverUrl, 'Archer Badge', 'Silver', 'Cupid Archery'),
   'archer-gold': badge(archerGoldUrl, 'Archer Badge', 'Gold', 'Cupid Archery'),
   'archer-platinum': badge(archerPlatinumUrl, 'Archer Badge', 'Platinum', 'Cupid Archery'),
+  'archer-diamond': badge(archerDiamondUrl, 'Archer Badge', 'Diamond', 'Cupid Archery'),
   'baller-bronze': badge(ballerBronzeUrl, 'Baller Badge', 'Bronze', 'Lazy Hoops'),
   'baller-silver': badge(ballerSilverUrl, 'Baller Badge', 'Silver', 'Lazy Hoops'),
   'baller-gold': badge(ballerGoldUrl, 'Baller Badge', 'Gold', 'Lazy Hoops'),
   'baller-platinum': badge(ballerPlatinumUrl, 'Baller Badge', 'Platinum', 'Lazy Hoops'),
+  'baller-diamond': badge(ballerDiamondUrl, 'Baller Badge', 'Diamond', 'Lazy Hoops'),
 } satisfies Record<string, Badge>
 
 export type ProfilePictureId = keyof typeof PROFILE_PICTURES
@@ -80,6 +90,7 @@ const BADGE_RULES: { game: DailyGame; tiers: BadgeTier[] }[] = [
       { badge: 'space-silver', at: 50 },
       { badge: 'space-gold', at: 100 },
       { badge: 'space-platinum', at: 150 },
+      { badge: 'space-diamond', at: 250 },
     ],
   },
   {
@@ -89,6 +100,7 @@ const BADGE_RULES: { game: DailyGame; tiers: BadgeTier[] }[] = [
       { badge: 'pride-silver', at: 150 },
       { badge: 'pride-gold', at: 180 },
       { badge: 'pride-platinum', at: 200 },
+      { badge: 'pride-diamond', at: 220 },
     ],
   },
   {
@@ -98,6 +110,7 @@ const BADGE_RULES: { game: DailyGame; tiers: BadgeTier[] }[] = [
       { badge: 'archer-silver', at: 5000 },
       { badge: 'archer-gold', at: 15000 },
       { badge: 'archer-platinum', at: 30000 },
+      { badge: 'archer-diamond', at: 60000 },
     ],
   },
   {
@@ -107,6 +120,7 @@ const BADGE_RULES: { game: DailyGame; tiers: BadgeTier[] }[] = [
       { badge: 'ninja-silver', at: 10000 },
       { badge: 'ninja-gold', at: 25000 },
       { badge: 'ninja-platinum', at: 50000 },
+      { badge: 'ninja-diamond', at: 100000 },
     ],
   },
   {
@@ -116,6 +130,7 @@ const BADGE_RULES: { game: DailyGame; tiers: BadgeTier[] }[] = [
       { badge: 'baller-silver', at: 15000 },
       { badge: 'baller-gold', at: 40000 },
       { badge: 'baller-platinum', at: 80000 },
+      { badge: 'baller-diamond', at: 120000 },
     ],
   },
 ]

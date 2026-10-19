@@ -105,7 +105,15 @@ export function AchievementsPanel({ username, localBests, onClose }: Props) {
                       </button>
                       <span className="achievements-tier">{badge.tier}</span>
                       <span className="achievements-need">
-                        {tier.earned ? 'Earned' : `Score ${tier.at.toLocaleString('en-US')}`}
+                        {tier.earned ? (
+                          'Earned'
+                        ) : (
+                          <>
+                            Score
+                            <br />
+                            {tier.at.toLocaleString('en-US')}
+                          </>
+                        )}
                       </span>
                     </li>
                   )

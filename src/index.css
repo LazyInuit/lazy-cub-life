@@ -1467,8 +1467,8 @@ h1 {
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 4px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 3px;
 }
 
 .achievements-game li {
@@ -1480,8 +1480,9 @@ h1 {
 }
 
 .achievements-badge {
-  width: 56px;
-  height: 56px;
+  width: 50px;
+  height: 50px;
+  max-width: 100%;
   padding: 0;
   border: 0;
   background: none;
@@ -1503,7 +1504,7 @@ h1 {
 
 .achievements-tier {
   color: #fffaf2;
-  font-size: 0.66rem;
+  font-size: 0.6rem;
   font-weight: 900;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1511,8 +1512,10 @@ h1 {
 
 .achievements-need {
   color: #ffe08a;
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
   white-space: nowrap;
 }
 
