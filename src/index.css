@@ -6707,9 +6707,10 @@ h1 {
 
 .nft-card-info {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 4px 6px;
   padding: 7px 8px;
 }
 
@@ -6717,6 +6718,7 @@ h1 {
   color: #fffaf2;
   font-size: 0.95rem;
   font-weight: 900;
+  white-space: nowrap;
 }
 
 .nft-zoom {

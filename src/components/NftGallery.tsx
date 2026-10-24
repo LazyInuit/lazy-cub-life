@@ -38,11 +38,11 @@ export function NftGallery({ onBack }: Props) {
       </p>
       <ul className="nft-grid">
         {SHOP_NFTS.map((nft) => (
-          <li key={nft.number}>
-            <button type="button" className="nft-card" onClick={() => setShown(nft)} aria-label={`Lazy Lion Cub #${nft.number}, coming soon`}>
+          <li key={nft.key}>
+            <button type="button" className="nft-card" onClick={() => setShown(nft)} aria-label={`${nft.name}, coming soon`}>
               <img src={nft.src} alt="" loading="lazy" decoding="async" />
               <span className="nft-card-info">
-                <strong>#{nft.number}</strong>
+                <strong>{nft.tag}</strong>
                 <span className="nft-soon">Coming soon</span>
               </span>
             </button>
@@ -50,10 +50,10 @@ export function NftGallery({ onBack }: Props) {
         ))}
       </ul>
       {shown ? (
-        <div className="nft-zoom" role="dialog" aria-modal="true" aria-label={`Lazy Lion Cub #${shown.number}`} onClick={() => setShown(null)}>
+        <div className="nft-zoom" role="dialog" aria-modal="true" aria-label={shown.name} onClick={() => setShown(null)}>
           <div className="nft-zoom-card">
-            <img src={shown.src} alt={`Lazy Lion Cub #${shown.number}`} />
-            <strong>Lazy Lion Cub #{shown.number}</strong>
+            <img src={shown.src} alt={shown.name} />
+            <strong>{shown.name}</strong>
             <span className="nft-soon">Coming soon</span>
             <span className="nft-zoom-hint">Tap to close</span>
           </div>

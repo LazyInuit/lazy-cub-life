@@ -10,7 +10,7 @@ import { isDemo } from '../game/demo'
 import { DemoLockBanner } from './DemoLockBanner'
 import { EnergyBar } from './EnergyBar'
 import { NftGallery } from './NftGallery'
-import { SHOP_NFTS } from '../game/nfts'
+import { SHOP_CUB_NFTS, SHOP_NFTS } from '../game/nfts'
 import { GamesButton, HomeButton } from './HomeButton'
 
 type Props = {
@@ -81,8 +81,8 @@ export function ShopScreen({ cub, onBack, onGames }: Props) {
       {SHOP_NFTS.length > 0 ? (
         <button type="button" className="shop-nft-open" onClick={() => setNftsOpen(true)}>
           <span className="shop-nft-stack" aria-hidden="true">
-            {SHOP_NFTS.slice(0, 3).map((nft) => (
-              <img key={nft.number} src={nft.src} alt="" />
+            {SHOP_CUB_NFTS.slice(0, 3).map((nft) => (
+              <img key={nft.key} src={nft.src} alt="" />
             ))}
           </span>
           <span className="shop-nft-copy">
