@@ -2008,6 +2008,80 @@ h1 {
   top: calc(78px + var(--safe-top));
 }
 
+/* Sits over the cabinet the stage draws on a visit. Plate and slot spots are fractions of that picture. */
+.badge-cabinet {
+  position: absolute;
+  left: var(--cabinet-x, 3%);
+  top: var(--cabinet-y, 60%);
+  width: var(--cabinet-w, 94%);
+  height: var(--cabinet-h, 32%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.badge-cabinet-plate {
+  position: absolute;
+  left: 16%;
+  top: 3.8%;
+  width: 68%;
+  height: 10.5%;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #ffe39a;
+  font-size: calc(var(--cabinet-w, 370px) * 0.042 * var(--plate-scale, 1));
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow:
+    0 1px 0 #3a1c08,
+    0 0 6px rgba(255, 200, 90, 0.35);
+}
+
+.badge-cabinet-slots {
+  position: absolute;
+  left: 6.63%;
+  top: 21.43%;
+  width: 86.61%;
+  height: 55.59%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  column-gap: 2.55%;
+  row-gap: 7.26%;
+}
+
+.badge-cabinet-slots li {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+}
+
+.badge-cabinet-slots button {
+  pointer-events: auto;
+  width: 88%;
+  height: 88%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.badge-cabinet-slots img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.55));
+}
+
 
 .game-picks-screen .game-picks {
   margin-top: auto;

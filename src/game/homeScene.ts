@@ -13,6 +13,7 @@ import halloweenPumpkinOff from '../assets/home/halloween-pumpkin-off.png'
 import halloweenPumpkinOn from '../assets/home/halloween-pumpkin-on.png'
 import halloweenTable from '../assets/home/halloween-table.png'
 import halloweenChair from '../assets/home/halloween-chair.png'
+import badgeCabinet from '../assets/home/badge-cabinet.png'
 
 export type HomeSlot = 'background' | 'chair' | 'character' | 'table'
 
@@ -123,6 +124,7 @@ export const homeCatalog: HomeItem[] = [
   { id: 'halloween-table', slot: 'table', src: halloweenTable },
   { id: 'halloween-pumpkin-off', slot: 'table', src: halloweenPumpkinOff, keyBlack: true },
   { id: 'halloween-pumpkin-on', slot: 'table', src: halloweenPumpkinOn, keyBlack: true },
+  { id: 'badge-cabinet', slot: 'table', src: badgeCabinet },
 ]
 
 /** Current room. Swap a piece by pointing its slot at another catalog id. */

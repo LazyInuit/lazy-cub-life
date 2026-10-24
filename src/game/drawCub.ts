@@ -415,6 +415,42 @@ export function drawHomeTable(
   drawFitted(ctx, image, placed)
 }
 
+/** Top of the cabinet's gold rail in the picture. The nameplate rises above it. */
+const cabinetRail = 88 / 485
+/** How far the cabinet sits below the table's place, as a share of its height. */
+const cabinetDrop = 0.2
+/** The cub and chair drop less than the cabinet, so more of the cub shows above it. */
+const cubDrop = 0.05
+/** Widens the cabinet past the screen edges without making it taller. */
+const cabinetStretch = 1.08
+
+/** Where a visit draws the badge cabinet: its rail starts at the table's wood, then drops a little. */
+export function badgeCabinetBox(width: number, height: number): SceneBox | null {
+  const image = homeArt('badge-cabinet')
+  if (!image) return null
+  const size = artSize(image)
+  const table = slotBox('table', width, height)
+  const fullWidth = Math.min(width, table.w)
+  const h = (fullWidth * size.h) / size.w
+  const w = fullWidth * cabinetStretch
+  const woodTop = table.y + table.h * plainTableWood.y
+  return { x: (width - w) / 2, y: woodTop - h * cabinetRail + h * cabinetDrop, w, h }
+}
+
+/** How far a visit moves the cub and chair down to sit behind the lowered cabinet. */
+export function badgeCabinetDrop(width: number, height: number): number {
+  const box = badgeCabinetBox(width, height)
+  return box ? box.h * cubDrop : 0
+}
+
+export function drawBadgeCabinet(ctx: CanvasRenderingContext2D, width: number, height: number): SceneBox | null {
+  const image = homeArt('badge-cabinet')
+  const box = badgeCabinetBox(width, height)
+  if (!image || !box) return null
+  ctx.drawImage(image, box.x, box.y, box.w, box.h)
+  return box
+}
+
 export function drawCubEffects(
   ctx: CanvasRenderingContext2D,
   pose: CubPose,

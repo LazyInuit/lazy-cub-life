@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { drawCubEffects, drawHalloweenPumpkin, drawHomeBackground, drawHomeChair, drawHomeTable, homeCharacterBox } from '../game/drawCub'
+import {
+  badgeCabinetDrop,
+  drawBadgeCabinet,
+  drawCubEffects,
+  drawHalloweenPumpkin,
+  drawHomeBackground,
+  drawHomeChair,
+  drawHomeTable,
+  homeCharacterBox,
+} from '../game/drawCub'
 import { HALLOWEEN_THEME, pumpkinLit, togglePumpkin } from '../game/halloween'
 import { characterLayers, type TryOn } from '../game/cubTraits'
 import { artSize, coverPlacement, fitInBox, homeArt, homeItem, slotBox, slotScale } from '../game/homeScene'
@@ -107,7 +116,8 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
         : tableSlot.y
       // The table picture's wood starts below its fitted box. This keeps the cub on that edge.
       const tableLip = tableSlot.h * 0.072
-      const homeSit = !wardrobe && cubBox ? Math.max(0, cubBox.y + cubBox.h - homeTableTop - tableLip) : 0
+      const visitDrop = modeRef.current === 'visit' ? badgeCabinetDrop(layoutW, layoutH) : 0
+      const homeSit = (!wardrobe && cubBox ? Math.max(0, cubBox.y + cubBox.h - homeTableTop - tableLip) : 0) - visitDrop
       const roomCtx = room.getContext('2d')
       if (roomCtx && rect.width > 0 && rect.height > 0) {
         roomCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
@@ -163,12 +173,22 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
         const tableArt = homeArt(wardrobe ? 'chest-1' : homeItem('table').id)
         const fittedTop = tableArt ? fitInBox(artSize(tableArt).w, artSize(tableArt).h, table).y : table.y
         const sitDrop = wardrobe && cub ? cub.y + cub.h - fittedTop - wardrobeLift : 0
-        drawHomeTable(fxCtx, layoutW, layoutH, wardrobe ? 'chest-1' : 'table-1', sitDrop)
         const visit = modeRef.current === 'visit'
+        const roomEl = room.closest('.home-room') as HTMLElement | null
+        if (visit) {
+          const cabinet = drawBadgeCabinet(fxCtx, layoutW, layoutH)
+          if (cabinet && roomEl) {
+            roomEl.style.setProperty('--cabinet-x', `${cabinet.x}px`)
+            roomEl.style.setProperty('--cabinet-y', `${cabinet.y}px`)
+            roomEl.style.setProperty('--cabinet-w', `${cabinet.w}px`)
+            roomEl.style.setProperty('--cabinet-h', `${cabinet.h}px`)
+          }
+        } else {
+          drawHomeTable(fxCtx, layoutW, layoutH, wardrobe ? 'chest-1' : 'table-1', sitDrop)
+        }
         const pumpkin = wardrobe || visit ? null : drawHalloweenPumpkin(fxCtx, layoutW, layoutH, time)
         if (!wardrobe) drawCubEffects(fxCtx, poseRef.current, time, layoutW, layoutH)
         const dockBottom = rect.height - (table.y + table.h) + 36
-        const roomEl = room.closest('.home-room') as HTMLElement | null
         roomEl?.style.setProperty('--dock-bottom', `${Math.max(0, dockBottom)}px`)
         roomEl?.style.setProperty('--table-top', `${fittedTop + sitDrop}px`)
         const bg = slotBox('background', layoutW, layoutH)

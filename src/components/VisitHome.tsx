@@ -1,12 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { showYellMouth, tryOnFromPicks } from '../game/cubTraits'
 import { setVisitHalloween } from '../game/halloween'
 import { getHomeCharacterAge, previewHomeCharacter, type CharacterAge } from '../game/homeScene'
 import type { PlayerProfile } from '../game/leaderboard'
+import { BADGES, earnedBadges, type BadgeId } from '../game/profileArt'
 import { levelProgress } from '../game/progress'
 import { playRoar } from '../game/roarAudio'
 import { sanitizeOwnedOutfit } from '../game/traitShop'
 import type { CubPose } from '../game/types'
+import { BadgeShowcase } from './BadgeShowcase'
 import { CubStage } from './CubStage'
 
 type Props = {
@@ -15,12 +17,16 @@ type Props = {
 }
 
 const PET_MS = 700
+const CABINET_SLOTS = 10
+/** Nameplate text longer than this shrinks to fit. */
+const PLATE_CHARS = 28
 
 /** Another player's home: their cubs, level and name only. Nothing here changes either save. */
 export function VisitHome({ profile, onReturn }: Props) {
   const room = profile.room
   const [age, setAge] = useState<CharacterAge>('old')
   const [pose, setPose] = useState<CubPose>('idle')
+  const [shownBadge, setShownBadge] = useState<BadgeId | null>(null)
   const petTimer = useRef<number | null>(null)
 
   useEffect(() => {
@@ -53,6 +59,10 @@ export function VisitHome({ profile, onReturn }: Props) {
   const xpPct = (progress.into / Math.max(1, progress.next)) * 100
   const ringR = 36
   const ringC = 2 * Math.PI * ringR
+  const badges = earnedBadges(profile.bests)
+  const slots = Array.from({ length: CABINET_SLOTS }, (_, index) => badges[index] ?? null)
+  const plate = `${profile.username}'s Badge Collection`
+  const plateScale = Math.min(1, PLATE_CHARS / plate.length)
 
   return (
     <section className="home-room visit-room">
@@ -63,6 +73,22 @@ export function VisitHome({ profile, onReturn }: Props) {
         onPet={pet}
         tryOn={tryOnFromPicks(sanitizeOwnedOutfit(room, age, room.outfits[age]))}
       />
+      <div className="badge-cabinet" aria-label={plate}>
+        <p className="badge-cabinet-plate" style={{ '--plate-scale': plateScale } as CSSProperties}>
+          {plate}
+        </p>
+        <ul className="badge-cabinet-slots">
+          {slots.map((id, index) => (
+            <li key={index}>
+              {id ? (
+                <button type="button" onClick={() => setShownBadge(id)} aria-label={`Show ${BADGES[id].label}`}>
+                  <img src={BADGES[id].src} alt="" />
+                </button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      </div>
       <div className="room-ui">
         <button type="button" className="visit-return" onClick={onReturn} aria-label="Return to the leaderboard">
           <span className="wood-btn">
@@ -106,6 +132,13 @@ export function VisitHome({ profile, onReturn }: Props) {
           </span>
         </div>
       </div>
+      {shownBadge ? (
+        <div className="badge-earned-pop" role="dialog" aria-modal="true" aria-label={BADGES[shownBadge].label}>
+          <div className="badge-earned-card">
+            <BadgeShowcase id={shownBadge} onClose={() => setShownBadge(null)} />
+          </div>
+        </div>
+      ) : null}
     </section>
   )
 }
