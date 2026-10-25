@@ -2,7 +2,7 @@ import { sanitizeDaily, type DailyGame, type DailyProgress } from './dailyTasks'
 import { supabase } from './supabase'
 import type { CubSave } from './types'
 
-export type GameCoinSource = 'flight' | 'hoops' | 'archer' | 'dojo' | 'match'
+export type GameCoinSource = 'flight' | 'hoops' | 'archer' | 'dojo' | 'match' | 'bubble'
 
 export type WalletPatch = {
   cubCash: number
@@ -120,6 +120,7 @@ const PAYOUT_GAP_MS: Record<GameCoinSource, number> = {
   archer: 15000,
   dojo: 10000,
   match: 8000,
+  bubble: 20000,
 }
 
 export function payoutGap(source: GameCoinSource) {

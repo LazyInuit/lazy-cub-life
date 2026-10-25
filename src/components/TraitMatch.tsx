@@ -71,7 +71,6 @@ type Props = {
   onReward: (
     baseXp: number,
     needs: Partial<Record<NeedKey, number>>,
-    options?: { flat?: boolean },
   ) => { xpGained: number }
   onCoins: (amount: number) => void
   onExit: () => void
@@ -196,7 +195,6 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
         ...moodFromScore(scoreRef.current),
         ...PLAY_NEED_COST,
       },
-      { flat: true },
     )
     setSummary({
       cleared: done,
@@ -402,7 +400,6 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
         ...moodFromScore(score),
         ...PLAY_NEED_COST,
       },
-      { flat: true },
     )
   }
   const bankMatchRef = useRef(bankMatch)

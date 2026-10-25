@@ -4867,6 +4867,325 @@ h1 {
   50% { transform: scale(1.06); }
 }
 
+/* Bubble Blast (placeholder look until the final art) */
+.thumb-bubble {
+  background: #0a6fe8;
+}
+
+.thumb-bubble img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* A "NEW" sash across the thumbnail's top-right corner. */
+.game-new-sash {
+  position: absolute;
+  top: 13px;
+  right: -30px;
+  z-index: 2;
+  width: 112px;
+  padding: 3px 0 2px;
+  transform: rotate(45deg);
+  background: linear-gradient(180deg, #ff5a4f, #e0102a 55%, #a3081c);
+  border-top: 2px solid #ffd36b;
+  border-bottom: 2px solid #ffd36b;
+  box-shadow: 0 2px 6px rgba(40, 0, 6, 0.55);
+  color: #fffaf0;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  line-height: 1.2;
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(90, 0, 10, 0.8);
+}
+
+.bubble-screen {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+  background: #0058e4;
+}
+
+/* Home and Games sit side by side on the sign's left plank; the screen sets their place and scale. */
+.bubble-nav {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  gap: 8px;
+  transform-origin: top left;
+}
+
+.bubble-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  touch-action: none;
+  overflow: hidden;
+  /* Matches the canvas: the sign sits at the very top, with the sky above it cut off. */
+  background: #3a1a08 url("./assets/bubble-blast/background-sign.jpg") center -9.38vw / 100% auto no-repeat;
+}
+
+.bubble-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+/* Centred in the space under the sign, which is 21.3% of the screen width tall. */
+.bubble-panel {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: calc(50% + 10.65vw);
+  transform: translateY(-50%);
+  max-height: calc(100% - 21.3vw - 24px);
+  overflow-y: auto;
+  z-index: 4;
+  margin: 0 auto;
+  max-width: 360px;
+  padding: 18px 18px 16px;
+  border-radius: 20px;
+  border: 3px solid #2e1404;
+  /* A carved wood plank like the sign: faint grain lines, a dark edge and a gold inner rim. */
+  background:
+    repeating-linear-gradient(180deg, rgba(40, 16, 2, 0) 0 26px, rgba(40, 16, 2, 0.2) 26px 28px),
+    linear-gradient(180deg, #8f4d1d, #6e340f 55%, #532509);
+  box-shadow:
+    inset 0 0 0 3px rgba(60, 26, 6, 0.9),
+    inset 0 0 0 5px #f0a43a,
+    inset 0 8px 14px rgba(255, 214, 150, 0.12),
+    0 6px 0 #2a1204,
+    0 12px 28px rgba(0, 0, 0, 0.35);
+  text-align: center;
+  color: #fff3dc;
+  text-shadow: 0 1px 0 rgba(40, 16, 2, 0.6);
+}
+
+.bubble-panel h2 {
+  margin: 0 0 8px;
+  font-size: 1.45rem;
+  color: #ffd36b;
+  text-shadow: 0 2px 0 #3d1c06;
+}
+
+.bubble-panel p {
+  margin: 0 0 7px;
+  line-height: 1.35;
+}
+
+.bubble-panel strong {
+  color: #ffe7a8;
+}
+
+.bubble-best,
+.bubble-new,
+.bubble-xp {
+  font-weight: 800;
+}
+
+.bubble-best,
+.bubble-new {
+  color: #ffe7a8;
+}
+
+.bubble-xp {
+  color: #ffd36b;
+}
+
+.bubble-coins {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #ffd36b;
+}
+
+.bubble-coins img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+/* Made like the wooden Home and Games buttons, stretched into a pill. */
+.bubble-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 14px;
+  border: 3px solid #5c3416;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f6dcae, #d9a057 50%, #a8662c);
+  color: #3c2918;
+  font: inherit;
+  font-weight: 900;
+  text-shadow: 0 1px 0 rgba(255, 240, 210, 0.6);
+  box-shadow: 0 4px 0 #2e1404, inset 0 2px 0 rgba(255, 236, 200, 0.65);
+}
+
+.bubble-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #2e1404, inset 0 2px 0 rgba(255, 236, 200, 0.65);
+}
+
+.bubble-btn:disabled {
+  opacity: 0.5;
+}
+
+.bubble-btn-ghost {
+  border: 2px solid #f0a43a;
+  background: linear-gradient(180deg, #5e2c0c, #3d1c06);
+  color: #ffe7a8;
+  text-shadow: 0 1px 0 rgba(20, 8, 0, 0.6);
+  box-shadow: 0 3px 0 #2a1204;
+}
+
+/* Start and rules screens: the panel sits low on the deck with the cub standing on top of it. */
+.bubble-home {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: calc(21.3vw + 8px);
+  bottom: calc(14px + var(--safe-bottom));
+  z-index: 4;
+  margin: 0 auto;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.bubble-home-cub {
+  flex-shrink: 0;
+  width: min(44%, 170px);
+  height: auto;
+  margin-bottom: -2px;
+  transform: translateX(6%);
+  display: block;
+  filter: drop-shadow(0 4px 10px rgba(20, 40, 60, 0.35));
+}
+
+.bubble-home .bubble-panel {
+  position: relative;
+  left: auto;
+  right: auto;
+  top: auto;
+  transform: none;
+  width: 100%;
+  min-height: 0;
+  max-height: none;
+  pointer-events: auto;
+}
+
+.bubble-rules {
+  margin: 0 0 4px;
+  padding: 0 0 0 18px;
+  text-align: left;
+  font-size: 0.92rem;
+  line-height: 1.32;
+}
+
+.bubble-rules li {
+  margin-bottom: 6px;
+}
+
+.bubble-rules strong {
+  color: #ffd36b;
+}
+
+/*
+ * First shot of a run: a lion paw presses just below the gum bubble in the cub's mouth,
+ * drags up along the arrow to aim, then lets go. The hint's bottom centre is that start point.
+ */
+.bubble-drag-hint {
+  position: absolute;
+  width: 64px;
+  height: 150px;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  z-index: 3;
+  filter: drop-shadow(0 0 4px rgba(255, 220, 140, 0.42)) drop-shadow(0 0 8px rgba(255, 160, 190, 0.28));
+}
+
+.bubble-drag-arrow {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 24px;
+  height: 108px;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 0 2px rgba(255, 250, 220, 0.48)) drop-shadow(0 2px 2px rgba(40, 22, 8, 0.45));
+  animation: bubble-drag-arrow 1.8s linear infinite;
+}
+
+.bubble-drag-paw {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 48px;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 0 3px rgba(255, 236, 170, 0.45)) drop-shadow(0 4px 4px rgba(0, 0, 0, 0.35));
+  animation: bubble-drag-paw 1.8s ease-in-out infinite;
+}
+
+@keyframes bubble-drag-paw {
+  0% {
+    transform: translateX(-50%) translateY(0) scale(1.18);
+    opacity: 0;
+  }
+  10% {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
+  68% {
+    transform: translateX(-50%) translateY(-92px) scale(1);
+    opacity: 1;
+  }
+  80% {
+    transform: translateX(-50%) translateY(-104px) scale(1.12);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-50%) translateY(0) scale(1.18);
+    opacity: 0;
+  }
+}
+
+@keyframes bubble-drag-arrow {
+  0%,
+  10% {
+    opacity: 0.35;
+  }
+  68% {
+    opacity: 1;
+  }
+  80%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble-drag-paw,
+  .bubble-drag-arrow {
+    animation: none;
+  }
+}
+
 @media (min-width: 520px) {
   .phone {
     height: min(920px, calc(100dvh - 32px));

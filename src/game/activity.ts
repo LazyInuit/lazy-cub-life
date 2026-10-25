@@ -8,6 +8,7 @@ export const ACTIVITY_AREAS = [
   { id: 'dojo', label: 'Ninja Cub Dojo' },
   { id: 'archer', label: 'Cupid Archery' },
   { id: 'hoops', label: 'Lazy Hoops' },
+  { id: 'bubble', label: 'Bubble Blast' },
 ] as const
 
 export type ActivityArea = (typeof ACTIVITY_AREAS)[number]['id']

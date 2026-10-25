@@ -28,7 +28,6 @@ type Props = {
   onReward: (
     baseXp: number,
     needs: Partial<Record<NeedKey, number>>,
-    options?: { flat?: boolean },
   ) => { xpGained: number }
   onCoins: (amount: number) => void
   onExit: () => void
@@ -101,7 +100,6 @@ export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onCoin
         ...moodFromScore(score),
         ...PLAY_NEED_COST,
       },
-      { flat: true },
     )
     const coins = engine.coins
     if (coins > 0) onCoinsRef.current(coins)

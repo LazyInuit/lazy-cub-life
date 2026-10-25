@@ -116,7 +116,6 @@ type Props = {
   onReward: (
     baseXp: number,
     needs: Partial<Record<NeedKey, number>>,
-    options?: { flat?: boolean },
   ) => { xpGained: number }
   onCoins: (amount: number) => void
   onExit: () => void
@@ -281,7 +280,6 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoi
     const result = onRewardRef.current(
       regulars * HOOPS_XP_BASKET + live.perfects * HOOPS_XP_PERFECT,
       { ...moodFromScore(score), ...PLAY_NEED_COST },
-      { flat: true },
     )
     const coins = live.perfects
     if (coins > 0) onCoinsRef.current(coins)

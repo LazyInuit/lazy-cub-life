@@ -44,7 +44,6 @@ type Props = {
   onReward: (
     baseXp: number,
     needs: Partial<Record<NeedKey, number>>,
-    options?: { flat?: boolean },
   ) => { xpGained: number }
   onCoins: (amount: number) => void
   onExit: () => void
@@ -99,7 +98,6 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
         ...moodFromScore(passed),
         ...PLAY_NEED_COST,
       },
-      { flat: true },
     )
     return { passed, xpGained: result.xpGained, coins: coins.current }
   }

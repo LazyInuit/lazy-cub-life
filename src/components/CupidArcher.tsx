@@ -42,7 +42,6 @@ type Props = {
   onReward: (
     baseXp: number,
     needs: Partial<Record<NeedKey, number>>,
-    options?: { flat?: boolean },
   ) => { xpGained: number }
   onCoins: (amount: number) => void
   onExit: () => void
@@ -171,7 +170,6 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onC
     const result = onRewardRef.current(
       Math.round(score * ARCHER_XP_PER_SCORE),
       { ...moodFromScore(score), ...PLAY_NEED_COST },
-      { flat: true },
     )
     const accuracy = round.shots > 0 ? Math.round((round.hits / round.shots) * 100) : 0
     const coins = round.paidBullseyes

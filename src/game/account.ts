@@ -40,7 +40,7 @@ export function takeAdoptedSave() {
   return next
 }
 
-type BoardBests = { flight: number; match: number; dojo: number; archer: number; hoops: number }
+type BoardBests = { flight: number; match: number; dojo: number; archer: number; hoops: number; bubble: number }
 
 /**
  * This account's best ever score in each game, from the leaderboard. Every run is sent
@@ -67,6 +67,7 @@ async function loadBoardBests(username: string | null): Promise<BoardBests | nul
       dojo: read(raw.dojo),
       archer: read(raw.archer),
       hoops: read(raw.hoops),
+      bubble: read(raw.bubble),
     }
   } catch {
     return null
@@ -82,6 +83,7 @@ function withBoardBests(save: CubSave, board: BoardBests | null): CubSave {
     dojoBest: board.dojo,
     archerBest: board.archer,
     hoopsBest: board.hoops,
+    bubbleBest: board.bubble,
   }
 }
 
@@ -91,7 +93,8 @@ function sameBests(a: CubSave, b: CubSave) {
     a.matchBest === b.matchBest &&
     a.dojoBest === b.dojoBest &&
     a.archerBest === b.archerBest &&
-    a.hoopsBest === b.hoopsBest
+    a.hoopsBest === b.hoopsBest &&
+    a.bubbleBest === b.bubbleBest
   )
 }
 

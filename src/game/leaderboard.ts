@@ -22,6 +22,7 @@ export const LEADERBOARD_BOARDS: { id: LeaderboardBoard; label: string }[] = [
   { id: 'dojo', label: 'Ninja Cub Dojo' },
   { id: 'archer', label: 'Cupid Archery' },
   { id: 'hoops', label: 'Lazy Hoops' },
+  { id: 'bubble', label: 'Bubble Blast' },
 ]
 
 export type LeaderboardBoard = DailyGame | 'overall'
@@ -174,7 +175,7 @@ export async function loadPlayerProfile(username: string): Promise<PlayerProfile
     ? (entry.bests as Record<string, unknown>)
     : {}
   const bests: Partial<Record<DailyGame, number>> = {}
-  for (const game of ['flight', 'match', 'dojo', 'archer', 'hoops'] as const) {
+  for (const game of ['flight', 'match', 'dojo', 'archer', 'hoops', 'bubble'] as const) {
     const best = readCount(rawBests[game])
     if (best > 0) bests[game] = best
   }

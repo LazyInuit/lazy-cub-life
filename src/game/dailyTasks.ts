@@ -2,7 +2,7 @@ import { TRAIT_CATEGORIES, type TraitCategory } from './cubTraits'
 import type { CharacterAge } from './homeScene'
 import { traitPrice } from './traitShop'
 
-export type DailyGame = 'flight' | 'hoops' | 'archer' | 'dojo' | 'match'
+export type DailyGame = 'flight' | 'hoops' | 'archer' | 'dojo' | 'match' | 'bubble'
 
 /** One wardrobe style won from the board dice. */
 export type BonusTrait = {
@@ -66,7 +66,7 @@ export function rollBonusCoins(random = Math.random): (typeof BONUS_COIN_AMOUNTS
   return BONUS_COIN_AMOUNTS[0]
 }
 
-/** One challenge per game. The same five stay up for 24 hours after the first one starts. */
+/** One challenge per game. The same set stays up for 24 hours after the first one starts. */
 export const DAILY_TASKS: DailyTask[] = [
   {
     id: 'dash-20',
@@ -108,9 +108,17 @@ export const DAILY_TASKS: DailyTask[] = [
     goal: 60,
     reward: 10,
   },
+  {
+    id: 'bubble-3000',
+    game: 'bubble',
+    gameLabel: 'Bubble Blast',
+    detail: 'Earn 3000 points',
+    goal: 3000,
+    reward: 10,
+  },
 ]
 
-const GAMES: DailyGame[] = ['flight', 'hoops', 'archer', 'dojo', 'match']
+const GAMES: DailyGame[] = ['flight', 'hoops', 'archer', 'dojo', 'match', 'bubble']
 
 export const DAILY_WINDOW_MS = 24 * 60 * 60 * 1000
 

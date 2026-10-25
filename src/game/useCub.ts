@@ -15,10 +15,8 @@ import {
   clampNeed,
   decaySave,
   isNeedy,
-  levelFromXp,
   levelProgress,
   PLAY_ENERGY_COST,
-  rewardMultiplier,
 } from './progress'
 import { BONUS_COIN_AMOUNTS, DAILY_TASKS, bonusReady, dailyView, type BonusTrait, type DailyGame } from './dailyTasks'
 import { DRINKS, type DrinkId } from './drinks'
@@ -448,6 +446,15 @@ export function useCub() {
     announceBadge('hoops', current.hoopsBest, nextBest)
   }, [announceBadge, commit])
 
+  const recordBubbleBest = useCallback((score: number) => {
+    const current = saveRef.current
+    if (!current) return
+    const nextBest = Math.max(0, Math.floor(score))
+    if (nextBest <= current.bubbleBest) return
+    commit({ ...current, bubbleBest: nextBest })
+    announceBadge('bubble', current.bubbleBest, nextBest)
+  }, [announceBadge, commit])
+
   const setOutfits = useCallback((outfits: CubOutfits) => {
     const current = saveRef.current
     if (!current) return
@@ -671,11 +678,11 @@ export function useCub() {
   }, [commit, noteLevel])
 
   const reward = useCallback(
-    (baseXp: number, needs: Partial<Record<NeedKey, number>>, options?: { flat?: boolean }) => {
+    (baseXp: number, needs: Partial<Record<NeedKey, number>>) => {
       const current = saveRef.current
       if (!current) return { xpGained: 0 }
-      const scaled = options?.flat ? baseXp : baseXp * rewardMultiplier(levelFromXp(current.xp))
-      const xpGained = options?.flat ? Math.max(0, scaled) : Math.max(0, Math.round(scaled))
+      // Game XP is the same at every level.
+      const xpGained = Math.max(0, baseXp)
       const next = applyReward(current, xpGained, needs)
       commit(next)
       noteLevel()
@@ -823,6 +830,7 @@ export function useCub() {
     recordDojoBest,
     recordArcherBest,
     recordHoopsBest,
+    recordBubbleBest,
     startDaily,
     noteDaily,
     claimDaily,

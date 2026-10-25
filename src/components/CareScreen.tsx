@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import dashThumb from '../assets/galactic-dash-cover.jpg'
 import archerThumb from '../assets/cupid-archer/cover.jpg'
 import hoopsThumb from '../assets/lazy-hoops/cover-select.jpg'
+import bubbleThumb from '../assets/bubble-blast/thumb.jpg'
 import dojoBg from '../assets/lazy-dojo/backgrounds/dojo-1.png'
 import dojoCover from '../assets/lazy-dojo/ui/ninja-cub-cover.png'
 import controllerUrl from '../assets/controller-icon.png'
@@ -60,6 +61,7 @@ type Props = {
   onDojo: () => void
   onArcher: () => void
   onHoops: () => void
+  onBubble: () => void
   startInGames?: boolean
   startInShop?: boolean
   /** Open the Achievements list straight away, from the badge-earned pop-up. */
@@ -85,6 +87,7 @@ export function CareScreen({
   onDojo,
   onArcher,
   onHoops,
+  onBubble,
   startInGames = false,
   startInShop = false,
   startInAchievements = false,
@@ -291,6 +294,20 @@ export function CareScreen({
             onPointerDown={flashSilverPress}
             onPointerUp={clearSilverPressGlow}
             onPointerCancel={clearSilverPressGlow}
+            onClick={() => tryGame(onBubble)}
+          >
+            <span className="game-thumb thumb-bubble" aria-hidden="true">
+              <img src={bubbleThumb} alt="" />
+              <span className="game-new-sash">New</span>
+            </span>
+            <span>Bubble Blast</span>
+          </button>
+          <button
+            type="button"
+            className="game-pick"
+            onPointerDown={flashSilverPress}
+            onPointerUp={clearSilverPressGlow}
+            onPointerCancel={clearSilverPressGlow}
             onClick={() => tryGame(onFlight)}
           >
             <span className="game-thumb thumb-flight" aria-hidden="true">
@@ -472,7 +489,9 @@ export function CareScreen({
                     ? onArcher
                     : task.game === 'dojo'
                       ? onDojo
-                      : onMatch
+                      : task.game === 'bubble'
+                        ? onBubble
+                        : onMatch
             return (
               <article key={task.id} className="daily-task">
                 <h2>{task.gameLabel}</h2>

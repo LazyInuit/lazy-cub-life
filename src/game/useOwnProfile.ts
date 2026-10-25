@@ -19,6 +19,7 @@ export function saveBests(save: CubSave | null): GameBests {
     dojo: save.dojoBest,
     archer: save.archerBest,
     hoops: save.hoopsBest,
+    bubble: save.bubbleBest,
   }
 }
 

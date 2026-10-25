@@ -65,6 +65,7 @@ export type CubSave = {
   dojoBest: number
   archerBest: number
   hoopsBest: number
+  bubbleBest: number
   /** Task scores for the current 24 hour round, which rewards have been claimed, and the board bonus. */
   daily: DailyProgress
   /** Matches DAILY_BOARD_RESET after a one-time board clear. */

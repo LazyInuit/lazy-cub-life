@@ -13,6 +13,7 @@ const GAMES = [
   { source: 'dojo', label: 'Ninja Cub Dojo' },
   { source: 'archer', label: 'Cupid Archery' },
   { source: 'hoops', label: 'Lazy Hoops' },
+  { source: 'bubble', label: 'Bubble Blast' },
 ]
 
 function coins(value: number) {
