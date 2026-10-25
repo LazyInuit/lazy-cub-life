@@ -31,14 +31,14 @@ export function EnergyBar({ energy }: { energy: number }) {
   )
 }
 
-export function RunEnergy({ energy, onShop }: { energy: number; onShop: () => void }) {
-  const low = energy < PLAY_ENERGY_COST
+export function RunEnergy({ energy, onShop, cost = PLAY_ENERGY_COST }: { energy: number; onShop: () => void; cost?: number }) {
+  const low = energy < cost
   return (
     <div className="run-energy">
       <EnergyBar energy={energy} />
       {low ? (
         <p className="run-energy-note">
-          You need {PLAY_ENERGY_COST} energy to play.{' '}
+          You need {cost} energy to play.{' '}
           <button type="button" onClick={onShop}>
             Visit the shop
           </button>{' '}

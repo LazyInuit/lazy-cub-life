@@ -340,7 +340,7 @@ function Game() {
         <SafariFlight
           best={cub.save.flightBest}
           onBest={cub.recordFlightBest}
-          onDailyStart={cub.startDaily}
+          onDailyStart={() => cub.startDaily('flight')}
           onDaily={(score) => cub.noteDaily('flight', score)}
           onReward={cub.reward}
           onCoins={(amount) => cub.addCubCash(amount, 'flight')}
@@ -354,7 +354,7 @@ function Game() {
         <TraitMatch
           best={cub.save.matchBest}
           onBest={cub.recordMatchBest}
-          onDailyStart={cub.startDaily}
+          onDailyStart={() => cub.startDaily('match')}
           onDaily={(score) => cub.noteDaily('match', score)}
           onReward={cub.reward}
           onCoins={(amount) => cub.addCubCash(amount, 'match')}
@@ -368,7 +368,7 @@ function Game() {
         <LazyDojo
           best={cub.save.dojoBest}
           onBest={cub.recordDojoBest}
-          onDailyStart={cub.startDaily}
+          onDailyStart={() => cub.startDaily('dojo')}
           onDaily={(score) => cub.noteDaily('dojo', score)}
           onReward={cub.reward}
           onCoins={(amount) => cub.addCubCash(amount, 'dojo')}
@@ -382,7 +382,7 @@ function Game() {
         <CupidArcher
           best={cub.save.archerBest}
           onBest={cub.recordArcherBest}
-          onDailyStart={cub.startDaily}
+          onDailyStart={() => cub.startDaily('archer')}
           onDaily={(score) => cub.noteDaily('archer', score)}
           onReward={cub.reward}
           onCoins={(amount) => cub.addCubCash(amount, 'archer')}
@@ -396,7 +396,7 @@ function Game() {
         <LazyHoops
           best={cub.save.hoopsBest}
           onBest={cub.recordHoopsBest}
-          onDailyStart={cub.startDaily}
+          onDailyStart={() => cub.startDaily('hoops')}
           onDaily={(score) => cub.noteDaily('hoops', score)}
           onReward={cub.reward}
           onCoins={(amount) => cub.addCubCash(amount, 'hoops')}
@@ -410,7 +410,7 @@ function Game() {
         <BubbleBlast
           best={cub.save.bubbleBest}
           onBest={cub.recordBubbleBest}
-          onDailyStart={cub.startDaily}
+          onDailyStart={() => cub.startDaily('bubble')}
           onDaily={(score) => cub.noteDaily('bubble', score)}
           onReward={cub.reward}
           onCoins={(amount) => cub.addCubCash(amount, 'bubble')}

@@ -25,6 +25,7 @@ import {
   pickBonusTrait,
   rollBonusCoins,
   type BonusTrait,
+  type DailyGame,
   bonusReady,
   dailyNeedsAttention,
   dailyView,
@@ -38,7 +39,7 @@ import { playDiceRattle } from '../game/diceAudio'
 import { startHalloweenBgm, stopHalloweenBgm } from '../game/halloweenBgm'
 import { pumpkinLit } from '../game/halloween'
 import { playCoin } from '../game/flightAudio'
-import { barIsFull, energyFillColor, levelProgress, PLAY_ENERGY_COST } from '../game/progress'
+import { barIsFull, energyFillColor, levelProgress, PLAY_ENERGY_COST, playEnergyCost } from '../game/progress'
 import { formatCubCash } from '../game/formatCubCash'
 import type { CubController } from '../game/useCub'
 import { CubStage } from './CubStage'
@@ -100,7 +101,8 @@ export function CareScreen({
   const [coinBurst, setCoinBurst] = useState<{ id: string; key: number } | null>(null)
   const [wardrobeOpen, setWardrobeOpen] = useState(false)
   const [shopOpen, setShopOpen] = useState(startInShop)
-  const [energyWarn, setEnergyWarn] = useState(false)
+  /** Energy the picked game needs, while its "Recover energy" popup is open. */
+  const [energyWarn, setEnergyWarn] = useState<number | null>(null)
   const [accountOpen, setAccountOpen] = useState(false)
   const [achievementsOpen, setAchievementsOpen] = useState(startInAchievements)
   const [bonusRoll, setBonusRoll] = useState<{ prize: BonusTrait | null; coins: number } | null>(null)
@@ -180,12 +182,13 @@ export function CareScreen({
 
   const demo = isDemo()
 
-  const tryGame = (start: () => void) => {
-    if (!demo && save.energy < PLAY_ENERGY_COST) {
-      setEnergyWarn(true)
+  const tryGame = (game: DailyGame, start: () => void) => {
+    const cost = playEnergyCost(game)
+    if (!demo && save.energy < cost) {
+      setEnergyWarn(cost)
       return
     }
-    setEnergyWarn(false)
+    setEnergyWarn(null)
     start()
   }
 
@@ -257,8 +260,8 @@ export function CareScreen({
             </span>
           </span>
         </button>
-        {energyWarn ? (
-          <div className="energy-pop" role="presentation" onClick={() => setEnergyWarn(false)}>
+        {energyWarn != null ? (
+          <div className="energy-pop" role="presentation" onClick={() => setEnergyWarn(null)}>
             <div
               className="energy-pop-card"
               role="dialog"
@@ -268,19 +271,19 @@ export function CareScreen({
             >
               <div className="energy-pop-face">
                 <h2 id="energy-pop-title">Recover energy</h2>
-                <p>You need {PLAY_ENERGY_COST} energy to play. Buy a drink in the shop to fill the bar, or put your cub to sleep.</p>
+                <p>You need {energyWarn} energy to play. Buy a drink in the shop to fill the bar, or put your cub to sleep.</p>
                 <button
                   type="button"
                   className="energy-pop-shop"
                   onClick={() => {
-                    setEnergyWarn(false)
+                    setEnergyWarn(null)
                     setGamesOpen(false)
                     setShopOpen(true)
                   }}
                 >
                   Visit the shop
                 </button>
-                <button type="button" className="energy-pop-close" onClick={() => setEnergyWarn(false)}>
+                <button type="button" className="energy-pop-close" onClick={() => setEnergyWarn(null)}>
                   Not now
                 </button>
               </div>
@@ -294,7 +297,7 @@ export function CareScreen({
             onPointerDown={flashSilverPress}
             onPointerUp={clearSilverPressGlow}
             onPointerCancel={clearSilverPressGlow}
-            onClick={() => tryGame(onBubble)}
+            onClick={() => tryGame('bubble', onBubble)}
           >
             <span className="game-thumb thumb-bubble" aria-hidden="true">
               <img src={bubbleThumb} alt="" />
@@ -308,7 +311,7 @@ export function CareScreen({
             onPointerDown={flashSilverPress}
             onPointerUp={clearSilverPressGlow}
             onPointerCancel={clearSilverPressGlow}
-            onClick={() => tryGame(onFlight)}
+            onClick={() => tryGame('flight', onFlight)}
           >
             <span className="game-thumb thumb-flight" aria-hidden="true">
               <img src={dashThumb} alt="" />
@@ -321,7 +324,7 @@ export function CareScreen({
             onPointerDown={flashSilverPress}
             onPointerUp={clearSilverPressGlow}
             onPointerCancel={clearSilverPressGlow}
-            onClick={() => tryGame(onMatch)}
+            onClick={() => tryGame('match', onMatch)}
           >
             <span className="game-thumb thumb-match" aria-hidden="true">
               <PrideThumbBack />
@@ -337,7 +340,7 @@ export function CareScreen({
             onPointerDown={flashSilverPress}
             onPointerUp={clearSilverPressGlow}
             onPointerCancel={clearSilverPressGlow}
-            onClick={() => tryGame(onDojo)}
+            onClick={() => tryGame('dojo', onDojo)}
           >
             <span className="game-thumb thumb-dojo" aria-hidden="true">
               <img className="thumb-dojo-bg" src={dojoBg} alt="" />
@@ -351,7 +354,7 @@ export function CareScreen({
             onPointerDown={flashSilverPress}
             onPointerUp={clearSilverPressGlow}
             onPointerCancel={clearSilverPressGlow}
-            onClick={() => tryGame(onArcher)}
+            onClick={() => tryGame('archer', onArcher)}
           >
             <span
               className="game-thumb thumb-archer"
@@ -366,7 +369,7 @@ export function CareScreen({
             onPointerDown={flashSilverPress}
             onPointerUp={clearSilverPressGlow}
             onPointerCancel={clearSilverPressGlow}
-            onClick={() => tryGame(onHoops)}
+            onClick={() => tryGame('hoops', onHoops)}
           >
             <span className="game-thumb thumb-hoops" aria-hidden="true">
               <img src={hoopsThumb} alt="" />

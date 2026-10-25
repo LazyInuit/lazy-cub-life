@@ -16,7 +16,7 @@ import {
   decaySave,
   isNeedy,
   levelProgress,
-  PLAY_ENERGY_COST,
+  playEnergyCost,
 } from './progress'
 import { BONUS_COIN_AMOUNTS, DAILY_TASKS, bonusReady, dailyView, type BonusTrait, type DailyGame } from './dailyTasks'
 import { DRINKS, type DrinkId } from './drinks'
@@ -468,13 +468,14 @@ export function useCub() {
     })
   }, [commit])
 
-  const startDaily = useCallback(() => {
+  const startDaily = useCallback((game: DailyGame) => {
     const current = saveRef.current
     if (!current) return false
     // Demo players cannot buy drinks, so a run never costs energy.
     if (demoCub) return true
-    if (current.energy < PLAY_ENERGY_COST) return false
-    const next: CubSave = { ...current, energy: current.energy - PLAY_ENERGY_COST }
+    const cost = playEnergyCost(game)
+    if (current.energy < cost) return false
+    const next: CubSave = { ...current, energy: current.energy - cost }
     const daily = dailyView(next.daily)
     if (daily.startedAt == null) {
       next.daily = { ...daily, startedAt: Date.now() }

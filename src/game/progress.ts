@@ -11,7 +11,7 @@ import {
   type OutfitTraits,
   type TraitSlot,
 } from './types'
-import { emptyDaily, sanitizeDaily } from './dailyTasks'
+import { emptyDaily, sanitizeDaily, type DailyGame } from './dailyTasks'
 
 /** Bump this to clear the daily board once on the next load. */
 const DAILY_BOARD_RESET = 2
@@ -31,6 +31,14 @@ export const SLEEP_ENERGY_PER_MIN = 1
 const SLEEP_ENERGY_MS = 60_000
 /** Energy spent when a game run starts. */
 export const PLAY_ENERGY_COST = 10
+const GAME_ENERGY_COSTS: Partial<Record<DailyGame, number>> = {
+  flight: 5,
+  match: 5,
+}
+
+export function playEnergyCost(game: DailyGame) {
+  return GAME_ENERGY_COSTS[game] ?? PLAY_ENERGY_COST
+}
 
 /** 50–100 green, 21–49 orange, 20 and under red. */
 export function energyBand(energy: number): 'high' | 'mid' | 'low' {

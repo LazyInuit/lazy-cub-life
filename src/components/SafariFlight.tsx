@@ -3,7 +3,7 @@ import type { PointerEvent as ReactPointerEvent } from 'react'
 import lionPawUrl from '../assets/lion-paw-ui.png'
 import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import { drawFlightLion } from '../game/drawCub'
-import { PLAY_ENERGY_COST, PLAY_NEED_COST, moodFromScore } from '../game/progress'
+import { PLAY_NEED_COST, moodFromScore, playEnergyCost } from '../game/progress'
 import { playCoin, playCrash, playEnd, playFlap, playIgnite, resumeFlightAudio, startSpaceAmbience, stopSpaceAmbience } from '../game/flightAudio'
 import type { NeedKey } from '../game/types'
 import { RunEnergy } from './EnergyBar'
@@ -362,9 +362,9 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
             <img src={coinUrl} alt="" />
             +{summary.coins}
           </p>
-          <RunEnergy energy={energy} onShop={onShop} />
+          <RunEnergy energy={energy} onShop={onShop} cost={playEnergyCost('flight')} />
           <div className="flight-results-actions">
-            <button type="button" className="cabinet-key" onClick={retry} disabled={energy < PLAY_ENERGY_COST}>
+            <button type="button" className="cabinet-key" onClick={retry} disabled={energy < playEnergyCost('flight')}>
               Retry
             </button>
             <button type="button" className="cabinet-key" onClick={onExit}>

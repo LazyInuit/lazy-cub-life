@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import lionPawUrl from '../assets/lion-paw-clear.png'
 import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
-import { PLAY_ENERGY_COST, PLAY_NEED_COST, moodFromScore } from '../game/progress'
+import { PLAY_NEED_COST, moodFromScore, playEnergyCost } from '../game/progress'
 import { traitSlug } from '../game/cubTraits'
 import { playCoin } from '../game/flightAudio'
 import { playPrideFail, resumePrideAudio, setPrideUrgency, startPrideAmbience, stopPrideAmbience } from '../game/prideAudio'
@@ -541,10 +541,10 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
           <p className="pride-results-coins">
             <img src={coinUrl} alt="" />+{summary.coins}
           </p>
-          <RunEnergy energy={energy} onShop={onShop} />
+          <RunEnergy energy={energy} onShop={onShop} cost={playEnergyCost('match')} />
           <div className="pride-results-actions">
             {!summary.won ? (
-              <button type="button" className="pride-results-btn pride-results-retry" onClick={retry} disabled={energy < PLAY_ENERGY_COST}>
+              <button type="button" className="pride-results-btn pride-results-retry" onClick={retry} disabled={energy < playEnergyCost('match')}>
                 Retry
               </button>
             ) : null}
