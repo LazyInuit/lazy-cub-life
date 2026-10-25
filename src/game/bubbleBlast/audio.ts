@@ -1,10 +1,20 @@
 /**
- * Placeholder synth sounds for Bubble Blast, so the game has feedback before real audio
- * files exist.
+ * Bubble Blast sound: the Tiki Lounge background loop, plus placeholder synth effects
+ * until real effect files exist.
  */
+import bgmUrl from '../../assets/bubble-blast/bgm-tiki-lounge.wav'
 import type { BubbleEvent } from './types'
 
 let audio: AudioContext | null = null
+
+/** Background music at 10% volume. */
+const BGM_GAIN = 0.1
+
+let bgmBuffer: AudioBuffer | null = null
+let bgmSource: AudioBufferSourceNode | null = null
+let bgmGain: GainNode | null = null
+/** Bumped on every start and stop, so a slow load never starts music that was already stopped. */
+let bgmTicket = 0
 
 function ctx(): AudioContext | null {
   try {
@@ -18,6 +28,49 @@ function ctx(): AudioContext | null {
 export function resumeBubbleAudio() {
   const current = ctx()
   if (current && current.state === 'suspended') void current.resume()
+}
+
+export function stopBubbleBgm() {
+  bgmTicket += 1
+  try {
+    bgmSource?.stop()
+  } catch {
+    // Already stopped.
+  }
+  bgmSource?.disconnect()
+  bgmGain?.disconnect()
+  bgmSource = null
+  bgmGain = null
+}
+
+/** Starts the looping background music from the top. Stays silent if the file cannot play. */
+export function startBubbleBgm() {
+  stopBubbleBgm()
+  const ticket = bgmTicket
+  const current = ctx()
+  if (!current) return
+  resumeBubbleAudio()
+  void (async () => {
+    try {
+      if (!bgmBuffer) {
+        const res = await fetch(bgmUrl)
+        bgmBuffer = await current.decodeAudioData(await res.arrayBuffer())
+      }
+      if (ticket !== bgmTicket) return
+      const gain = current.createGain()
+      gain.gain.value = BGM_GAIN
+      const source = current.createBufferSource()
+      source.buffer = bgmBuffer
+      source.loop = true
+      source.connect(gain)
+      gain.connect(current.destination)
+      source.start()
+      bgmSource = source
+      bgmGain = gain
+    } catch {
+      // No music if the file fails to load or decode; the game still plays.
+    }
+  })()
 }
 
 type Tone = { freq: number; dur: number; type?: OscillatorType; gain?: number; slide?: number; delay?: number }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import homeCubUrl from '../assets/bubble-blast/home-cub.png'
 import lionPawUrl from '../assets/lion-paw-ui.png'
-import { playBubbleEvent, resumeBubbleAudio } from '../game/bubbleBlast/audio'
+import { playBubbleEvent, resumeBubbleAudio, startBubbleBgm, stopBubbleBgm } from '../game/bubbleBlast/audio'
 import {
   BUBBLE_R,
   BUBBLE_XP_PER_SCORE,
@@ -134,6 +134,7 @@ export function BubbleBlast({ best, onBest, onDailyStart, onDaily, onReward, onC
 
   useEffect(
     () => () => {
+      stopBubbleBgm()
       if (overTimer.current !== null) window.clearTimeout(overTimer.current)
       const game = gameRef.current
       if (game && modeRef.current === 'play' && !rewarded.current) finishRef.current(game)
@@ -301,6 +302,7 @@ export function BubbleBlast({ best, onBest, onDailyStart, onDaily, onReward, onC
     }
     setLowEnergy(false)
     resumeBubbleAudio()
+    startBubbleBgm()
     if (overTimer.current !== null) window.clearTimeout(overTimer.current)
     overTimer.current = null
     const game = createGame()
@@ -315,6 +317,7 @@ export function BubbleBlast({ best, onBest, onDailyStart, onDaily, onReward, onC
   }
 
   const leave = (go: () => void) => {
+    stopBubbleBgm()
     const game = gameRef.current
     if (modeRef.current === 'play' && game && !rewarded.current) {
       finish(game)
