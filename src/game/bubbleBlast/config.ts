@@ -90,8 +90,15 @@ export const ROW_DENSITY_START = 0.7
 export const ROW_DENSITY_MAX = 1
 export const ROW_DENSITY_PER_SUCCESS = 0.003
 
-/** Misses in a row before the ceiling drops a row. */
-export const MISS_LIMIT = 3
+/**
+ * Misses in a row before the ceiling drops a row. It tightens as the run goes on,
+ * counted in successful shots: 3 at the start, then 2, then every miss drops it.
+ */
+export const MISS_LIMITS = [
+  { from: 40, limit: 1 },
+  { from: 15, limit: 2 },
+  { from: 0, limit: 3 },
+] as const
 /** How long the board takes to slide down one row. The next shot waits for it. */
 export const CEILING_DROP_SECONDS = 0.45
 

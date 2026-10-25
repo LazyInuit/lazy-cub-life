@@ -201,12 +201,12 @@ function drawSign(ctx: CanvasRenderingContext2D, sign: SignValues, pill: PillPla
   const score = signPoint(SIGN.score.x, SIGN.score.y)
   signText(ctx, 'SCORE', score.x, score.y - 20, 8, 'rgba(255, 236, 200, 0.9)', null)
   signText(ctx, sign.score.toLocaleString('en-US'), score.x, score.y - 4, 23, '#fffaf0', 'rgba(60, 22, 4, 0.85)')
-  drawCeilingBar(ctx, score.x, score.y + 18, sign.misses)
+  drawCeilingBar(ctx, score.x, score.y + 18, sign.misses, missLimit(sign.successfulShots))
   drawMultiplierPill(ctx, pill, `×${comboMultiplier(sign.combo)}`)
 }
 
-/** What the sign shows: the run's score, misses toward the ceiling drop, and combo. */
-type SignValues = Pick<BubbleState, 'score' | 'misses' | 'combo'>
+/** What the sign shows: the run's score, misses toward the ceiling drop, how far along it is, and combo. */
+type SignValues = Pick<BubbleState, 'score' | 'misses' | 'successfulShots' | 'combo'>
 
 /** The multiplier pill in field units: as tall as the Home and Games buttons and on their line. */
 type PillPlace = { cy: number; h: number; unit: number }
@@ -281,8 +281,7 @@ function drawMultiplierPill(ctx: CanvasRenderingContext2D, pill: PillPlace, text
 }
 
 /** A small wood pill with a gold rim, like the score plate: CEILING, then one bar per miss allowed. */
-function drawCeilingBar(ctx: CanvasRenderingContext2D, cx: number, cy: number, misses: number) {
-  const limit = missLimit()
+function drawCeilingBar(ctx: CanvasRenderingContext2D, cx: number, cy: number, misses: number, limit: number) {
   const h = 13
   const barW = 13
   const barH = 5.5
@@ -569,7 +568,7 @@ export function drawBubbleIdle(ctx: CanvasRenderingContext2D, width: number, hei
   ctx.translate(view.x, view.y)
   ctx.scale(view.scale, view.scale)
   drawBackground(ctx, -view.y / view.scale - 20, (height - view.y) / view.scale + 20)
-  drawSign(ctx, { score: 0, misses: 0, combo: 0 }, pillPlace(width, height))
+  drawSign(ctx, { score: 0, misses: 0, successfulShots: 0, combo: 0 }, pillPlace(width, height))
   ctx.restore()
 }
 

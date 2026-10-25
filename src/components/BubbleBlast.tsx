@@ -12,6 +12,7 @@ import {
   LAUNCH_X,
   LAUNCH_Y,
   MATCH_MIN,
+  MISS_LIMITS,
 } from '../game/bubbleBlast/config'
 import { drawBubbleFrame, drawBubbleIdle, fitField, signNav } from '../game/bubbleBlast/draw'
 import {
@@ -19,7 +20,6 @@ import {
   cancelAim,
   createGame,
   megaButtonHit,
-  missLimit,
   moveAim,
   releaseAim,
   stepGame,
@@ -64,6 +64,12 @@ type Summary = {
 const OVER_PANEL_MS = 900
 
 type NavPlace = ReturnType<typeof signNav>
+
+/** "3 misses in a row, then 2 misses in a row, then every miss", from the tightening table. */
+const CEILING_STEPS = [...MISS_LIMITS]
+  .reverse()
+  .map((step) => (step.limit === 1 ? 'every miss' : `${step.limit} misses in a row`))
+  .join(', then ')
 
 /** The paw image's height in CSS pixels, plus a small gap under the gum bubble. */
 const HINT_PAW_PX = 46
@@ -378,7 +384,12 @@ export function BubbleBlast({ best, onBest, onDailyStart, onDaily, onReward, onC
               </div>
             ) : (
               <div className="bubble-panel">
-                <h2>Rules</h2>
+                <div className="bubble-rules-head">
+                  <button type="button" className="bubble-btn bubble-rules-back" onClick={() => setShowRules(false)}>
+                    ‹ Back
+                  </button>
+                  <h2>Rules</h2>
+                </div>
                 <ul className="bubble-rules">
                   <li>
                     <strong>Aim:</strong> hold anywhere and drag to aim, then let go to blow a bubble.
@@ -399,15 +410,13 @@ export function BubbleBlast({ best, onBest, onDailyStart, onDaily, onReward, onC
                     Bubble that clears a wide area.
                   </li>
                   <li>
-                    <strong>Ceiling:</strong> every {missLimit()} misses in a row, the ceiling drops a row.
+                    <strong>Ceiling:</strong> the ceiling drops a row after {CEILING_STEPS}. It gets stricter the more you
+                    pop.
                   </li>
                   <li>
                     <strong>Game over:</strong> keep the bubbles above the red line!
                   </li>
                 </ul>
-                <button type="button" className="bubble-btn" onClick={() => setShowRules(false)}>
-                  Back
-                </button>
               </div>
             )}
           </div>

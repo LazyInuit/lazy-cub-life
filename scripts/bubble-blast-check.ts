@@ -134,7 +134,7 @@ function noOverlaps(state: BubbleState) {
 {
   // No purple on the board, and the purples land apart, so every one is a miss.
   const s = board(['BRGBRGBR'])
-  const limit = missLimit()
+  const limit = missLimit(s.successfulShots)
   const before = occupied(s.grid).map((pos) => ({ x: cellX(pos.row, pos.col, s.parity), y: cellY(pos.row) }))
   for (let i = 0; i < limit - 1; i += 1) landAt(s, 1, i * 2, 'purple')
   const rowsBefore = s.grid.length
@@ -156,7 +156,24 @@ function noOverlaps(state: BubbleState) {
   check('ceiling rows keep every bubble attached', hanging === countBubbles(s.grid) && noOverlaps(s))
   check('row widths stay valid', s.grid.every((cells, row) => cells.length === rowCols(row, s.parity)))
 }
-check('ceiling always drops after 3 misses', missLimit() === 3)
+check(
+  'miss limit tightens 3, 2, 1 as the run goes on',
+  missLimit(0) === 3 && missLimit(14) === 3 && missLimit(15) === 2 && missLimit(39) === 2 && missLimit(40) === 1 && missLimit(500) === 1,
+)
+{
+  // Late in a run a single miss drops the ceiling.
+  const s = board(['BRGBRGBR'])
+  s.successfulShots = 40
+  const r = landAt(s, 1, 0, 'purple')
+  check('one miss drops the ceiling late on', r.ceilingDropped && s.misses === 0, JSON.stringify(r))
+}
+{
+  // Crossing a step warns the player.
+  const s = board(['BB.....R'])
+  s.successfulShots = 14
+  landAt(s, 1, 0, 'blue')
+  check('tightening shows a warning', s.successfulShots === 15 && s.texts.some((t) => t.text.includes('2 misses')))
+}
 {
   const s = createGame(seeded(3))
   check('cannot aim while the gum bubble is still being blown', !beginAim(s, 180, 200))

@@ -5089,16 +5089,103 @@ h1 {
   pointer-events: auto;
 }
 
+.bubble-rules-head {
+  position: relative;
+}
+
+.bubble-rules-back {
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: auto;
+  margin: 0;
+  padding: 5px 12px;
+  border-width: 2px;
+  font-size: 0.85rem;
+  box-shadow: 0 3px 0 #2e1404, inset 0 2px 0 rgba(255, 236, 200, 0.65);
+}
+
+.bubble-rules-back:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #2e1404, inset 0 2px 0 rgba(255, 236, 200, 0.65);
+}
+
 .bubble-rules {
   margin: 0 0 4px;
-  padding: 0 0 0 18px;
+  padding: 0;
+  list-style: none;
   text-align: left;
   font-size: 0.92rem;
   line-height: 1.32;
 }
 
 .bubble-rules li {
+  --bubble-base: #e0102a;
+  --bubble-light: #ff6b6b;
+  --bubble-dark: #8a0010;
+  --bubble-rim: #7a0010;
+  position: relative;
   margin-bottom: 6px;
+  padding-left: 24px;
+}
+
+/* A small candy bubble in the game's colours, matching the bubbles on the board. */
+.bubble-rules li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.08em;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.95) 0 11%, rgba(255, 255, 255, 0) 22%),
+    radial-gradient(circle at 38% 34%, var(--bubble-light) 0%, var(--bubble-base) 48%, var(--bubble-dark) 100%);
+  box-shadow:
+    inset 0 0 0 1.3px var(--bubble-rim),
+    0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.bubble-rules li:nth-child(2) {
+  --bubble-base: #1a7ff0;
+  --bubble-light: #7cc8ff;
+  --bubble-dark: #0b3d94;
+  --bubble-rim: #082f73;
+}
+
+.bubble-rules li:nth-child(3) {
+  --bubble-base: #1db94c;
+  --bubble-light: #86f2a0;
+  --bubble-dark: #0b6127;
+  --bubble-rim: #084a1d;
+}
+
+.bubble-rules li:nth-child(4) {
+  --bubble-base: #f2b01e;
+  --bubble-light: #fff1b0;
+  --bubble-dark: #a86a00;
+  --bubble-rim: #7a4c00;
+}
+
+.bubble-rules li:nth-child(5) {
+  --bubble-base: #ff2c95;
+  --bubble-light: #ff9fd2;
+  --bubble-dark: #a3085a;
+  --bubble-rim: #ffcf6b;
+}
+
+.bubble-rules li:nth-child(6) {
+  --bubble-base: #8f3ff0;
+  --bubble-light: #d0a6ff;
+  --bubble-dark: #4a1594;
+  --bubble-rim: #3a0f75;
+}
+
+.bubble-rules li:nth-child(7) {
+  --bubble-base: #f7c316;
+  --bubble-light: #fff2a0;
+  --bubble-dark: #b07c06;
+  --bubble-rim: #8f6000;
 }
 
 .bubble-rules strong {

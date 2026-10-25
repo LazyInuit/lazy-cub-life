@@ -24,7 +24,7 @@ import {
   MEGA_X,
   MEGA_Y,
   MIN_AIM_DEG,
-  MISS_LIMIT,
+  MISS_LIMITS,
   POINTS_BOARD_CLEAR,
   POINTS_DROP,
   POINTS_GOLDEN,
@@ -66,8 +66,9 @@ function pick<T>(items: readonly T[], rng: () => number): T {
   return items[Math.min(items.length - 1, Math.floor(rng() * items.length))]
 }
 
-export function missLimit() {
-  return MISS_LIMIT
+/** Misses in a row allowed before the ceiling drops, for a run this far along. */
+export function missLimit(successfulShots: number) {
+  return MISS_LIMITS.find((step) => successfulShots >= step.from)?.limit ?? MISS_LIMITS[MISS_LIMITS.length - 1].limit
 }
 
 export function comboMultiplier(combo: number) {
@@ -407,13 +408,19 @@ function finishShot(state: BubbleState, result: ShotResult, at: { x: number; y: 
   }
 
   if (result.successful) {
+    const before = missLimit(state.successfulShots)
     state.misses = 0
     state.successfulShots += 1
     state.cubMood = 'happy'
     state.cubMoodTime = 0.9
+    const after = missLimit(state.successfulShots)
+    if (after < before) {
+      const warning = after === 1 ? 'Every miss drops the ceiling!' : `Ceiling drops after ${after} misses!`
+      state.texts.push({ x: FIELD_W / 2, y: FIELD_H * 0.5, text: warning, t: 0, big: true })
+    }
   } else {
     state.misses += 1
-    if (state.misses >= missLimit()) {
+    if (state.misses >= missLimit(state.successfulShots)) {
       dropCeiling(state)
       result.ceilingDropped = true
       state.misses = 0
@@ -574,7 +581,7 @@ function stepMood(state: BubbleState, dt: number) {
     state.cubMoodTime -= dt
     if (state.cubMoodTime > 0) return
   }
-  const limit = missLimit()
+  const limit = missLimit(state.successfulShots)
   const low = lowestRow(state.grid)
   const danger = cellY(Math.max(0, low)) + BUBBLE_R >= DANGER_Y - ROW_H * 3
   if (state.phase === 'aiming') state.cubMood = 'aiming'
