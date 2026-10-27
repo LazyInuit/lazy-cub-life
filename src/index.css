@@ -4052,8 +4052,10 @@ h1 {
   position: absolute;
   left: 10px;
   right: 10px;
-  bottom: 0;
-  margin-bottom: calc(12px + var(--safe-bottom));
+  /* Centred on the screen rather than resting on the bottom edge. */
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0 14px;
   background:
     linear-gradient(180deg, rgba(126, 240, 255, 0.18), transparent 28%),
     linear-gradient(180deg, #161c44, #07091a);
@@ -4900,6 +4902,267 @@ h1 {
   text-align: center;
   text-transform: uppercase;
   text-shadow: 0 1px 0 rgba(90, 0, 10, 0.8);
+}
+
+.thumb-river {
+  background: #1e8cbc;
+}
+
+.thumb-river img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Lazy River: the Phaser canvas fills the stage; panels use the game's own river colours. */
+.river-screen {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+  background: #1e8cbc;
+}
+
+.river-stage {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+}
+
+.river-stage canvas {
+  display: block;
+  touch-action: none;
+  -webkit-touch-callout: none;
+}
+
+.river-nav {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+}
+
+.river-home {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 46%;
+  bottom: calc(14px + var(--safe-bottom));
+  z-index: 4;
+  margin: 0 auto;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.river-panel {
+  position: relative;
+  min-height: 0;
+  overflow-y: auto;
+  pointer-events: auto;
+  padding: 16px 18px 16px;
+  border-radius: 22px;
+  border: 4px solid #1b2830;
+  background:
+    radial-gradient(120% 60% at 50% 0%, rgba(127, 212, 239, 0.22), rgba(127, 212, 239, 0) 70%),
+    linear-gradient(180deg, #145a78, #0c3d52 60%, #082c3d);
+  box-shadow:
+    inset 0 0 0 3px rgba(215, 243, 255, 0.28),
+    0 6px 0 #0a2230,
+    0 12px 28px rgba(0, 0, 0, 0.35);
+  text-align: center;
+  color: #f4fbff;
+  text-shadow: 0 1px 0 rgba(4, 24, 34, 0.6);
+}
+
+.river-panel h2 {
+  margin: 0 0 8px;
+  font-family: Fredoka, "Trebuchet MS", sans-serif;
+  font-weight: 700;
+  font-size: 1.7rem;
+  letter-spacing: 0.02em;
+  color: #f7fbff;
+  text-shadow: 0 3px 0 #0b3e56, 0 0 12px rgba(127, 212, 239, 0.35);
+}
+
+.river-panel p {
+  margin: 0 0 7px;
+  line-height: 1.35;
+}
+
+.river-panel strong {
+  color: #ffe08a;
+}
+
+.river-best,
+.river-new,
+.river-xp {
+  font-weight: 800;
+}
+
+.river-best,
+.river-new {
+  color: #ffe08a;
+}
+
+.river-xp {
+  font-size: 1.2rem;
+  color: #7fd4ef;
+}
+
+/* Game over sits just under the score bar, so the whole panel fits without scrolling. */
+.river-home-over {
+  top: 72px;
+}
+
+.river-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+
+.river-stats div {
+  padding: 6px 4px 5px;
+  border-radius: 12px;
+  background: rgba(4, 24, 34, 0.42);
+  box-shadow: inset 0 0 0 1.5px rgba(215, 243, 255, 0.16);
+}
+
+.river-stats dt {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #d7f3ff;
+}
+
+.river-stats dd {
+  margin: 1px 0 0;
+  font-family: Fredoka, "Trebuchet MS", sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffe08a;
+}
+
+.river-gains {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.river-coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #ffd56a;
+}
+
+.river-coins img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.river-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 14px;
+  border: 4px solid #1b2830;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0 24%, rgba(255, 255, 255, 0) 24%),
+    #ffc857;
+  color: #083044;
+  font-family: Fredoka, "Trebuchet MS", sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 5px 0 #a8751a;
+}
+
+.river-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #a8751a;
+}
+
+.river-btn:disabled {
+  opacity: 0.5;
+}
+
+.river-btn-light {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0 24%, rgba(255, 255, 255, 0) 24%),
+    #f4f7fb;
+  font-size: 1rem;
+  box-shadow: 0 5px 0 #9aa7b2;
+}
+
+.river-btn-light:active {
+  box-shadow: 0 2px 0 #9aa7b2;
+}
+
+.river-rules-head {
+  position: relative;
+}
+
+.river-rules-back {
+  position: absolute;
+  left: -4px;
+  top: -2px;
+  width: auto;
+  margin: 0;
+  padding: 4px 11px;
+  border-width: 3px;
+  border-radius: 14px;
+  font-size: 0.8rem;
+  box-shadow: 0 3px 0 #9aa7b2;
+}
+
+.river-rules-back:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #9aa7b2;
+}
+
+.river-rules {
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  font-size: 0.92rem;
+  line-height: 1.32;
+}
+
+.river-rules li {
+  position: relative;
+  margin-bottom: 7px;
+  padding-left: 24px;
+}
+
+/* A small glossy water drop before each rule. */
+.river-rules li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.1em;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.95) 0 12%, rgba(255, 255, 255, 0) 24%),
+    radial-gradient(circle at 40% 36%, #b9ecff 0%, #3fb6e6 50%, #12688f 100%);
+  box-shadow:
+    inset 0 0 0 1.3px #0b3e56,
+    0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
 .bubble-screen {

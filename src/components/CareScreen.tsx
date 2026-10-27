@@ -3,6 +3,7 @@ import dashThumb from '../assets/galactic-dash-cover.jpg'
 import archerThumb from '../assets/cupid-archer/cover.jpg'
 import hoopsThumb from '../assets/lazy-hoops/cover-select.jpg'
 import bubbleThumb from '../assets/bubble-blast/thumb.jpg'
+import riverThumb from '../assets/lazy-river/game-thumb-cub.jpg'
 import dojoBg from '../assets/lazy-dojo/backgrounds/dojo-1.png'
 import dojoCover from '../assets/lazy-dojo/ui/ninja-cub-cover.png'
 import controllerUrl from '../assets/controller-icon.png'
@@ -63,6 +64,7 @@ type Props = {
   onArcher: () => void
   onHoops: () => void
   onBubble: () => void
+  onRiver: () => void
   startInGames?: boolean
   startInShop?: boolean
   /** Open the Achievements list straight away, from the badge-earned pop-up. */
@@ -89,6 +91,7 @@ export function CareScreen({
   onArcher,
   onHoops,
   onBubble,
+  onRiver,
   startInGames = false,
   startInShop = false,
   startInAchievements = false,
@@ -297,6 +300,20 @@ export function CareScreen({
             onPointerDown={flashSilverPress}
             onPointerUp={clearSilverPressGlow}
             onPointerCancel={clearSilverPressGlow}
+            onClick={() => tryGame('river', onRiver)}
+          >
+            <span className="game-thumb thumb-river" aria-hidden="true">
+              <img src={riverThumb} alt="" />
+              <span className="game-new-sash">New</span>
+            </span>
+            <span>Lazy River</span>
+          </button>
+          <button
+            type="button"
+            className="game-pick"
+            onPointerDown={flashSilverPress}
+            onPointerUp={clearSilverPressGlow}
+            onPointerCancel={clearSilverPressGlow}
             onClick={() => tryGame('bubble', onBubble)}
           >
             <span className="game-thumb thumb-bubble" aria-hidden="true">
@@ -324,15 +341,12 @@ export function CareScreen({
             onPointerDown={flashSilverPress}
             onPointerUp={clearSilverPressGlow}
             onPointerCancel={clearSilverPressGlow}
-            onClick={() => tryGame('match', onMatch)}
+            onClick={() => tryGame('hoops', onHoops)}
           >
-            <span className="game-thumb thumb-match" aria-hidden="true">
-              <PrideThumbBack />
-              <PrideThumbCell body="Zebra" />
-              <PrideThumbCell body="Zebra" />
-              <PrideThumbBack />
+            <span className="game-thumb thumb-hoops" aria-hidden="true">
+              <img src={hoopsThumb} alt="" />
             </span>
-            <span>Pride Pairs</span>
+            <span>Lazy Hoops</span>
           </button>
           <button
             type="button"
@@ -369,12 +383,15 @@ export function CareScreen({
             onPointerDown={flashSilverPress}
             onPointerUp={clearSilverPressGlow}
             onPointerCancel={clearSilverPressGlow}
-            onClick={() => tryGame('hoops', onHoops)}
+            onClick={() => tryGame('match', onMatch)}
           >
-            <span className="game-thumb thumb-hoops" aria-hidden="true">
-              <img src={hoopsThumb} alt="" />
+            <span className="game-thumb thumb-match" aria-hidden="true">
+              <PrideThumbBack />
+              <PrideThumbCell body="Zebra" />
+              <PrideThumbCell body="Zebra" />
+              <PrideThumbBack />
             </span>
-            <span>Lazy Hoops</span>
+            <span>Pride Pairs</span>
           </button>
         </div>
       </section>
@@ -494,7 +511,9 @@ export function CareScreen({
                       ? onDojo
                       : task.game === 'bubble'
                         ? onBubble
-                        : onMatch
+                        : task.game === 'river'
+                          ? onRiver
+                          : onMatch
             return (
               <article key={task.id} className="daily-task">
                 <h2>{task.gameLabel}</h2>

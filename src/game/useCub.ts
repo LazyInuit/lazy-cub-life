@@ -455,6 +455,15 @@ export function useCub() {
     announceBadge('bubble', current.bubbleBest, nextBest)
   }, [announceBadge, commit])
 
+  const recordRiverBest = useCallback((score: number) => {
+    const current = saveRef.current
+    if (!current) return
+    const nextBest = Math.max(0, Math.floor(score))
+    if (nextBest <= current.riverBest) return
+    commit({ ...current, riverBest: nextBest })
+    announceBadge('river', current.riverBest, nextBest)
+  }, [announceBadge, commit])
+
   const setOutfits = useCallback((outfits: CubOutfits) => {
     const current = saveRef.current
     if (!current) return
@@ -832,6 +841,7 @@ export function useCub() {
     recordArcherBest,
     recordHoopsBest,
     recordBubbleBest,
+    recordRiverBest,
     startDaily,
     noteDaily,
     claimDaily,

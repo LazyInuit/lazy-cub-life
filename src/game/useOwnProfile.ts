@@ -20,6 +20,7 @@ export function saveBests(save: CubSave | null): GameBests {
     archer: save.archerBest,
     hoops: save.hoopsBest,
     bubble: save.bubbleBest,
+    river: save.riverBest,
   }
 }
 

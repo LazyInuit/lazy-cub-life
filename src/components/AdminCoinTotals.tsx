@@ -14,6 +14,7 @@ const GAMES = [
   { source: 'archer', label: 'Cupid Archery' },
   { source: 'hoops', label: 'Lazy Hoops' },
   { source: 'bubble', label: 'Bubble Blast' },
+  { source: 'river', label: 'Lazy River' },
 ]
 
 function coins(value: number) {

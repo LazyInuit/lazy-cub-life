@@ -9,6 +9,7 @@ import { AdminScreen } from './components/AdminScreen'
 import { BadgeEarnedPop } from './components/BadgeShowcase'
 import { CareScreen } from './components/CareScreen'
 import { BubbleBlast } from './components/BubbleBlast'
+import { LazyRiver } from './components/LazyRiver'
 import { CupidArcher } from './components/CupidArcher'
 import { LazyHoops } from './components/LazyHoops'
 import { LazyDojo } from './components/LazyDojo'
@@ -24,7 +25,7 @@ import { DemoScorePop } from './components/DemoScorePop'
 import { useCub } from './game/useCub'
 import { supabase } from './game/supabase'
 
-type Screen = 'home' | 'flight' | 'match' | 'dojo' | 'archer' | 'hoops' | 'bubble'
+type Screen = 'home' | 'flight' | 'match' | 'dojo' | 'archer' | 'hoops' | 'bubble' | 'river'
 
 export default function App() {
   if (window.location.pathname === '/admin' || window.location.pathname === '/admin/') {
@@ -334,6 +335,10 @@ function Game() {
             setOpenGames(false)
             setScreen('bubble')
           }}
+          onRiver={() => {
+            setOpenGames(false)
+            setScreen('river')
+          }}
         />
       ) : null}
       {screen === 'flight' ? (
@@ -414,6 +419,20 @@ function Game() {
           onDaily={(score) => cub.noteDaily('bubble', score)}
           onReward={cub.reward}
           onCoins={(amount) => cub.addCubCash(amount, 'bubble')}
+          onExit={goHome}
+          onGames={goGames}
+          energy={playEnergy}
+          onShop={goShop}
+        />
+      ) : null}
+      {screen === 'river' ? (
+        <LazyRiver
+          best={cub.save.riverBest}
+          onBest={cub.recordRiverBest}
+          onDailyStart={() => cub.startDaily('river')}
+          onDaily={(score) => cub.noteDaily('river', score)}
+          onReward={cub.reward}
+          onCoins={(amount) => cub.addCubCash(amount, 'river')}
           onExit={goHome}
           onGames={goGames}
           energy={playEnergy}
