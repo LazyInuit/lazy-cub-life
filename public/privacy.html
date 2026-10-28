@@ -92,10 +92,17 @@
         </li>
         <li>
           If you are in the UK, the European Economic Area or Switzerland, we ask for your consent before personalised ads or
-          non-essential cookies are used, through a consent message provided by Google. You can change your choice at any
-          time from that message.
+          non-essential cookies are used, through a consent message provided by Google.
+        </li>
+        <li>
+          If you are in a US state with its own privacy law, Google shows a "Do Not Sell or Share My Personal Information"
+          link that lets you opt out of personalised advertising. See <a href="#us-states">US state privacy rights</a> below.
         </li>
       </ul>
+      <p id="privacy-choices" hidden>
+        <a href="javascript:window.googlefc.showRevocationMessage();">Privacy and cookie settings</a>: change the choice you
+        made in the consent message at any time.
+      </p>
       <p>We do not use any other analytics or tracking tools.</p>
 
       <h2>How we use information</h2>
@@ -142,6 +149,27 @@
         with your username.
       </p>
 
+      <h2 id="us-states">US state privacy rights</h2>
+      <p>
+        If you live in a US state with its own privacy law, such as California, Colorado, Connecticut, Virginia or Utah, you
+        have extra rights:
+      </p>
+      <ul>
+        <li>
+          <strong>Opt out of "sale" or "sharing" for personalised ads.</strong> We do not sell your information for money.
+          Under some state laws, letting Google use cookies to personalise ads can count as "selling" or "sharing". Use the
+          "Do Not Sell or Share My Personal Information" link that Google shows on the site to opt out. You will still see
+          ads, but they will not be personalised.
+        </li>
+        <li><strong>Know, access and correct</strong> the personal information we hold about you.</li>
+        <li><strong>Delete</strong> your personal information.</li>
+        <li><strong>Not be treated differently</strong> for using these rights.</li>
+      </ul>
+      <p>
+        To make a request, message <a href="https://x.com/lazyinuit" target="_blank" rel="noopener noreferrer">@lazyinuit on X</a>
+        with your username. We do not use or disclose sensitive personal information.
+      </p>
+
       <h2>Keeping information safe</h2>
       <p>
         Information is sent over secure connections and stored with access controls. No online service can be completely
@@ -156,5 +184,15 @@
     <footer class="site-foot">
       <a href="/about">About</a> · <a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms of Use</a>
     </footer>
+    <script>
+      // The settings link only works once Google's consent tools have loaded, so it stays hidden until then.
+      window.googlefc = window.googlefc || {};
+      window.googlefc.callbackQueue = window.googlefc.callbackQueue || [];
+      window.googlefc.callbackQueue.push({
+        CONSENT_API_READY: () => {
+          document.getElementById('privacy-choices').hidden = false;
+        },
+      });
+    </script>
   </body>
 </html>
