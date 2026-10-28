@@ -1365,11 +1365,12 @@ export class GameScene extends Phaser.Scene {
   private spawnBuilt(row: ReturnType<typeof buildRow>): void {
     this.lastGapX = row.lastGapX;
     this.lastLayout = row.layout;
+    // A whirlpool first: if anything has to give way to it, it is an obstacle, which only opens the river up.
+    for (const spec of row.whirls) this.activateWhirl(spec);
     for (const spec of row.obstacles) this.activateObstacle(spec);
     for (const spec of row.gems) this.activateGem(spec);
     for (const spec of row.pads) this.activatePad(spec);
     for (const spec of row.rapids) this.activateRapids(spec);
-    for (const spec of row.whirls) this.activateWhirl(spec);
   }
 
   private activateObstacle(spec: ObstacleSpawn): void {

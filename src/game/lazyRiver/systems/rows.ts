@@ -4,6 +4,7 @@ import {
   PAD_CHANCE,
   PAD_DRAW_W,
   PAD_FORWARD_SHARE,
+  PLAYER_RADIUS,
   RAPIDS_CHANCE,
   RAPIDS_HW,
   RIVER_LEFT,
@@ -92,12 +93,19 @@ export function buildRow(
   const gapR = gapX + gapW / 2;
   const leftSpan: [number, number] = [RIVER_LEFT, gapL - HIT_PAD_X];
   const rightSpan: [number, number] = [gapR + HIT_PAD_X, RIVER_RIGHT];
+  const yRoomEarly = calm ? 10 : Math.max(10, Math.min(32, (spacing - 160) * 0.28));
+  // Rapids win first; otherwise a whirlpool may take one edge of the gap.
+  const rapidsRow = !calm && Math.random() < RAPIDS_CHANCE;
+  const whirl = !rapidsRow && !calm && Math.random() < WHIRL_CHANCE ? placeWhirl(gapL, gapR, gapW, y, yRoomEarly) : null;
+  // Obstacles on the whirlpool's side keep clear of it.
+  if (whirl?.side === 'left') leftSpan[1] = Math.min(leftSpan[1], whirl.x - WHIRL_CLEAR);
+  if (whirl?.side === 'right') rightSpan[0] = Math.max(rightSpan[0], whirl.x + WHIRL_CLEAR);
   const leftWidth = leftSpan[1] - leftSpan[0];
   const rightWidth = rightSpan[1] - rightSpan[0];
   const layout = pickLayout(t, calm, previous, leftWidth, rightWidth);
   const wideSide: 'left' | 'right' = leftWidth >= rightWidth ? (Math.random() < 0.72 ? 'left' : 'right') : Math.random() < 0.72 ? 'right' : 'left';
   const pairSide: 'left' | 'right' | null = Math.random() < 0.5 ? 'left' : 'right';
-  const yRoom = calm ? 10 : Math.max(10, Math.min(32, (spacing - 160) * 0.28));
+  const yRoom = yRoomEarly;
   const stagger = calm ? 0 : (Math.random() < 0.5 ? -1 : 1) * yRoom * 0.55;
   const obstacles: ObstacleSpawn[] = [];
   const used: ObstacleKind[] = [];
@@ -119,22 +127,15 @@ export function buildRow(
   const pads: PadSpawn[] = [];
   const rapids: RapidsSpawn[] = [];
   const whirls: WhirlSpawn[] = [];
-  if (!calm && Math.random() < RAPIDS_CHANCE) {
+  if (rapidsRow) {
     // Rapids sit in the gap, off to one side where there is room, so a quick cub can skirt them.
     const room = Math.max(0, gapW - RAPIDS_HW * 2 - 8);
     rapids.push({
       x: clamp(gapL + RAPIDS_HW + 4 + Math.random() * room, RIVER_LEFT + RAPIDS_HW, RIVER_RIGHT - RAPIDS_HW),
       y: y + (Math.random() * 2 - 1) * yRoom * 0.3,
     });
-  } else if (!calm && Math.random() < WHIRL_CHANCE) {
-    // Off to one side of the gap where there is room, like rapids, so it can be skirted.
-    const half = WHIRL_CATCH_R + 10;
-    const room = Math.max(0, gapW - half * 2 - 8);
-    whirls.push({
-      x: clamp(gapL + half + 4 + Math.random() * room, RIVER_LEFT + half + 20, RIVER_RIGHT - half - 20),
-      y: y + (Math.random() * 2 - 1) * yRoom * 0.3,
-      dir: Math.random() < 0.5 ? 1 : -1,
-    });
+  } else if (whirl) {
+    whirls.push({ x: whirl.x, y: whirl.y, dir: whirl.dir });
   } else if (!calm && Math.random() < PAD_CHANCE) {
     // A pad takes the gap's pickup slot, so it is always reachable and never under a coin.
     const room = Math.max(0, gapW - PAD_DRAW_W - 8);
@@ -153,6 +154,37 @@ export function buildRow(
   }
 
   return { lastGapX: gapX, layout, obstacles, gems, pads, rapids, whirls };
+}
+
+/** Open gap the cub's centre always keeps beside a whirlpool, since being caught ends the run. */
+const WHIRL_LANE = 64;
+/** How far obstacles on the whirlpool's side stay from its centre. */
+const WHIRL_CLEAR = 90;
+
+/**
+ * A whirlpool on one edge of the gap: its catch circle reaches into the gap no further than
+ * leaves WHIRL_LANE open on the other side. Null if neither edge has room.
+ * The lane is measured where the cub's centre can actually go, so a gap against a bank counts
+ * only the part away from it.
+ */
+function placeWhirl(
+  gapL: number,
+  gapR: number,
+  _gapW: number,
+  y: number,
+  yRoom: number,
+): (WhirlSpawn & { side: 'left' | 'right' }) | null {
+  const openL = Math.max(gapL, RIVER_LEFT + PLAYER_RADIUS);
+  const openR = Math.min(gapR, RIVER_RIGHT - PLAYER_RADIUS);
+  const reach = Math.min(WHIRL_CATCH_R + 10, openR - openL - WHIRL_LANE);
+  if (reach <= 0) return null;
+  const sides: ('left' | 'right')[] = Math.random() < 0.5 ? ['left', 'right'] : ['right', 'left'];
+  for (const side of sides) {
+    const x = side === 'left' ? openL - WHIRL_CATCH_R + reach : openR + WHIRL_CATCH_R - reach;
+    if (x < RIVER_LEFT + 24 || x > RIVER_RIGHT - 24) continue;
+    return { x, y: y + (Math.random() * 2 - 1) * yRoom * 0.3, dir: Math.random() < 0.5 ? 1 : -1, side };
+  }
+  return null;
 }
 
 function nextGap(last: number, minCenter: number, maxCenter: number, reach: number, calm: boolean): number {
