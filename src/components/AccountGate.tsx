@@ -24,6 +24,29 @@ export function ForgotPasswordNote() {
   )
 }
 
+/** The About, Privacy and Terms pages, which live outside the app. */
+export function SiteLinks({ intro }: { intro?: string }) {
+  const page = (href: string, label: string) => (
+    <a href={href} target="_blank" rel="noopener noreferrer">
+      {label}
+    </a>
+  )
+  return (
+    <p className="account-forgot site-links">
+      {intro ? `${intro} ` : null}
+      {intro ? (
+        <>
+          {page('/terms', 'Terms of Use')} and {page('/privacy', 'Privacy Policy')}.
+        </>
+      ) : (
+        <>
+          {page('/about', 'About')} · {page('/privacy', 'Privacy')} · {page('/terms', 'Terms')}
+        </>
+      )}
+    </p>
+  )
+}
+
 type Props = {
   onEnter: () => void
   notice?: string | null
@@ -207,6 +230,7 @@ export function AccountGate({ onEnter, notice = null, startMode = 'up', onBack }
               ) : (
                 <p>No email needed.</p>
               )}
+              {mode === 'up' ? <SiteLinks intro="By creating an account you agree to our" /> : null}
               <button type="submit" className="account-submit" disabled={busy}>
                 {busy ? 'Please wait' : mode === 'up' ? 'Create account' : 'Sign in'}
               </button>

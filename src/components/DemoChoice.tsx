@@ -1,5 +1,6 @@
 import landingUrl from '../assets/home/landing.jpg'
 import { DEMO_CASH } from '../game/demo'
+import { SiteLinks } from './AccountGate'
 
 type Props = {
   notice?: string | null
@@ -27,6 +28,7 @@ export function DemoChoice({ notice = null, onCreate, onSignIn, onDemo }: Props)
           Play demo version
           <span>Try everything with {DEMO_CASH.toLocaleString('en-US')} demo coins. Nothing is saved.</span>
         </button>
+        <SiteLinks />
       </div>
     </main>
   )

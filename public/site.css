@@ -1,0 +1,122 @@
+/* About, privacy and terms pages. Matches the game's warm wood and cream colours. */
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #241910;
+  color: #3c2918;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.site-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 18px 20px;
+  color: #fff3dc;
+}
+
+.site-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 1.15rem;
+}
+
+.site-brand img {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+
+.site-nav a {
+  color: #f0c56a;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.site-nav a[aria-current="page"] {
+  color: #fff3dc;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.site-page {
+  max-width: 760px;
+  margin: 0 auto 32px;
+  padding: 28px 24px 36px;
+  background: #f4e2c6;
+  border-radius: 22px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+
+.site-page h1 {
+  margin: 0 0 6px;
+  font-size: 1.9rem;
+  line-height: 1.2;
+}
+
+.site-page h2 {
+  margin: 28px 0 8px;
+  font-size: 1.2rem;
+}
+
+.site-page p,
+.site-page li {
+  font-size: 1rem;
+}
+
+.site-page ul {
+  padding-left: 1.3em;
+}
+
+.site-page a {
+  color: #8a4a12;
+  font-weight: 700;
+}
+
+.site-updated {
+  margin-top: 0;
+  color: #7a5a3a;
+  font-size: 0.92rem;
+}
+
+.site-play {
+  display: inline-block;
+  margin: 12px 0 4px;
+  padding: 12px 26px;
+  background: #f0b23a;
+  color: #3c2918;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 800;
+  box-shadow: 0 4px 0 #a86418;
+}
+
+.site-foot {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 20px 32px;
+  color: #c9b08c;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.site-foot a {
+  color: #f0c56a;
+}
