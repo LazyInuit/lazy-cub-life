@@ -12,6 +12,7 @@ import {
   RIM_Y,
   RIM_Z,
 } from './config'
+import { canvasRatio } from '../frameScale'
 import { buildStadium } from './stadium'
 import type { Vec3 } from './sim'
 
@@ -121,8 +122,7 @@ export function createCourt(canvas: HTMLCanvasElement): Court {
 
   const court: Court = {
     resize(width, height) {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.75)
-      renderer.setPixelRatio(dpr)
+      renderer.setPixelRatio(canvasRatio(1.75))
       renderer.setSize(width, height, false)
       camera.aspect = width / Math.max(1, height)
       camera.fov = width / height < 0.62 ? 54 : 52

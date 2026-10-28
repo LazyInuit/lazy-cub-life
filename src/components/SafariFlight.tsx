@@ -3,6 +3,7 @@ import type { PointerEvent as ReactPointerEvent } from 'react'
 import lionPawUrl from '../assets/lion-paw-ui.png'
 import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import { drawFlightLion } from '../game/drawCub'
+import { canvasRatio, layoutSize } from '../game/frameScale'
 import { PLAY_NEED_COST, moodFromScore, playEnergyCost } from '../game/progress'
 import { playCoin, playCrash, playEnd, playFlap, playIgnite, resumeFlightAudio, startSpaceAmbience, stopSpaceAmbience } from '../game/flightAudio'
 import type { NeedKey } from '../game/types'
@@ -155,16 +156,14 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
       if (cancelled) return
       const dt = Math.min(0.032, (now - last) / 1000)
       last = now
-      const rect = canvas.getBoundingClientRect()
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
-      const width = Math.max(1, Math.floor(rect.width * dpr))
-      const height = Math.max(1, Math.floor(rect.height * dpr))
+      const { width: w, height: h } = layoutSize(canvas)
+      const dpr = canvasRatio()
+      const width = Math.max(1, Math.floor(w * dpr))
+      const height = Math.max(1, Math.floor(h * dpr))
       if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width
         canvas.height = height
       }
-      const w = rect.width
-      const h = rect.height
       if (y.current === 0 && ready.current) y.current = h * 0.46
       const cubX = w * 0.5
 

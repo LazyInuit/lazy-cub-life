@@ -4,6 +4,7 @@ import cubUrl from '../assets/cupid-archer/cub.png'
 import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import lionPawUrl from '../assets/lion-paw-ui.png'
 import { ARCHER_XP_PER_SCORE, LIVES, ROUND_SECONDS } from '../game/cupidArcher/config'
+import { canvasRatio, layoutPoint, layoutSize } from '../game/frameScale'
 import {
   playBullseye,
   playDraw,
@@ -219,8 +220,8 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onC
     if (!canvas || !wrap) return
 
     const resize = () => {
-      const rect = wrap.getBoundingClientRect()
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      const rect = layoutSize(wrap)
+      const dpr = canvasRatio()
       canvas.width = Math.max(1, Math.floor(rect.width * dpr))
       canvas.height = Math.max(1, Math.floor(rect.height * dpr))
       canvas.style.width = `${rect.width}px`
@@ -284,8 +285,7 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onC
   }, [mode])
 
   const pointFrom = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect()
-    return { x: event.clientX - rect.left, y: event.clientY - rect.top }
+    return layoutPoint(event.currentTarget, event.clientX, event.clientY)
   }
 
   const onPointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
@@ -319,7 +319,7 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onC
     resumeArcherAudio()
     startArcherBgm()
     const wrap = wrapRef.current
-    const rect = wrap?.getBoundingClientRect()
+    const rect = wrap ? layoutSize(wrap) : null
     const w = rect?.width || 390
     const h = rect?.height || 700
     roundRef.current = createRound(w, h)

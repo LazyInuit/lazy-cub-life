@@ -1,5 +1,6 @@
 import '@fontsource/fredoka/700.css';
 import Phaser from 'phaser';
+import { frameScale } from '../frameScale';
 import { GAME_HEIGHT, GAME_WIDTH, setGameWidth } from './constants';
 import { BootScene, PLAY_ON_BOOT } from './scenes/BootScene';
 import { GameScene, RUN_OVER } from './scenes/GameScene';
@@ -27,6 +28,21 @@ export async function createLazyRiver(host: HTMLElement, onOver: (result: RunRes
   const rect = host.getBoundingClientRect();
   setGameWidth((GAME_HEIGHT * rect.width) / Math.max(1, rect.height));
 
+  // Phaser sizes its canvas from the host's on-screen box. In a scaled-up tablet frame that box is
+  // larger than the CSS space inside it, so report the host in the frame's own pixels. Phaser's
+  // centring compares that with the canvas's on-screen size, so a scaled frame centres it in CSS.
+  const scaled = frameScale() > 1;
+  host.getBoundingClientRect = () => {
+    const box = Element.prototype.getBoundingClientRect.call(host);
+    const scale = frameScale();
+    return new DOMRect(box.x, box.y, box.width / scale, box.height / scale);
+  };
+  if (scaled) {
+    host.style.display = 'flex';
+    host.style.alignItems = 'center';
+    host.style.justifyContent = 'center';
+  }
+
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: host,
@@ -39,7 +55,7 @@ export async function createLazyRiver(host: HTMLElement, onOver: (result: RunRes
     input: { activePointers: 2 },
     scale: {
       mode: Phaser.Scale.FIT,
-      autoCenter: Phaser.Scale.CENTER_BOTH,
+      autoCenter: scaled ? Phaser.Scale.NO_CENTER : Phaser.Scale.CENTER_BOTH,
       width: GAME_WIDTH,
       height: GAME_HEIGHT,
       autoRound: true,
@@ -85,6 +101,12 @@ export async function createLazyRiver(host: HTMLElement, onOver: (result: RunRes
       host.removeEventListener('pointerdown', unlock);
       game.events.off(RUN_OVER, onOver);
       game.destroy(true);
+      delete (host as { getBoundingClientRect?: unknown }).getBoundingClientRect;
+      if (scaled) {
+        host.style.removeProperty('display');
+        host.style.removeProperty('align-items');
+        host.style.removeProperty('justify-content');
+      }
     },
   };
 }

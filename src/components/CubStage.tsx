@@ -11,6 +11,7 @@ import {
 } from '../game/drawCub'
 import { HALLOWEEN_THEME, pumpkinLit, togglePumpkin } from '../game/halloween'
 import { characterLayers, type TryOn } from '../game/cubTraits'
+import { canvasRatio, layoutSize } from '../game/frameScale'
 import { artSize, coverPlacement, fitInBox, homeArt, homeItem, slotBox, slotScale } from '../game/homeScene'
 import { playPlantRuffle } from '../game/plantAudio'
 import { playPumpkinLight, playPumpkinOut } from '../game/pumpkinAudio'
@@ -91,8 +92,8 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
     const paint = (now: number) => {
       if (!alive) return
       const scene = (room.closest('.home-room') as HTMLElement | null) ?? room
-      const rect = scene.getBoundingClientRect()
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      const rect = layoutSize(scene)
+      const dpr = canvasRatio()
       const width = Math.max(1, Math.floor(rect.width * dpr))
       const height = Math.max(1, Math.floor(rect.height * dpr))
       for (const canvas of [room, view, fx]) {

@@ -36,6 +36,7 @@ import {
   WHIRL_SLOW,
   WHIRL_SPIN,
 } from '../constants';
+import { frameScale } from '../../frameScale';
 import { FOAM_VARIANTS } from '../art/textures';
 import { Player } from '../entities/Player';
 import { clamp, lerp } from '../math';
@@ -1642,7 +1643,7 @@ export class GameScene extends Phaser.Scene {
 
   /** Game units per CSS pixel, so the score bar can line up with the Home and Games buttons. */
   private cssScale(): number {
-    const height = this.game.canvas?.getBoundingClientRect().height ?? 0;
+    const height = (this.game.canvas?.getBoundingClientRect().height ?? 0) / frameScale();
     return height > 2 ? GAME_HEIGHT / height : 1.5;
   }
 

@@ -15,6 +15,7 @@ import {
   MISS_LIMITS,
 } from '../game/bubbleBlast/config'
 import { drawBubbleFrame, drawBubbleIdle, fitField, signNav } from '../game/bubbleBlast/draw'
+import { canvasRatio, layoutPoint, layoutSize } from '../game/frameScale'
 import {
   beginAim,
   cancelAim,
@@ -152,7 +153,7 @@ export function BubbleBlast({ best, onBest, onDailyStart, onDaily, onReward, onC
     const wrap = wrapRef.current
     if (!wrap) return
     const place = () => {
-      const rect = wrap.getBoundingClientRect()
+      const rect = layoutSize(wrap)
       setNav(signNav(rect.width, rect.height))
       const view = fitField(rect.width, rect.height)
       // The paw starts just below the gum bubble in the cub's mouth, then drags up.
@@ -172,8 +173,8 @@ export function BubbleBlast({ best, onBest, onDailyStart, onDaily, onReward, onC
     if (!canvas || !wrap) return
     let frame = 0
     const tick = () => {
-      const rect = wrap.getBoundingClientRect()
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      const rect = layoutSize(wrap)
+      const dpr = canvasRatio()
       const w = Math.max(1, Math.floor(rect.width * dpr))
       const h = Math.max(1, Math.floor(rect.height * dpr))
       if (canvas.width !== w || canvas.height !== h) {
@@ -198,8 +199,8 @@ export function BubbleBlast({ best, onBest, onDailyStart, onDaily, onReward, onC
     if (!canvas || !wrap) return
 
     const resize = () => {
-      const rect = wrap.getBoundingClientRect()
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      const rect = layoutSize(wrap)
+      const dpr = canvasRatio()
       canvas.width = Math.max(1, Math.floor(rect.width * dpr))
       canvas.height = Math.max(1, Math.floor(rect.height * dpr))
       sizeRef.current = { width: rect.width, height: rect.height }
@@ -256,9 +257,10 @@ export function BubbleBlast({ best, onBest, onDailyStart, onDaily, onReward, onC
   }, [mode])
 
   const fieldPoint = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect()
-    const view = fitField(rect.width, rect.height)
-    return { x: (event.clientX - rect.left - view.x) / view.scale, y: (event.clientY - rect.top - view.y) / view.scale }
+    const size = layoutSize(event.currentTarget)
+    const at = layoutPoint(event.currentTarget, event.clientX, event.clientY)
+    const view = fitField(size.width, size.height)
+    return { x: (at.x - view.x) / view.scale, y: (at.y - view.y) / view.scale }
   }
 
   const onPointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {

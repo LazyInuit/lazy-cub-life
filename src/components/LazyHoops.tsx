@@ -33,6 +33,7 @@ import {
   stopHoopsBgm,
 } from '../game/lazyHoops/audio'
 import { createCourt, type Court } from '../game/lazyHoops/court'
+import { layoutPoint, layoutSize } from '../game/frameScale'
 import {
   createShot,
   launchVelocity,
@@ -321,7 +322,7 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoi
     const live = liveRef.current
 
     const resize = () => {
-      const rect = wrap.getBoundingClientRect()
+      const rect = layoutSize(wrap)
       const width = Math.max(1, rect.width)
       const height = Math.max(1, rect.height)
       live.viewW = width
@@ -511,10 +512,7 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoi
     }
     startRef.current = start
 
-    const point = (event: PointerEvent) => {
-      const rect = canvas.getBoundingClientRect()
-      return { x: event.clientX - rect.left, y: event.clientY - rect.top }
-    }
+    const point = (event: PointerEvent) => layoutPoint(canvas, event.clientX, event.clientY)
 
     const onDown = (event: PointerEvent) => {
       if (!live.playing || live.phase !== 'ready' || live.paused || live.over) return

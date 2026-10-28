@@ -6,6 +6,7 @@ import {
   type TraitCategory,
 } from '../game/cubTraits'
 import { playDiceRattle } from '../game/diceAudio'
+import { layoutSize } from '../game/frameScale'
 import type { CharacterAge } from '../game/homeScene'
 import { levelProgress } from '../game/progress'
 import { formatCubCash } from '../game/formatCubCash'
@@ -98,7 +99,7 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
     if (!manifest || !box) return
 
     const measure = () => {
-      const width = box.getBoundingClientRect().width
+      const width = layoutSize(box).width
       if (width <= 0) return
       const probe = box.cloneNode(true) as HTMLDivElement
       probe.style.cssText = `position:absolute;visibility:hidden;pointer-events:none;left:-9999px;top:0;width:${width}px;min-height:0;height:auto;`

@@ -3,6 +3,7 @@ import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import { PLAY_ENERGY_COST, PLAY_NEED_COST, moodFromScore } from '../game/progress'
 import { DOJO_ASSETS, loadDojoSprites, type DojoSprites } from '../game/lazyDojo/assets'
 import { XP_PER_SCORE } from '../game/lazyDojo/config'
+import { canvasRatio, layoutPoint, layoutSize } from '../game/frameScale'
 import {
   applySwipeSegment,
   beginSwipe,
@@ -132,8 +133,8 @@ export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onCoin
     if (!canvas || !wrap) return
 
     const resize = () => {
-      const rect = wrap.getBoundingClientRect()
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      const rect = layoutSize(wrap)
+      const dpr = canvasRatio()
       canvas.width = Math.max(1, Math.floor(rect.width * dpr))
       canvas.height = Math.max(1, Math.floor(rect.height * dpr))
       canvas.style.width = `${rect.width}px`
@@ -189,8 +190,7 @@ export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onCoin
   const toLocal = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current
     if (!canvas) return { x: 0, y: 0 }
-    const rect = canvas.getBoundingClientRect()
-    return { x: clientX - rect.left, y: clientY - rect.top }
+    return layoutPoint(canvas, clientX, clientY)
   }
 
   const onPointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {

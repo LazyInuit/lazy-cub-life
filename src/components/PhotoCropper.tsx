@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { frameScale } from '../game/frameScale'
 import { PHOTO_SIZE } from '../game/profilePhoto'
 
 type Props = {
@@ -66,16 +67,19 @@ export function PhotoCropper({ file, busy, error, onCancel, onSave }: Props) {
     gesture.current = { view, distance, midX, midY }
   }
 
+  /** Finger position in the app's own pixels, so the photo moves with the finger on a scaled-up tablet. */
+  const at = (event: React.PointerEvent<HTMLDivElement>) => ({ x: event.clientX / frameScale(), y: event.clientY / frameScale() })
+
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!image || busy) return
     event.currentTarget.setPointerCapture(event.pointerId)
-    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    pointers.current.set(event.pointerId, at(event))
     startGesture()
   }
 
   const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!pointers.current.has(event.pointerId) || !gesture.current) return
-    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    pointers.current.set(event.pointerId, at(event))
     const start = gesture.current
     const points = [...pointers.current.values()]
     const [a, b] = points

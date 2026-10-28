@@ -59,6 +59,16 @@ html.safari-frame .phone {
   margin-top: var(--safari-page-top);
 }
 
+/* Tablets: the phone frame keeps its layout and is scaled up evenly to the full screen height. */
+html.frame-scaled .phone {
+  width: var(--app-w);
+  height: var(--app-h);
+  max-height: none;
+  flex-shrink: 0;
+  border-radius: 0;
+  transform: scale(var(--frame-scale));
+}
+
 html.safari-frame .trait-roll {
   top: var(--safari-page-top);
   right: 0;
@@ -1350,7 +1360,7 @@ h1 {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  max-height: calc(100dvh - 60px);
+  max-height: calc(var(--app-h, 100dvh) - 60px);
   overflow: auto;
   padding: 54px 16px 16px;
   border-radius: 19px;
@@ -1414,7 +1424,7 @@ h1 {
 
 .profile-card-face.achievements-face {
   gap: 10px;
-  max-height: calc(100dvh - 48px);
+  max-height: calc(var(--app-h, 100dvh) - 48px);
   padding: 16px 12px 14px;
 }
 
@@ -2085,7 +2095,7 @@ h1 {
 
 .game-picks-screen .game-picks {
   margin-top: auto;
-  margin-bottom: 36vh;
+  margin-bottom: calc(var(--app-h, 100vh) * 0.36);
 }
 
 .game-screen {
@@ -4319,7 +4329,7 @@ h1 {
 .dojo-hero {
   width: min(78%, 280px);
   height: auto;
-  max-height: 42vh;
+  max-height: calc(var(--app-h, 100vh) * 0.42);
   object-fit: contain;
   border-radius: 16px;
   filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.35));
@@ -4366,7 +4376,7 @@ h1 {
 }
 
 .dojo-howto {
-  max-height: min(78vh, 560px);
+  max-height: min(calc(var(--app-h, 100vh) * 0.78), 560px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -4536,7 +4546,7 @@ h1 {
   color: #fffaf2;
   text-shadow: 0 2px 0 #3a2416;
   box-shadow: 0 3px 0 #3a2416;
-  font-size: clamp(0.78rem, 3.4vw, 1rem);
+  font-size: clamp(0.78rem, calc(var(--app-w, 100vw) * 0.034), 1rem);
   white-space: nowrap;
 }
 
@@ -5192,7 +5202,7 @@ h1 {
   touch-action: none;
   overflow: hidden;
   /* Matches the canvas: the sign sits at the very top, with the sky above it cut off. */
-  background: #3a1a08 url("./assets/bubble-blast/background-sign.jpg") center -9.38vw / 100% auto no-repeat;
+  background: #3a1a08 url("./assets/bubble-blast/background-sign.jpg") center calc(var(--app-w, 100vw) * -0.0938) / 100% auto no-repeat;
 }
 
 .bubble-canvas {
@@ -5209,9 +5219,9 @@ h1 {
   position: absolute;
   left: 12px;
   right: 12px;
-  top: calc(50% + 10.65vw);
+  top: calc(50% + var(--app-w, 100vw) * 0.1065);
   transform: translateY(-50%);
-  max-height: calc(100% - 21.3vw - 24px);
+  max-height: calc(100% - var(--app-w, 100vw) * 0.213 - 24px);
   overflow-y: auto;
   z-index: 4;
   margin: 0 auto;
@@ -5318,7 +5328,7 @@ h1 {
   position: absolute;
   left: 12px;
   right: 12px;
-  top: calc(21.3vw + 8px);
+  top: calc(var(--app-w, 100vw) * 0.213 + 8px);
   bottom: calc(14px + var(--safe-bottom));
   z-index: 4;
   margin: 0 auto;
@@ -5598,7 +5608,7 @@ h1 {
   color: #fffaf2;
   text-shadow: 0 2px 0 #3a1e0c;
   box-shadow: 0 3px 0 #3a1e0c;
-  font-size: clamp(0.78rem, 3.4vw, 1rem);
+  font-size: clamp(0.78rem, calc(var(--app-w, 100vw) * 0.034), 1rem);
   white-space: nowrap;
 }
 
@@ -5878,7 +5888,7 @@ h1 {
   position: absolute;
   bottom: 100%;
   top: auto;
-  width: clamp(88px, 26vw, 128px);
+  width: clamp(88px, calc(var(--app-w, 100vw) * 0.26), 128px);
   height: auto;
   transform: translateY(-1%);
   display: block;
