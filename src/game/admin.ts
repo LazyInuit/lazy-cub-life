@@ -86,6 +86,54 @@ export async function listPlayers(query: string, sort: PlayerSort): Promise<{ pl
   return { players: asPlayers(data), sorted: true }
 }
 
+export type DemoStats = {
+  startsToday: number
+  startsWeek: number
+  startsAll: number
+  signupsToday: number
+  signupsWeek: number
+  signupsAll: number
+  /** Demo players per day for the last 14 days, oldest first. */
+  days: { day: string; count: number }[]
+  /** Demo runs started in each game. */
+  gamesWeek: Record<string, number>
+  gamesAll: Record<string, number>
+  /** First day anything was counted. */
+  since: string | null
+}
+
+/** Anonymous demo counts, or null until demo-stats.sql is run. */
+export async function adminDemoStats(): Promise<DemoStats | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('admin_demo_stats')
+  if (error && missingFunction(error)) return null
+  if (error) throw new Error(error.message)
+  const row = (data && typeof data === 'object' && !Array.isArray(data) ? data : {}) as Record<string, unknown>
+  const num = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? value : Number(value) || 0)
+  const games = (value: unknown) => {
+    const out: Record<string, number> = {}
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      for (const [game, total] of Object.entries(value as Record<string, unknown>)) out[game] = num(total)
+    }
+    return out
+  }
+  return {
+    startsToday: num(row.startsToday),
+    startsWeek: num(row.startsWeek),
+    startsAll: num(row.startsAll),
+    signupsToday: num(row.signupsToday),
+    signupsWeek: num(row.signupsWeek),
+    signupsAll: num(row.signupsAll),
+    days: (Array.isArray(row.days) ? (row.days as Record<string, unknown>[]) : []).map((item) => ({
+      day: String(item.day ?? ''),
+      count: num(item.count),
+    })),
+    gamesWeek: games(row.gamesWeek),
+    gamesAll: games(row.gamesAll),
+    since: typeof row.since === 'string' ? row.since : null,
+  }
+}
+
 /** The dashboard overview, or null until admin-overview.sql is run. */
 export async function adminOverview(): Promise<AdminOverview | null> {
   if (!supabase) return null

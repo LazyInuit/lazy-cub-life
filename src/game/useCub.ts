@@ -27,6 +27,7 @@ import { pumpkinLit, setPumpkinLit } from './halloween'
 import { stopHalloweenBgm } from './halloweenBgm'
 import { earnedBadges, hasProfileCard, type BadgeId } from './profileArt'
 import { isDemo } from './demo'
+import { countDemo } from './demoStats'
 import { supabase } from './supabase'
 import { addDailyScore, applyWallet, buyDrinkOnServer, claimDailyTask, grantGameCoins, payoutGap, payoutParts, purchaseTraitOnServer, rollDailyBonus as rollServerBonus, settleWeeklyPrize, touchDailyBoard, walletActive, type GameCoinSource, type WalletPatch } from './wallet'
 import { isTraitUnlocked, sanitizeOwnedOutfits, traitKey, traitPrice, traitXpBonus } from './traitShop'
@@ -481,7 +482,10 @@ export function useCub() {
     const current = saveRef.current
     if (!current) return false
     // Demo players cannot buy drinks, so a run never costs energy.
-    if (demoCub) return true
+    if (demoCub) {
+      countDemo(`play:${game}`)
+      return true
+    }
     const cost = playEnergyCost(game)
     if (current.energy < cost) return false
     const next: CubSave = { ...current, energy: current.energy - cost }

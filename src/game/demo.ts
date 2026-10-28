@@ -2,6 +2,8 @@
  * Demo mode: play without an account. The demo cub lives in its own save on this phone,
  * starts with DEMO_CASH, and never earns coins, saves scores, or touches the cloud.
  */
+import { countDemo, noteDemoTried } from './demoStats'
+
 export const DEMO_CASH = 10_000
 
 const DEMO_KEY = 'lazy-cub-demo'
@@ -21,6 +23,8 @@ export function startDemo() {
   } catch {
     // Without session storage the demo still runs until the page reloads.
   }
+  noteDemoTried()
+  countDemo('start')
 }
 
 export function endDemo() {

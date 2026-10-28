@@ -18,6 +18,7 @@ import { ACTIVITY_AREAS } from '../game/activity'
 import { removeProfilePhoto } from '../game/profilePhoto'
 import { AdminCoinHistory } from './AdminCoinHistory'
 import { AdminCoinTotals } from './AdminCoinTotals'
+import { AdminDemo } from './AdminDemo'
 import { AdminOverview, formatPlayTime } from './AdminOverview'
 import { levelFromXp } from '../game/progress'
 import { supabase } from '../game/supabase'
@@ -407,6 +408,8 @@ where email = '${signedInAs ?? 'yourname'}@users.lazycub.life';`}
       ) : null}
 
       {gate === 'admin' ? <AdminOverview refreshKey={refreshKey} onPickPlayer={(id, name) => void pickPlayer(id, name)} /> : null}
+
+      {gate === 'admin' ? <AdminDemo refreshKey={refreshKey} /> : null}
 
       {gate === 'admin' ? <AdminCoinTotals key={`economy-${refreshKey}`} /> : null}
 

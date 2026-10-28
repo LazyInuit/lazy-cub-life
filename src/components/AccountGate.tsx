@@ -6,6 +6,7 @@ import {
   signUpAccount,
   takeAdoptedSave,
 } from '../game/account'
+import { countDemoSignup } from '../game/demoStats'
 import { defaultSave } from '../game/progress'
 import { writeSave } from '../game/storage'
 import { supabase } from '../game/supabase'
@@ -87,6 +88,7 @@ export function AccountGate({ onEnter, notice = null, startMode = 'up', onBack }
       mode === 'up'
         ? await signUpAccount(username, password, defaultSave(), ethAddress)
         : await signInAccount(username, password)
+    if (mode === 'up' && (message === null || message === ACCOUNT_CREATED_SIGN_IN)) countDemoSignup()
     if (message === ACCOUNT_CREATED_SIGN_IN) {
       setBusy(false)
       setPassword('')

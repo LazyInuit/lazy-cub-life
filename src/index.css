@@ -7350,12 +7350,40 @@ h1 {
   flex: 1 1 140px;
 }
 
+.admin-demo-tiles {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-demo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.admin-demo-grid h3 {
+  margin: 0 0 8px;
+}
+
+.admin-spark-bar-demo {
+  background: linear-gradient(180deg, #8fe0d8, #3e9c94);
+}
+
+.admin-demo-range {
+  margin-bottom: 8px;
+}
+
+.admin-demo-range button {
+  padding: 4px 8px;
+  font-size: 0.74rem;
+}
+
 @media (max-width: 1000px) {
   .admin-tiles {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .admin-overview-grid {
+  .admin-overview-grid,
+  .admin-demo-grid {
     grid-template-columns: 1fr;
   }
 }
