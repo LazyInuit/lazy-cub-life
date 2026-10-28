@@ -201,7 +201,7 @@ export function LazyRiver({ best, onBest, onDailyStart, onDaily, onReward, onCoi
                   can!
                 </li>
                 <li>
-                  <strong>Whirlpools:</strong> get too close and you'll be spun round and round while the wave catches up.
+                  <strong>Whirlpools:</strong> steer clear! Get too close and you'll be sucked under, which ends your run.
                 </li>
                 <li>
                   <strong>Wave:</strong> a wave chases you up the river and gains on you whenever you slow down or get washed

@@ -72,20 +72,14 @@ export const RAPIDS_KICK = 340;
 
 /**
  * Chance a row past the calm start has a whirlpool in its gap. A cub that strays within
- * WHIRL_CATCH_R of its centre is swept round it WHIRL_ORBIT_R out, clockwise or anticlockwise,
- * for WHIRL_SECONDS. The cub makes almost no headway meanwhile (WHIRL_SLOW of the river's
- * speed), so the wave closes in. Then it is flung WHIRL_FLING further along the circuit and
- * can't be caught by the same whirlpool again for WHIRL_COOLDOWN seconds.
+ * WHIRL_CATCH_R of its centre is sucked in: it spirals to the middle over WHIRL_SUCK_SECONDS,
+ * spinning faster (from WHIRL_SPIN radians a second) as it shrinks and fades, and the run ends.
  */
 export const WHIRL_CHANCE = 0.07;
 export const WHIRL_DRAW_W = 180;
 export const WHIRL_CATCH_R = 58;
-export const WHIRL_ORBIT_R = 60;
 export const WHIRL_SPIN = 4.4;
-export const WHIRL_SECONDS = 1.8;
-export const WHIRL_SLOW = 0.08;
-export const WHIRL_FLING = 70;
-export const WHIRL_COOLDOWN = 1.4;
+export const WHIRL_SUCK_SECONDS = 1.2;
 
 /**
  * A wave chases the cub up the river from the bottom of the screen. Touching it ends the run.

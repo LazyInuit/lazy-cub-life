@@ -28,13 +28,9 @@ import {
   WAVE_MAX_GAIN,
   WAVE_RECEDE,
   WHIRL_CATCH_R,
-  WHIRL_COOLDOWN,
   WHIRL_DRAW_W,
-  WHIRL_FLING,
-  WHIRL_ORBIT_R,
-  WHIRL_SECONDS,
-  WHIRL_SLOW,
   WHIRL_SPIN,
+  WHIRL_SUCK_SECONDS,
 } from '../constants';
 import { frameScale } from '../../frameScale';
 import { FOAM_VARIANTS } from '../art/textures';
@@ -112,8 +108,6 @@ interface Whirl {
   x: number;
   y: number;
   dir: 1 | -1;
-  /** Seconds before it can catch the cub again after letting go. */
-  cooldown: number;
   baseScale: number;
   fxAcc: number;
   active: boolean;
@@ -145,12 +139,15 @@ interface Ambient {
   active: boolean;
 }
 
-/** A whirlpool sweeping the cub round its centre. */
+/** A whirlpool sucking the cub down into its centre. */
 interface WhirlHold {
   whirl: Whirl;
   angle: number;
   radius: number;
+  startRadius: number;
   time: number;
+  /** The cub has gone under and the run is ending. */
+  gone: boolean;
 }
 
 interface Rapids {
@@ -315,9 +312,13 @@ export class GameScene extends Phaser.Scene {
   private freeWhirls: Whirl[] = [];
   private whirlHold: WhirlHold | null = null;
   /** How held up the cub is by a whirlpool, 0 to 1, eased so the river slows and recovers smoothly. */
-  private whirlEase = 0;
-  /** Extra turn on the cub from being spun round, eased back upright once free. */
+  /** Extra turn on the cub as a whirlpool spins it under. */
   private riderSpin = 0;
+  /** How much of the cub is left as a whirlpool swallows it: size and opacity, 1 down to 0. */
+  private riderShrink = 1;
+  private riderFade = 1;
+  private riderBase = { x: 1, y: 1 };
+  private shadowBase = { x: 1, y: 1 };
   private particles: Particle[] = [];
   private ambient: Ambient[] = [];
   private trail: Trail[] = [];
@@ -400,8 +401,9 @@ export class GameScene extends Phaser.Scene {
     this.whirls = [];
     this.freeWhirls = [];
     this.whirlHold = null;
-    this.whirlEase = 0;
     this.riderSpin = 0;
+    this.riderShrink = 1;
+    this.riderFade = 1;
     this.waveTime = 0;
     this.rollTime = 0;
     this.waveGain = 0;
@@ -424,6 +426,8 @@ export class GameScene extends Phaser.Scene {
       .setDisplaySize(riderH * aspect, riderH)
       .setOrigin(0.5, 0.78)
       .setDepth(4);
+    this.riderBase = { x: this.rider.scaleX, y: this.rider.scaleY };
+    this.shadowBase = { x: this.shadow.scaleX, y: this.shadow.scaleY };
 
     this.createPools();
     this.createHud();
@@ -474,8 +478,7 @@ export class GameScene extends Phaser.Scene {
   private tick(dt: number): void {
     const speed = this.currentSpeed(dt);
     if (this.phase === 'play') {
-      // A whirlpool steers the cub itself while it has hold of it.
-      if (!this.whirlHold) this.applySteer(dt);
+      this.applySteer(dt);
       this.distance = Math.max(0, this.distance + (speed * dt) / 28);
       this.ensureRows();
       this.stepSurge(dt);
@@ -508,7 +511,7 @@ export class GameScene extends Phaser.Scene {
       return this.deathSpeed;
     }
     const speed =
-      cruising * this.surgeFactor() * (1 - (1 - RAPIDS_SLOW) * this.buffet) * (1 - (1 - WHIRL_SLOW) * this.whirlEase);
+      cruising * this.surgeFactor() * (1 - (1 - RAPIDS_SLOW) * this.buffet);
     this.deathSpeed = Math.max(0, speed);
     return speed;
   }
@@ -1027,9 +1030,8 @@ export class GameScene extends Phaser.Scene {
     for (const whirl of this.whirls) {
       if (!whirl.active) continue;
       whirl.y += speed * dt;
-      whirl.cooldown = Math.max(0, whirl.cooldown - dt);
       const held = this.whirlHold?.whirl === whirl;
-      whirl.sprite.rotation += whirl.dir * (held ? 3.2 : 1.3) * dt;
+      whirl.sprite.rotation += whirl.dir * (held ? 4.5 : 1.3) * dt;
       whirl.sprite.setPosition(whirl.x, whirl.y);
       if (onScreen(whirl.y)) {
         whirl.fxAcc += dt * (held ? 12 : 6);
@@ -1038,69 +1040,62 @@ export class GameScene extends Phaser.Scene {
           this.emitSpiral(whirl);
         }
       }
-      if (this.phase === 'play' && !this.whirlHold && whirl.cooldown <= 0) {
+      if (this.phase === 'play' && !this.whirlHold) {
         const dx = this.player.x - whirl.x;
         const dy = this.player.y - whirl.y;
         if (dx * dx + dy * dy < WHIRL_CATCH_R * WHIRL_CATCH_R) this.catchInWhirl(whirl, dx, dy);
       }
       if (whirl.y > GAME_HEIGHT + 200 && !held) this.releaseWhirl(whirl);
     }
-    this.whirlEase += ((this.whirlHold ? 1 : 0) - this.whirlEase) * Math.min(1, dt * (this.whirlHold ? 5 : 2.5));
     if (this.whirlHold) this.stepWhirlHold(dt);
-    else if (this.riderSpin !== 0) {
-      this.riderSpin *= 1 - Math.min(1, dt * 7);
-      if (Math.abs(this.riderSpin) < 0.01) this.riderSpin = 0;
-    }
   }
 
+  /** Caught: the run is over, and the whirlpool starts drawing the cub down. */
   private catchInWhirl(whirl: Whirl, dx: number, dy: number): void {
-    this.whirlHold = { whirl, angle: Math.atan2(dy, dx), radius: Math.max(24, Math.hypot(dx, dy)), time: 0 };
+    if (this.phase !== 'play') return;
+    const radius = Math.max(24, Math.hypot(dx, dy));
+    this.whirlHold = { whirl, angle: Math.atan2(dy, dx), radius, startRadius: radius, time: 0, gone: false };
+    this.phase = 'dying';
     this.surge = null;
+    this.steer.cancel();
+    this.deathSpeed = riverSpeed(curve(this.distance));
+    this.hidePaw();
     audio.whirl();
     haptics.near();
-    this.floatText(this.player.x, this.player.y - 74, 'WHIRLPOOL!', '#bfe4ff');
+    this.caughtLabel.setText('SUCKED INTO\nTHE WHIRLPOOL!').setVisible(true).setAlpha(0).setScale(0.6);
+    this.tweens.add({ targets: this.caughtLabel, alpha: 1, scale: 1, duration: 260, ease: 'Back.easeOut' });
   }
 
-  /** Sweeps the cub round the centre, speeding up as it settles onto the circuit, then flings it out. */
+  /** Spirals the cub into the centre, spinning faster as it shrinks and fades, then ends the run. */
   private stepWhirlHold(dt: number): void {
     const hold = this.whirlHold;
-    if (!hold) return;
-    if (this.phase !== 'play') {
-      this.whirlHold = null;
-      return;
-    }
+    if (!hold || hold.gone) return;
     const { whirl } = hold;
     hold.time += dt;
-    const spin = WHIRL_SPIN * (0.45 + 0.55 * Math.min(1, hold.time / 0.35));
+    const p = Math.min(1, hold.time / WHIRL_SUCK_SECONDS);
+    const pull = p * p;
+    const spin = WHIRL_SPIN * (1 + 3 * p);
     hold.angle += whirl.dir * spin * dt;
-    hold.radius += (WHIRL_ORBIT_R - hold.radius) * Math.min(1, dt * 6);
-    // Kept inside the cub's usual area so it never jumps when steering takes over again.
-    const x = clamp(whirl.x + Math.cos(hold.angle) * hold.radius, this.bounds.minX, this.bounds.maxX);
-    const y = clamp(whirl.y + Math.sin(hold.angle) * hold.radius, this.bounds.minY, this.bounds.maxY);
-    // Velocity along the circuit, so the cub leans into the turn.
-    this.player.vx = (x - this.player.x) / Math.max(dt, 1e-3);
+    hold.radius = hold.startRadius * (1 - pull);
+    this.player.x = whirl.x + Math.cos(hold.angle) * hold.radius;
+    this.player.y = whirl.y + Math.sin(hold.angle) * hold.radius;
+    this.player.vx = 0;
     this.player.vy = 0;
-    this.player.x = x;
-    this.player.y = y;
-    this.riderSpin += whirl.dir * spin * dt;
-    if (Math.random() < 0.35) this.burst(x, y + 16, 0xeaf8ff, 1, 90);
-    if (hold.time < WHIRL_SECONDS) return;
+    this.riderSpin += whirl.dir * spin * 1.4 * dt;
+    this.riderShrink = 1 - 0.88 * pull;
+    this.riderFade = p < 0.7 ? 1 : 1 - (p - 0.7) / 0.3;
+    if (Math.random() < 0.5) this.burst(this.player.x, this.player.y + 10, 0xeaf8ff, 1, 70);
+    if (p < 1) return;
 
-    // Let go: the cub carries on along the circuit and steering picks up from there.
-    const tx = -Math.sin(hold.angle) * whirl.dir;
-    const ty = Math.cos(hold.angle) * whirl.dir;
-    const goX = clamp(x + tx * WHIRL_FLING, this.bounds.minX, this.bounds.maxX);
-    const goY = clamp(y + ty * WHIRL_FLING, this.bounds.minY, this.bounds.maxY);
-    this.player.vx = tx * 260;
-    this.player.vy = ty * 160;
-    this.player.targetX = goX;
-    this.player.targetY = goY;
-    this.steer.targetX = goX;
-    this.steer.targetY = goY;
-    // Leave the cub upright the short way round.
-    this.riderSpin = Math.atan2(Math.sin(this.riderSpin), Math.cos(this.riderSpin));
-    whirl.cooldown = WHIRL_COOLDOWN;
-    this.whirlHold = null;
+    // Gone under.
+    hold.gone = true;
+    this.riderFade = 0;
+    this.burst(whirl.x, whirl.y, 0xf4fbff, 12, 160);
+    this.burst(whirl.x, whirl.y, 0x7fd4ef, 8, 110);
+    this.cameras.main.shake(160, 0.008);
+    audio.crash();
+    haptics.crash();
+    this.time.delayedCall(600, () => this.finishRun());
   }
 
   private activateWhirl(spec: WhirlSpawn): void {
@@ -1111,7 +1106,6 @@ export class GameScene extends Phaser.Scene {
     whirl.x = spec.x;
     whirl.y = spec.y;
     whirl.dir = spec.dir;
-    whirl.cooldown = 0;
     whirl.fxAcc = Math.random();
     whirl.baseScale = WHIRL_DRAW_W / Math.max(1, whirl.sprite.width);
     // The art swirls clockwise; mirrored, it swirls the other way.
@@ -1310,8 +1304,10 @@ export class GameScene extends Phaser.Scene {
     const tilt = this.phase === 'idle' ? Math.sin(this.bob * 1.3) * 0.08 : clamp(this.player.vx / 720, -0.28, 0.28);
     this.rider.setRotation(tilt + this.buffet * Math.sin(this.bob * 23) * 0.16 + this.riderSpin);
     this.rider.setDepth(2 + this.player.y / GAME_HEIGHT);
-    this.shadow.setPosition(this.player.x, this.player.y + 22);
+    this.rider.setScale(this.riderBase.x * this.riderShrink, this.riderBase.y * this.riderShrink).setAlpha(this.riderFade);
+    this.shadow.setPosition(this.player.x, this.player.y + 22 * this.riderShrink);
     this.shadow.setDepth(1.9 + this.player.y / GAME_HEIGHT);
+    this.shadow.setScale(this.shadowBase.x * this.riderShrink, this.shadowBase.y * this.riderShrink).setAlpha(this.riderFade);
   }
 
   /** The lion paw presses under the cub and sweeps left and right until the first steer. */
@@ -1783,7 +1779,7 @@ export class GameScene extends Phaser.Scene {
     }
     for (let i = 0; i < 3; i += 1) {
       const sprite = this.add.image(0, -400, 'whirlpool').setVisible(false).setDepth(1.03);
-      const whirl: Whirl = { sprite, x: 0, y: 0, dir: 1, cooldown: 0, baseScale: 1, fxAcc: 0, active: false };
+      const whirl: Whirl = { sprite, x: 0, y: 0, dir: 1, baseScale: 1, fxAcc: 0, active: false };
       this.whirls.push(whirl);
       this.freeWhirls.push(whirl);
     }
