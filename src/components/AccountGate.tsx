@@ -24,7 +24,7 @@ export function ForgotPasswordNote() {
   )
 }
 
-/** The About, Privacy and Terms pages, which live outside the app. */
+/** The About, How to play, Privacy and Terms pages, which live outside the app. */
 export function SiteLinks({ intro }: { intro?: string }) {
   const page = (href: string, label: string) => (
     <a href={href} target="_blank" rel="noopener noreferrer">
@@ -40,7 +40,8 @@ export function SiteLinks({ intro }: { intro?: string }) {
         </>
       ) : (
         <>
-          {page('/about', 'About')} · {page('/privacy', 'Privacy')} · {page('/terms', 'Terms')}
+          {page('/about', 'About')} · {page('/how-to-play', 'How to play')} · {page('/privacy', 'Privacy')} ·{' '}
+          {page('/terms', 'Terms')}
         </>
       )}
     </p>
