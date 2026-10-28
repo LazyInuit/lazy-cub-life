@@ -6,6 +6,7 @@ import {
   fillEnergy,
   listPlayers,
   playerActivity,
+  playerActivityRange,
   playerHistory,
   setPlayerBan,
   setPlayerPassword,
@@ -23,6 +24,13 @@ import { supabase } from '../game/supabase'
 
 type Gate = 'loading' | 'signed-out' | 'missing' | 'player' | 'admin'
 type PlayerTab = 'overview' | 'coins' | 'actions'
+
+/** Same choices as the coin totals. Today counts from UK midnight. */
+const ACTIVITY_RANGES = [
+  { id: 'all', label: 'All time', days: null },
+  { id: 'week', label: 'Last 7 days', days: 7 },
+  { id: 'day', label: 'Today', days: 1 },
+] as const
 
 const SORTS: { id: PlayerSort; label: string }[] = [
   { id: 'active', label: 'Recently active' },
@@ -76,6 +84,7 @@ export function AdminScreen() {
   const [history, setHistory] = useState<LedgerEntry[]>([])
   const [activity, setActivity] = useState<Record<string, number>>({})
   const [activityNote, setActivityNote] = useState<string | null>(null)
+  const [activityRange, setActivityRange] = useState<(typeof ACTIVITY_RANGES)[number]['id']>('all')
   const [coinAmount, setCoinAmount] = useState('10')
   const [coinNote, setCoinNote] = useState('')
   const [nextPassword, setNextPassword] = useState('')
@@ -166,8 +175,6 @@ export function AdminScreen() {
   useEffect(() => {
     if (!selected) {
       setHistory([])
-      setActivity({})
-      setActivityNote(null)
       return
     }
     const playerId = selected.id
@@ -179,11 +186,36 @@ export function AdminScreen() {
       .catch((reason: unknown) => {
         if (!cancel) setError(reason instanceof Error ? reason.message : 'Could not load history')
       })
-    void playerActivity(playerId)
-      .then((times) => {
+    return () => {
+      cancel = true
+    }
+  }, [selected?.id])
+
+  useEffect(() => {
+    if (!selected) {
+      setActivity({})
+      setActivityNote(null)
+      return
+    }
+    const playerId = selected.id
+    const days = ACTIVITY_RANGES.find((item) => item.id === activityRange)?.days ?? null
+    let cancel = false
+    setActivityNote(null)
+    const load = days === null ? playerActivity(playerId).then((times) => ({ times, since: null as string | null })) : playerActivityRange(playerId, days)
+    void load
+      .then((result) => {
         if (cancel) return
-        setActivity(times)
-        setActivityNote(null)
+        if (!result) {
+          setActivity({})
+          setActivityNote('Today and the last 7 days need supabase/activity-daily.sql. All time works now.')
+          return
+        }
+        setActivity(result.times)
+        const start = days === null ? null : new Date(Date.now() - (days - 1) * 86400000).toISOString().slice(0, 10)
+        if (result.since && start && result.since > start) {
+          const since = new Date(`${result.since}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+          setActivityNote(`Daily tracking started on ${since}, so this only counts from then.`)
+        }
       })
       .catch((reason: unknown) => {
         if (cancel) return
@@ -198,7 +230,7 @@ export function AdminScreen() {
     return () => {
       cancel = true
     }
-  }, [selected?.id])
+  }, [selected?.id, activityRange])
 
   const signIn = async () => {
     setBusy(true)
@@ -514,7 +546,21 @@ where email = '${signedInAs ?? 'yourname'}@users.lazycub.life';`}
               {tab === 'overview' ? (
                 <div className="admin-tab-body">
                   <h3>Time spent</h3>
-                  {activityNote ? <p>{activityNote}</p> : null}
+                  <div className="admin-coins-filter" role="tablist" aria-label="Time range">
+                    {ACTIVITY_RANGES.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={activityRange === item.id}
+                        className={activityRange === item.id ? 'on' : ''}
+                        onClick={() => setActivityRange(item.id)}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                  {activityNote ? <p className="admin-muted">{activityNote}</p> : null}
                   <ul className="admin-bars">
                     {(() => {
                       const top = Math.max(1, ...ACTIVITY_AREAS.map((row) => activity[row.id] ?? 0))

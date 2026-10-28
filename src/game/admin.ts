@@ -134,6 +134,29 @@ export async function playerActivity(playerId: string): Promise<Record<string, n
   return times
 }
 
+/**
+ * One player's seconds per area over the last `days` UK days, today included, and the day
+ * daily tracking began. Null until activity-daily.sql is run.
+ */
+export async function playerActivityRange(
+  playerId: string,
+  days: number,
+): Promise<{ times: Record<string, number>; since: string | null } | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('admin_activity_range', { p_player: playerId, p_days: days })
+  if (error && missingFunction(error)) return null
+  if (error) throw new Error(error.message)
+  const row = (data && typeof data === 'object' && !Array.isArray(data) ? data : {}) as Record<string, unknown>
+  const times: Record<string, number> = {}
+  if (row.areas && typeof row.areas === 'object' && !Array.isArray(row.areas)) {
+    for (const [key, value] of Object.entries(row.areas as Record<string, unknown>)) {
+      const seconds = typeof value === 'number' ? value : Number(value)
+      if (Number.isFinite(seconds)) times[key] = seconds
+    }
+  }
+  return { times, since: typeof row.since === 'string' ? row.since : null }
+}
+
 export async function playerHistory(playerId: string): Promise<LedgerEntry[]> {
   if (!supabase) return []
   const { data, error } = await supabase.rpc('admin_history', { p_player: playerId })
