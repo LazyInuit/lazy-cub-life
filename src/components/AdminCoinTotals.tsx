@@ -50,6 +50,8 @@ export function AdminCoinTotals({ playerId = null }: Props) {
   }, [range, playerId])
 
   const gameTotal = totals ? GAMES.reduce((sum, game) => sum + (totals.grants[game.source] ?? 0), 0) : 0
+  const topGame = totals ? Math.max(1, ...GAMES.map((game) => totals.grants[game.source] ?? 0)) : 1
+  const byGame = totals ? [...GAMES].sort((a, b) => (totals.grants[b.source] ?? 0) - (totals.grants[a.source] ?? 0)) : GAMES
   const since = totals?.labelsSince ? new Date(totals.labelsSince) : null
 
   const player = playerId !== null
@@ -93,14 +95,25 @@ export function AdminCoinTotals({ playerId = null }: Props) {
               {since.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}, when labels started.
             </p>
           ) : null}
-          <h3>Earned</h3>
-          <ul className="admin-coins-groups">
-            {GAMES.map((game) => (
+          <h3>Earned in games</h3>
+          <ul className="admin-bars">
+            {byGame.map((game) => (
               <li key={game.source}>
-                <span>{game.label}</span>
-                <strong className="admin-coins-in">{coins(totals.grants[game.source] ?? 0)}</strong>
+                <div className="admin-bar-head">
+                  <span>{game.label}</span>
+                  <strong className="admin-coins-in">{coins(totals.grants[game.source] ?? 0)}</strong>
+                </div>
+                <span className="admin-bar-track">
+                  <span
+                    className="admin-bar-fill admin-bar-fill-in"
+                    style={{ width: `${((totals.grants[game.source] ?? 0) / topGame) * 100}%` }}
+                  />
+                </span>
               </li>
             ))}
+          </ul>
+          <h3>Earned in total</h3>
+          <ul className="admin-coins-groups">
             <li className="admin-economy-sum">
               <span>All games</span>
               <strong className="admin-coins-in">{coins(gameTotal)}</strong>
@@ -120,5 +133,5 @@ export function AdminCoinTotals({ playerId = null }: Props) {
   )
 
   if (player) return <div className="admin-coins admin-economy-player">{content}</div>
-  return <section className="admin-card admin-economy">{content}</section>
+  return <section className="admin-card admin-economy admin-wide">{content}</section>
 }

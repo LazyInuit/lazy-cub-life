@@ -10,7 +10,27 @@ export type AdminPlayer = {
   eth_address: string | null
   created_at: string
   last_visit: number
+  /** Last recorded activity or save visit. Only from admin_players. */
+  last_seen?: string | null
   banned?: boolean
+}
+
+export type PlayerSort = 'active' | 'new' | 'coins' | 'level' | 'name'
+
+export type AdminOverview = {
+  players: number
+  newToday: number
+  newWeek: number
+  activeToday: number
+  activeWeek: number
+  banned: number
+  cashHeld: number
+  /** The last 14 days, oldest first. */
+  signups: { day: string; count: number }[]
+  /** Seconds spent and players who have played, by activity area. */
+  areas: Record<string, { seconds: number; players: number }>
+  /** Biggest coin earners in the last 24 hours. */
+  earners: { id: string; username: string; earned: number; grants: number; banned: boolean }[]
 }
 
 export type LedgerEntry = {
@@ -52,6 +72,54 @@ export async function searchPlayers(query: string): Promise<AdminPlayer[]> {
   const { data, error } = await supabase.rpc('admin_search', { p_query: query.trim() })
   if (error) throw new Error(error.message)
   return asPlayers(data)
+}
+
+/**
+ * Players sorted for the dashboard. Until admin-overview.sql is run, falls back to the
+ * first 25 alphabetical matches and says so with `sorted: false`.
+ */
+export async function listPlayers(query: string, sort: PlayerSort): Promise<{ players: AdminPlayer[]; sorted: boolean }> {
+  if (!supabase) return { players: [], sorted: false }
+  const { data, error } = await supabase.rpc('admin_players', { p_query: query.trim(), p_sort: sort, p_limit: 100 })
+  if (error && missingFunction(error)) return { players: await searchPlayers(query), sorted: false }
+  if (error) throw new Error(error.message)
+  return { players: asPlayers(data), sorted: true }
+}
+
+/** The dashboard overview, or null until admin-overview.sql is run. */
+export async function adminOverview(): Promise<AdminOverview | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('admin_overview')
+  if (error && missingFunction(error)) return null
+  if (error) throw new Error(error.message)
+  const row = (data && typeof data === 'object' && !Array.isArray(data) ? data : {}) as Record<string, unknown>
+  const num = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? value : Number(value) || 0)
+  const areas: AdminOverview['areas'] = {}
+  if (row.areas && typeof row.areas === 'object' && !Array.isArray(row.areas)) {
+    for (const [area, value] of Object.entries(row.areas as Record<string, unknown>)) {
+      const item = (value ?? {}) as Record<string, unknown>
+      areas[area] = { seconds: num(item.seconds), players: num(item.players) }
+    }
+  }
+  const list = (value: unknown) => (Array.isArray(value) ? (value as Record<string, unknown>[]) : [])
+  return {
+    players: num(row.players),
+    newToday: num(row.newToday),
+    newWeek: num(row.newWeek),
+    activeToday: num(row.activeToday),
+    activeWeek: num(row.activeWeek),
+    banned: num(row.banned),
+    cashHeld: num(row.cashHeld),
+    signups: list(row.signups).map((item) => ({ day: String(item.day ?? ''), count: num(item.count) })),
+    areas,
+    earners: list(row.earners).map((item) => ({
+      id: String(item.id ?? ''),
+      username: String(item.username ?? ''),
+      earned: num(item.earned),
+      grants: num(item.grants),
+      banned: item.banned === true,
+    })),
+  }
 }
 
 export async function playerActivity(playerId: string): Promise<Record<string, number>> {
