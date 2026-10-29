@@ -9,6 +9,11 @@ import ballerGoldUrl from '../assets/player-profile/badges/baller-gold.png'
 import ballerDiamondUrl from '../assets/player-profile/badges/baller-diamond.png'
 import ballerPlatinumUrl from '../assets/player-profile/badges/baller-platinum.png'
 import ballerSilverUrl from '../assets/player-profile/badges/baller-silver.png'
+import bubbleBronzeUrl from '../assets/player-profile/badges/bubble-bronze.png'
+import bubbleGoldUrl from '../assets/player-profile/badges/bubble-gold.png'
+import bubbleDiamondUrl from '../assets/player-profile/badges/bubble-diamond.png'
+import bubblePlatinumUrl from '../assets/player-profile/badges/bubble-platinum.png'
+import bubbleSilverUrl from '../assets/player-profile/badges/bubble-silver.png'
 import ninjaBronzeUrl from '../assets/player-profile/badges/ninja-bronze.png'
 import ninjaGoldUrl from '../assets/player-profile/badges/ninja-gold.png'
 import ninjaDiamondUrl from '../assets/player-profile/badges/ninja-diamond.png'
@@ -19,6 +24,11 @@ import prideGoldUrl from '../assets/player-profile/badges/pride-gold.png'
 import prideDiamondUrl from '../assets/player-profile/badges/pride-diamond.png'
 import pridePlatinumUrl from '../assets/player-profile/badges/pride-platinum.png'
 import prideSilverUrl from '../assets/player-profile/badges/pride-silver.png'
+import riverBronzeUrl from '../assets/player-profile/badges/river-bronze.png'
+import riverGoldUrl from '../assets/player-profile/badges/river-gold.png'
+import riverDiamondUrl from '../assets/player-profile/badges/river-diamond.png'
+import riverPlatinumUrl from '../assets/player-profile/badges/river-platinum.png'
+import riverSilverUrl from '../assets/player-profile/badges/river-silver.png'
 import spaceBronzeUrl from '../assets/player-profile/badges/space-bronze.png'
 import spaceGoldUrl from '../assets/player-profile/badges/space-gold.png'
 import spaceDiamondUrl from '../assets/player-profile/badges/space-diamond.png'
@@ -64,6 +74,16 @@ export const BADGES = {
   'baller-gold': badge(ballerGoldUrl, 'Baller Badge', 'Gold', 'Lazy Hoops'),
   'baller-platinum': badge(ballerPlatinumUrl, 'Baller Badge', 'Platinum', 'Lazy Hoops'),
   'baller-diamond': badge(ballerDiamondUrl, 'Baller Badge', 'Diamond', 'Lazy Hoops'),
+  'bubble-bronze': badge(bubbleBronzeUrl, 'Bubble Badge', 'Bronze', 'Bubble Blast'),
+  'bubble-silver': badge(bubbleSilverUrl, 'Bubble Badge', 'Silver', 'Bubble Blast'),
+  'bubble-gold': badge(bubbleGoldUrl, 'Bubble Badge', 'Gold', 'Bubble Blast'),
+  'bubble-platinum': badge(bubblePlatinumUrl, 'Bubble Badge', 'Platinum', 'Bubble Blast'),
+  'bubble-diamond': badge(bubbleDiamondUrl, 'Bubble Badge', 'Diamond', 'Bubble Blast'),
+  'river-bronze': badge(riverBronzeUrl, 'River Badge', 'Bronze', 'Lazy River'),
+  'river-silver': badge(riverSilverUrl, 'River Badge', 'Silver', 'Lazy River'),
+  'river-gold': badge(riverGoldUrl, 'River Badge', 'Gold', 'Lazy River'),
+  'river-platinum': badge(riverPlatinumUrl, 'River Badge', 'Platinum', 'Lazy River'),
+  'river-diamond': badge(riverDiamondUrl, 'River Badge', 'Diamond', 'Lazy River'),
 } satisfies Record<string, Badge>
 
 export type ProfilePictureId = keyof typeof PROFILE_PICTURES
@@ -131,6 +151,26 @@ const BADGE_RULES: { game: DailyGame; tiers: BadgeTier[] }[] = [
       { badge: 'baller-gold', at: 40000 },
       { badge: 'baller-platinum', at: 80000 },
       { badge: 'baller-diamond', at: 120000 },
+    ],
+  },
+  {
+    game: 'bubble',
+    tiers: [
+      { badge: 'bubble-bronze', at: 5000 },
+      { badge: 'bubble-silver', at: 10000 },
+      { badge: 'bubble-gold', at: 20000 },
+      { badge: 'bubble-platinum', at: 35000 },
+      { badge: 'bubble-diamond', at: 50000 },
+    ],
+  },
+  {
+    game: 'river',
+    tiers: [
+      { badge: 'river-bronze', at: 1500 },
+      { badge: 'river-silver', at: 3000 },
+      { badge: 'river-gold', at: 5000 },
+      { badge: 'river-platinum', at: 10000 },
+      { badge: 'river-diamond', at: 15000 },
     ],
   },
 ]
