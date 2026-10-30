@@ -31,6 +31,8 @@ import type { ArcherRound } from '../game/cupidArcher/types'
 import { PLAY_ENERGY_COST, PLAY_NEED_COST, moodFromScore } from '../game/progress'
 import type { NeedKey } from '../game/types'
 import { RunEnergy } from './EnergyBar'
+import { PowerBonusNote } from './PowerBonusNote'
+import type { RunBonus } from '../game/useCub'
 import { GamesButton, HomeButton } from './HomeButton'
 
 type Mode = 'start' | 'play' | 'over'
@@ -49,6 +51,8 @@ type Props = {
   onGames: () => void
   energy: number
   onShop: () => void
+  /** Cub Power bonus added to this run. */
+  powerBonus?: RunBonus
 }
 
 type Summary = {
@@ -116,7 +120,7 @@ function LivesHud({ lives }: { lives: number }) {
   )
 }
 
-export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop }: Props) {
+export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [hud, setHud] = useState({ lives: LIVES, score: 0, time: ROUND_SECONDS, shots: 0, aiming: false })
@@ -431,6 +435,7 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onC
               <img src={coinUrl} alt="" />
               +{summary.coins}
             </p>
+            <PowerBonusNote bonus={powerBonus} />
             <RunEnergy energy={energy} onShop={onShop} />
             <button type="button" className="archer-btn" onClick={startRound} disabled={energy < PLAY_ENERGY_COST}>
               Play again

@@ -17,6 +17,8 @@ import { playBomb, playCombo, playMiss, playSlash, playSwipe, playUi, resumeDojo
 import type { EngineState } from '../game/lazyDojo/types'
 import type { NeedKey } from '../game/types'
 import { RunEnergy } from './EnergyBar'
+import { PowerBonusNote } from './PowerBonusNote'
+import type { RunBonus } from '../game/useCub'
 import { GamesButton, HomeButton } from './HomeButton'
 
 type Mode = 'start' | 'howto' | 'play' | 'pause' | 'over'
@@ -35,9 +37,11 @@ type Props = {
   onGames: () => void
   energy: number
   onShop: () => void
+  /** Cub Power bonus added to this run. */
+  powerBonus?: RunBonus
 }
 
-export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop }: Props) {
+export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [hudScore, setHudScore] = useState(0)
@@ -496,6 +500,7 @@ export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onCoin
               <img src={coinUrl} alt="" />
               +{summary.coins}
             </p>
+            <PowerBonusNote bonus={powerBonus} />
             <RunEnergy energy={energy} onShop={onShop} />
             <button type="button" className="dojo-btn" onClick={startTraining} disabled={energy < PLAY_ENERGY_COST}>
               TRAIN AGAIN

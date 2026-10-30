@@ -48,6 +48,9 @@ import { HomeButton } from './HomeButton'
 import { DailyTraitRoll, ageCubLabel, traitsFromManifest } from './DailyTraitRoll'
 import { AccountPanel } from './AccountPanel'
 import { AchievementsPanel } from './AchievementsPanel'
+import { CubPowerPanel, multiplierText } from './CubPowerPanel'
+import cubPowerUiUrl from '../assets/home/cub-power-plate.png'
+import { PowerNoticePop } from './PowerNoticePop'
 import { PROFILE_PICTURES } from '../game/profileArt'
 import { useOwnProfile } from '../game/useOwnProfile'
 import { isDemo, requestSignUp } from '../game/demo'
@@ -108,6 +111,7 @@ export function CareScreen({
   const [energyWarn, setEnergyWarn] = useState<number | null>(null)
   const [accountOpen, setAccountOpen] = useState(false)
   const [achievementsOpen, setAchievementsOpen] = useState(startInAchievements)
+  const [powerOpen, setPowerOpen] = useState(false)
   const [bonusRoll, setBonusRoll] = useState<{ prize: BonusTrait | null; coins: number } | null>(null)
   const [diceShake, setDiceShake] = useState(false)
   const [age, setAge] = useState<CharacterAge>(() => getHomeCharacterAge())
@@ -707,7 +711,53 @@ export function CareScreen({
             <strong>{progress.level}</strong>
           </span>
         </div>
+        {demo ? (
+          <button
+            type="button"
+            className="power-plate power-plate-locked"
+            onClick={requestSignUp}
+            aria-label="Cub Power. Create an account to start building it."
+          >
+            <img src={cubPowerUiUrl} alt="" />
+            <span className="power-plate-total power-plate-signup">Sign up</span>
+            <span className="power-plate-mult">{multiplierText(100)}</span>
+          </button>
+        ) : cub.cubPower ? (
+          <button
+            type="button"
+            className="power-plate"
+            onClick={() => setPowerOpen(true)}
+            aria-label={`Cub Power ${cub.cubPower.total}, ${cub.cubPower.percent}% bonuses, login streak ${multiplierText(
+              cub.cubPower.streakMultiplier,
+            )}${cub.cubPower.streakCount > 0 ? `, day ${cub.cubPower.streakCount}` : ''}`}
+          >
+            <img src={cubPowerUiUrl} alt="" />
+            <span className="power-plate-total">{cub.cubPower.total.toLocaleString('en-US')}</span>
+            <span className="power-plate-mult">{multiplierText(cub.cubPower.streakMultiplier)}</span>
+            {cub.powerNewGame ? <span className="account-open-dot" aria-hidden="true" /> : null}
+          </button>
+        ) : null}
         {cub.toast ? <p className="home-toast">{cub.toast}</p> : null}
+        {powerOpen ? (
+          <CubPowerPanel
+            power={cub.cubPower}
+            newGame={cub.powerNewGame}
+            onSeenNewGame={cub.dismissPowerNewGame}
+            onRefresh={cub.refreshCubPower}
+            onClose={() => setPowerOpen(false)}
+          />
+        ) : null}
+        {cub.powerNotice &&
+        !powerOpen &&
+        !accountOpen &&
+        !achievementsOpen &&
+        !dailyOpen &&
+        !gamesOpen &&
+        !shopOpen &&
+        !boardOpen &&
+        !bonusRoll ? (
+          <PowerNoticePop notice={cub.powerNotice} onClose={cub.dismissPowerNotice} />
+        ) : null}
         {accountOpen ? (
           <AccountPanel
             cub={cub}

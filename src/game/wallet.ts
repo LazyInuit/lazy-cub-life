@@ -1,3 +1,4 @@
+import { readCubPower, type CubPower } from './cubPower'
 import { sanitizeDaily, type DailyGame, type DailyProgress } from './dailyTasks'
 import { supabase } from './supabase'
 import type { CubSave } from './types'
@@ -7,6 +8,10 @@ export type GameCoinSource = 'flight' | 'hoops' | 'archer' | 'dojo' | 'match' | 
 export type WalletPatch = {
   cubCash: number
   granted?: number
+  /** Whole Cub Cash the Cub Power bonus paid on top of granted. */
+  bonus?: number
+  /** Cub Power bonus left over after this payout, in hundredths. */
+  bonusHundredths?: number
   daily?: DailyProgress
   unlockedTraits?: string[]
   xpGained?: number
@@ -16,6 +21,8 @@ export type WalletPatch = {
 type RpcRow = {
   cubCash?: unknown
   granted?: unknown
+  bonus?: unknown
+  bonusHundredths?: unknown
   ok?: unknown
   reason?: unknown
   daily?: unknown
@@ -53,6 +60,10 @@ function readPatch(value: unknown): WalletPatch | null {
   if (!row || typeof row.cubCash !== 'number' || !Number.isFinite(row.cubCash)) return null
   const patch: WalletPatch = { cubCash: Math.max(0, Math.floor(row.cubCash)) }
   if (typeof row.granted === 'number' && Number.isFinite(row.granted)) patch.granted = Math.floor(row.granted)
+  if (typeof row.bonus === 'number' && Number.isFinite(row.bonus)) patch.bonus = Math.max(0, Math.floor(row.bonus))
+  if (typeof row.bonusHundredths === 'number' && Number.isFinite(row.bonusHundredths)) {
+    patch.bonusHundredths = Math.min(99, Math.max(0, Math.floor(row.bonusHundredths)))
+  }
   if (row.daily) patch.daily = sanitizeDaily(row.daily)
   if (Array.isArray(row.unlockedTraits)) {
     patch.unlockedTraits = row.unlockedTraits.filter((item): item is string => typeof item === 'string')
@@ -181,6 +192,14 @@ export async function settleWeeklyPrize(): Promise<WeeklyPrize | null> {
     winners.push({ place: 1, username: legacy.trim() })
   }
   return { ...result.patch, winners }
+}
+
+/** This player's Cub Power. Also counts as today's login for the streak. Null if signed out or not installed. */
+export async function getCubPower(): Promise<CubPower | null> {
+  if (!supabase || !(await signedIn())) return null
+  const { data, error } = await supabase.rpc('get_cub_power')
+  if (error) return null
+  return readCubPower(data)
 }
 
 export async function touchDailyBoard() {

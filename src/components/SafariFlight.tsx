@@ -8,6 +8,8 @@ import { PLAY_NEED_COST, moodFromScore, playEnergyCost } from '../game/progress'
 import { playCoin, playCrash, playEnd, playFlap, playIgnite, resumeFlightAudio, startSpaceAmbience, stopSpaceAmbience } from '../game/flightAudio'
 import type { NeedKey } from '../game/types'
 import { RunEnergy } from './EnergyBar'
+import { PowerBonusNote } from './PowerBonusNote'
+import type { RunBonus } from '../game/useCub'
 import { HomeButton, GamesButton } from './HomeButton'
 
 type Gate = {
@@ -51,9 +53,11 @@ type Props = {
   onGames: () => void
   energy: number
   onShop: () => void
+  /** Cub Power bonus added to this run. */
+  powerBonus?: RunBonus
 }
 
-export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop }: Props) {
+export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const onRewardRef = useRef(onReward)
   const onBestRef = useRef(onBest)
@@ -361,6 +365,7 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
             <img src={coinUrl} alt="" />
             +{summary.coins}
           </p>
+          <PowerBonusNote bonus={powerBonus} />
           <RunEnergy energy={energy} onShop={onShop} cost={playEnergyCost('flight')} />
           <div className="flight-results-actions">
             <button type="button" className="cabinet-key" onClick={retry} disabled={energy < playEnergyCost('flight')}>

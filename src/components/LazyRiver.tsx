@@ -6,6 +6,8 @@ import { startRiverBgm, stopRiverBgm } from '../game/lazyRiver/music'
 import { PLAY_ENERGY_COST, PLAY_NEED_COST, moodFromScore } from '../game/progress'
 import type { NeedKey } from '../game/types'
 import { RunEnergy } from './EnergyBar'
+import { PowerBonusNote } from './PowerBonusNote'
+import type { RunBonus } from '../game/useCub'
 import { GamesButton, HomeButton } from './HomeButton'
 
 type Mode = 'start' | 'play' | 'over'
@@ -24,6 +26,8 @@ type Props = {
   onGames: () => void
   energy: number
   onShop: () => void
+  /** Cub Power bonus added to this run. */
+  powerBonus?: RunBonus
 }
 
 type Summary = RunResult & {
@@ -36,7 +40,7 @@ type Summary = RunResult & {
 /** Time to see the cub stop in the water before the results panel opens. */
 const OVER_PANEL_MS = 500
 
-export function LazyRiver({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop }: Props) {
+export function LazyRiver({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [showRules, setShowRules] = useState(false)
@@ -250,6 +254,7 @@ export function LazyRiver({ best, onBest, onDailyStart, onDaily, onReward, onCoi
                 <img src={coinUrl} alt="" />+{summary.cash}
               </span>
             </p>
+            <PowerBonusNote bonus={powerBonus} />
             <RunEnergy energy={energy} onShop={onShop} />
             <button type="button" className="river-btn" onClick={startRun} disabled={energy < PLAY_ENERGY_COST}>
               Play again

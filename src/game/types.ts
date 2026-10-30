@@ -58,6 +58,8 @@ export type CubSave = {
   /** The cub stays asleep across closing the app, and energy recovers while this is true. */
   asleep: boolean
   xp: number
+  /** Cub Power bonus XP not yet worth a whole point, in hundredths (0-99). */
+  xpBonusHundredths: number
   level: number
   lastVisit: number
   flightBest: number

@@ -349,6 +349,7 @@ function Game() {
           onDaily={(score) => cub.noteDaily('flight', score)}
           onReward={cub.reward}
           onCoins={(amount) => cub.addCubCash(amount, 'flight')}
+          powerBonus={cub.runBonus}
           onExit={goHome}
           onGames={goGames}
           energy={playEnergy}
@@ -363,6 +364,7 @@ function Game() {
           onDaily={(score) => cub.noteDaily('match', score)}
           onReward={cub.reward}
           onCoins={(amount) => cub.addCubCash(amount, 'match')}
+          powerBonus={cub.runBonus}
           onExit={goHome}
           onGames={goGames}
           energy={playEnergy}
@@ -377,6 +379,7 @@ function Game() {
           onDaily={(score) => cub.noteDaily('dojo', score)}
           onReward={cub.reward}
           onCoins={(amount) => cub.addCubCash(amount, 'dojo')}
+          powerBonus={cub.runBonus}
           onExit={goHome}
           onGames={goGames}
           energy={playEnergy}
@@ -391,6 +394,7 @@ function Game() {
           onDaily={(score) => cub.noteDaily('archer', score)}
           onReward={cub.reward}
           onCoins={(amount) => cub.addCubCash(amount, 'archer')}
+          powerBonus={cub.runBonus}
           onExit={goHome}
           onGames={goGames}
           energy={playEnergy}
@@ -405,6 +409,7 @@ function Game() {
           onDaily={(score) => cub.noteDaily('hoops', score)}
           onReward={cub.reward}
           onCoins={(amount) => cub.addCubCash(amount, 'hoops')}
+          powerBonus={cub.runBonus}
           onExit={goHome}
           onGames={goGames}
           energy={playEnergy}
@@ -419,6 +424,7 @@ function Game() {
           onDaily={(score) => cub.noteDaily('bubble', score)}
           onReward={cub.reward}
           onCoins={(amount) => cub.addCubCash(amount, 'bubble')}
+          powerBonus={cub.runBonus}
           onExit={goHome}
           onGames={goGames}
           energy={playEnergy}
@@ -433,6 +439,7 @@ function Game() {
           onDaily={(score) => cub.noteDaily('river', score)}
           onReward={cub.reward}
           onCoins={(amount) => cub.addCubCash(amount, 'river')}
+          powerBonus={cub.runBonus}
           onExit={goHome}
           onGames={goGames}
           energy={playEnergy}

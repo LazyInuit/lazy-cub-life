@@ -3,6 +3,7 @@ import { ACCOUNT_CREATED_SIGN_IN, changeAccountPassword, usernameChangeNote } fr
 import { hasProfileCard, type GameBests } from '../game/profileArt'
 import type { CubController } from '../game/useCub'
 import { AchievementsPanel } from './AchievementsPanel'
+import { CubPowerPanel } from './CubPowerPanel'
 import { PlayerProfileCard } from './PlayerProfileCard'
 
 type Props = {
@@ -32,6 +33,7 @@ export function AccountPanel({ cub, onClose, unseenBadges = 0, localBests }: Pro
   const [saved, setSaved] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [achievementsOpen, setAchievementsOpen] = useState(false)
+  const [powerOpen, setPowerOpen] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
 
   const submit = async () => {
@@ -124,6 +126,18 @@ export function AccountPanel({ cub, onClose, unseenBadges = 0, localBests }: Pro
   if (achievementsOpen && cub.accountName) {
     return (
       <AchievementsPanel username={cub.accountName} localBests={localBests} onClose={() => setAchievementsOpen(false)} />
+    )
+  }
+
+  if (powerOpen && cub.accountName) {
+    return (
+      <CubPowerPanel
+        power={cub.cubPower}
+        newGame={cub.powerNewGame}
+        onSeenNewGame={cub.dismissPowerNewGame}
+        onRefresh={cub.refreshCubPower}
+        onClose={() => setPowerOpen(false)}
+      />
     )
   }
 
@@ -305,6 +319,12 @@ export function AccountPanel({ cub, onClose, unseenBadges = 0, localBests }: Pro
                     </span>
                   ) : null}
                 </button>
+                {cub.cubPower ? (
+                  <button type="button" className="account-submit account-achievements" onClick={() => setPowerOpen(true)}>
+                    Cub Power · {cub.cubPower.total.toLocaleString('en-US')}
+                    {cub.powerNewGame ? <span className="account-new">New game</span> : null}
+                  </button>
+                ) : null}
               </>
             ) : null}
             <button type="button" className="account-submit" onClick={openSettings}>

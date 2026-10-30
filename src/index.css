@@ -1145,6 +1145,86 @@ h1 {
   object-fit: contain;
 }
 
+.leaderboard-prize-num {
+  min-width: 1.85em;
+}
+
+.leaderboard-prize-power {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 3px;
+  color: #ffd23a;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+/* Room for the coin and Cub Power rewards side by side without clipping "1st place". */
+.leaderboard-prize-banner .leaderboard-prize-offer {
+  gap: 3px;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
+.leaderboard-prize-banner .leaderboard-prize-place {
+  gap: 4px;
+}
+
+/* Same width on every row, so each row's coin and Cub Power start in line with 1st place's. */
+.leaderboard-prize-banner .leaderboard-prize-amount {
+  min-width: 6.6em;
+  justify-content: flex-start;
+}
+
+/* 4th-10th: one centred line across the banner, with no winner column. */
+.leaderboard-prize-banner .leaderboard-prize-rest {
+  grid-template-columns: 1fr;
+}
+
+.leaderboard-prize-banner .leaderboard-prize-rest .leaderboard-prize-offer {
+  justify-content: center;
+  gap: 8px;
+}
+
+.leaderboard-prize-banner .leaderboard-prize-rest .leaderboard-prize-amount {
+  min-width: 0;
+}
+
+.leaderboard-prize-banner .leaderboard-prize-rest .leaderboard-prize-num {
+  min-width: 0;
+}
+
+@media (max-width: 389px) {
+  .leaderboard-prize-banner .leaderboard-prize-offer {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .leaderboard-prize-banner .leaderboard-prize-place .leaderboard-prize-kicker {
+    font-size: 0.56rem;
+    letter-spacing: 0;
+  }
+
+  .leaderboard-prize-banner .leaderboard-prize-amount {
+    font-size: 0.8rem;
+  }
+
+  .leaderboard-prize-banner .leaderboard-prize-amount img {
+    width: 14px;
+    height: 14px;
+  }
+
+  .leaderboard-prize-banner .leaderboard-prize-power {
+    margin-left: 2px;
+    font-size: 0.72rem;
+  }
+}
+
+.leaderboard-prize-bolt {
+  width: 11px;
+  height: 11px;
+  flex: none;
+}
+
 .leaderboard-prize-winner {
   display: flex;
   align-items: center;
@@ -2790,43 +2870,49 @@ h1 {
 .xp-ring-track,
 .xp-ring-fill {
   fill: none;
-  stroke-width: 7;
 }
 
+/* A soft groove around the wooden plate, with a slim glowing line for the XP. */
 .xp-ring-track {
-  stroke: #3a2414;
+  stroke: rgba(46, 22, 6, 0.55);
+  stroke-width: 6;
 }
 
 .xp-ring-fill {
-  stroke: #6fbf32;
+  stroke: #9be84f;
+  stroke-width: 3.2;
   stroke-linecap: round;
+  filter: drop-shadow(0 0 1.5px rgba(170, 255, 110, 0.95)) drop-shadow(0 0 3px rgba(110, 220, 60, 0.6));
 }
 
 .lvl-face {
-  width: 62px;
-  height: 62px;
+  width: 66px;
+  height: 66px;
   border-radius: 50%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0;
-  border: 3px solid #4a2a12;
-  background: radial-gradient(circle at 32% 28%, #f0c98a, #c4843e 46%, #7a4520 78%);
-  box-shadow: 0 3px 0 #3a2010, inset 0 2px 0 rgba(255, 236, 200, 0.55);
+  background: url('./assets/home/level-plate.png') center / contain no-repeat;
+  filter: drop-shadow(0 2px 1px rgba(40, 18, 4, 0.55));
 }
 
 .lvl-kicker {
   font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.08em;
-  text-shadow: 0 1px 0 #5a3010;
+  text-shadow:
+    0 1px 0 #4a2208,
+    0 0 3px rgba(60, 26, 6, 0.85);
 }
 
 .level-badge strong {
   font-size: 1.65rem;
   line-height: 1;
-  text-shadow: 0 2px 0 #5a3010;
+  text-shadow:
+    0 2px 0 #4a2208,
+    0 0 4px rgba(60, 26, 6, 0.8);
 }
 
 .age-switch {
@@ -7915,4 +8001,556 @@ h1 {
   color: rgba(255, 246, 216, 0.6);
   font-size: 0.72rem;
   font-weight: 700;
+}
+
+/* Cub Power: home chip under the level badge, its panel, results line and wardrobe price. */
+.power-chip {
+  pointer-events: auto;
+  position: absolute;
+  top: calc(150px + var(--safe-top));
+  left: 8px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 92px;
+  padding: 4px 9px 4px 6px;
+  border: 2px solid #4a2a12;
+  border-radius: 14px;
+  background: radial-gradient(circle at 30% 25%, #ffe28a, #f0b63a 48%, #b46f18);
+  box-shadow: 0 3px 0 #3a2010, inset 0 2px 0 rgba(255, 246, 200, 0.5);
+  color: #3a2010;
+  font: inherit;
+  cursor: pointer;
+}
+
+.power-chip:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #3a2010, inset 0 2px 0 rgba(255, 246, 200, 0.5);
+}
+
+.power-chip > span {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.05;
+}
+
+.power-chip small {
+  font-size: 0.56rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.power-chip strong {
+  font-size: 0.98rem;
+  font-weight: 900;
+}
+
+.power-chip-bolt {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  color: #fff7d6;
+  filter: drop-shadow(0 1px 0 #6a3a10);
+}
+
+.power-chip .account-open-dot {
+  top: -4px;
+  right: -4px;
+}
+
+/* The Cub Power artwork. Slot spots are fractions of cub-power-plate.png. */
+.power-plate {
+  pointer-events: auto;
+  position: absolute;
+  top: calc(146px + var(--safe-top));
+  left: 7px;
+  z-index: 2;
+  width: 94px;
+  aspect-ratio: 360 / 298;
+  container-type: inline-size;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.power-plate:active {
+  transform: scale(0.97);
+}
+
+.power-plate img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 3px 3px rgba(20, 10, 4, 0.45));
+}
+
+.power-plate-total,
+.power-plate-mult {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  color: #fff6d8;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow:
+    0 1px 0 #2a1406,
+    0 0 2px rgba(42, 20, 6, 0.85);
+}
+
+.power-plate-total {
+  left: 21.5%;
+  width: 39.5%;
+  top: 63%;
+  height: 20%;
+  font-size: 0.86rem;
+  font-size: 13.4cqw;
+}
+
+.power-plate-signup {
+  font-size: 0.58rem;
+  font-size: 9cqw;
+}
+
+.power-plate-mult {
+  left: 74.4%;
+  width: 17.9%;
+  top: 68.5%;
+  height: 11%;
+  font-size: 0.45rem;
+  font-size: 7cqw;
+  letter-spacing: -0.03em;
+}
+
+.power-plate .account-open-dot {
+  top: 4%;
+  right: 6%;
+}
+
+.power-plate-locked img {
+  filter: grayscale(0.35) drop-shadow(0 3px 3px rgba(20, 10, 4, 0.45));
+}
+
+.power-chip-streak {
+  margin-top: 1px;
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.power-pop {
+  pointer-events: auto;
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  display: grid;
+  place-items: center;
+  padding: 20px 22px;
+  background: rgba(8, 6, 4, 0.55);
+  cursor: pointer;
+  animation: power-pop-fade 0.25s ease-out;
+}
+
+.power-pop-card {
+  width: min(100%, 300px);
+  padding: 3px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #fff6d4 0%, #f0c56a 18%, #c48a2e 46%, #7a4a14 78%, #e8c56a 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 220, 0.95),
+    0 10px 24px rgba(12, 6, 2, 0.5);
+  animation: power-pop-in 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.power-pop-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 14px 14px;
+  border-radius: 19px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 214, 120, 0.26), transparent 60%),
+    linear-gradient(180deg, #3b2618 0%, #1d120a 62%, #140c08 100%);
+  color: #fff6d8;
+  text-align: center;
+}
+
+.power-pop-face h2 {
+  margin: 0;
+  color: #fffaf2;
+  font-size: 1.4rem;
+  font-weight: 900;
+  line-height: 1.15;
+  text-shadow: 0 2px 0 #1a0c06;
+}
+
+.power-pop-icon {
+  width: 46px;
+  height: 46px;
+  color: #ffd23a;
+  filter: drop-shadow(0 2px 0 #1a0c06);
+}
+
+.power-pop-kicker {
+  margin: 0;
+  color: #ffe08a;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.power-pop-main {
+  margin: 2px 0 0;
+  color: #ffd23a;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.power-pop-note {
+  margin: 0;
+  color: #fff3c4;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.power-pop-small {
+  margin: 2px 0 0;
+  color: rgba(255, 246, 216, 0.6);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.power-pop-tap {
+  margin: 8px 0 0;
+  color: rgba(255, 246, 216, 0.55);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.power-pop-face .power-streak-bar {
+  margin: 4px -6px 2px;
+  width: calc(100% + 12px);
+}
+
+@keyframes power-pop-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes power-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+.power-chip-locked {
+  background: radial-gradient(circle at 30% 25%, #e9dcc0, #b9a27a 50%, #7c6646);
+}
+
+.power-face {
+  gap: 10px;
+}
+
+.power-total {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: -4px 0 0;
+  color: #ffd23a;
+  font-size: 2.3rem;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 3px 0 #1a0c06;
+}
+
+.power-bolt {
+  width: 30px;
+  height: 30px;
+  color: #ffd23a;
+}
+
+/* Login streak artwork. Circle spots are fractions of login-streak.png. */
+.power-streak-bar {
+  position: relative;
+  width: calc(100% + 16px);
+  margin: -4px -8px -2px;
+  aspect-ratio: 640 / 220;
+}
+
+.power-streak-text {
+  margin-top: -14px;
+}
+
+.power-streak-text p {
+  margin: 0;
+}
+
+.power-streak-today {
+  color: #ffd23a;
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.power-streak-next {
+  margin-top: 2px;
+  color: #fff3c4;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.power-streak-bar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.power-streak-bar span {
+  position: absolute;
+  top: 55.1%;
+  width: 5.5%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.power-streak-bar span.on {
+  background: radial-gradient(circle at 35% 30%, #d8ff9a 0%, #7fdc3a 38%, #3f9b16 78%, #2b6e0c 100%);
+  box-shadow:
+    inset 0 -2px 3px rgba(20, 60, 4, 0.55),
+    0 0 6px rgba(140, 240, 80, 0.65);
+  animation: power-streak-pop 0.4s ease-out both;
+}
+
+@keyframes power-streak-pop {
+  from {
+    transform: translate(-50%, -50%) scale(0.4);
+    opacity: 0;
+  }
+}
+
+.power-note {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 210, 58, 0.55);
+  border-radius: 12px;
+  background: rgba(255, 210, 58, 0.12);
+}
+
+.power-note p {
+  margin: 0 0 6px;
+  color: #fff3c4;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.power-note button {
+  padding: 3px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #ffd23a;
+  color: #3a2010;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.power-section {
+  width: 100%;
+  padding: 8px 10px 10px;
+  border-radius: 14px;
+  background: rgba(255, 246, 216, 0.06);
+  text-align: left;
+}
+
+.power-section h3 {
+  margin: 0 0 6px;
+  color: #ffe08a;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.power-benefits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  text-align: center;
+}
+
+.power-benefits li {
+  padding: 6px 2px;
+  border-radius: 10px;
+  background: rgba(255, 246, 216, 0.08);
+  color: #fffaf2;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.power-benefits strong {
+  display: block;
+  color: #ffd23a;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.power-quiet,
+.power-next {
+  margin: 6px 0 0;
+  color: #fff3c4;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.power-quiet {
+  margin-top: 0;
+}
+
+.power-parts {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.power-parts div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.power-parts dt {
+  color: #fffaf2;
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.power-parts dd {
+  margin: 0;
+  color: #ffd23a;
+  font-size: 0.86rem;
+  font-weight: 900;
+  text-align: right;
+}
+
+.power-parts small {
+  margin-left: 4px;
+  color: rgba(255, 246, 216, 0.7);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.power-trophy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgba(255, 210, 58, 0.14);
+  color: #fff3c4;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.power-trophy small {
+  display: block;
+  color: rgba(255, 246, 216, 0.72);
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.power-trophy-icon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  color: #ffd23a;
+}
+
+.power-games {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.power-games li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: #fffaf2;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.power-tier {
+  color: #ffd23a;
+  font-weight: 900;
+}
+
+.power-tier.none {
+  color: rgba(255, 246, 216, 0.5);
+}
+
+.power-help p {
+  margin: 0 0 6px;
+  color: rgba(255, 246, 216, 0.78);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.power-help p:last-child {
+  margin-bottom: 0;
+}
+
+.power-run-bonus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 2px 0 6px;
+  color: #ffd23a;
+  font-size: 0.8rem;
+  font-weight: 900;
+  text-shadow: 0 1px 0 rgba(26, 12, 6, 0.6);
+}
+
+.power-run-bolt {
+  width: 16px;
+  height: 16px;
+}
+
+.wardrobe-was {
+  margin-right: 3px;
+  color: rgba(255, 250, 242, 0.65);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.wardrobe-discount {
+  color: #fff3b0;
+  font-size: 0.66rem;
+  font-weight: 900;
+  line-height: 1.1;
+  text-shadow: 0 1px 0 #5a3010;
 }

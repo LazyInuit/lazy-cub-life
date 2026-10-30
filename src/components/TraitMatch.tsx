@@ -7,6 +7,8 @@ import { playCoin } from '../game/flightAudio'
 import { playPrideFail, resumePrideAudio, setPrideUrgency, startPrideAmbience, stopPrideAmbience } from '../game/prideAudio'
 import type { NeedKey } from '../game/types'
 import { RunEnergy } from './EnergyBar'
+import { PowerBonusNote } from './PowerBonusNote'
+import type { RunBonus } from '../game/useCub'
 import { HomeButton, GamesButton } from './HomeButton'
 
 type BodyTrait = { id: string; label: string }
@@ -77,6 +79,8 @@ type Props = {
   onGames: () => void
   energy: number
   onShop: () => void
+  /** Cub Power bonus added to this run. */
+  powerBonus?: RunBonus
 }
 
 function layerUrl(part: string, name: string) {
@@ -130,7 +134,7 @@ function MatchBust({ body }: { body: string }) {
   )
 }
 
-export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop }: Props) {
+export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const [pairs, setPairs] = useState(2)
   const [cards, setCards] = useState<Card[]>(() => deal(2))
   const [left, setLeft] = useState(() => secondsForPairs(2))
@@ -541,6 +545,7 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
           <p className="pride-results-coins">
             <img src={coinUrl} alt="" />+{summary.coins}
           </p>
+          <PowerBonusNote bonus={powerBonus} />
           <RunEnergy energy={energy} onShop={onShop} cost={playEnergyCost('match')} />
           <div className="pride-results-actions">
             {!summary.won ? (

@@ -31,6 +31,8 @@ import type { BubbleState } from '../game/bubbleBlast/types'
 import { PLAY_ENERGY_COST, PLAY_NEED_COST, moodFromScore } from '../game/progress'
 import type { NeedKey } from '../game/types'
 import { RunEnergy } from './EnergyBar'
+import { PowerBonusNote } from './PowerBonusNote'
+import type { RunBonus } from '../game/useCub'
 import { GamesButton, HomeButton } from './HomeButton'
 
 type Mode = 'start' | 'play' | 'over'
@@ -49,6 +51,8 @@ type Props = {
   onGames: () => void
   energy: number
   onShop: () => void
+  /** Cub Power bonus added to this run. */
+  powerBonus?: RunBonus
 }
 
 type Summary = {
@@ -80,7 +84,7 @@ function showsDragHint(game: BubbleState) {
   return game.shots === 0 && game.phase !== 'aiming' && game.phase !== 'over'
 }
 
-export function BubbleBlast({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop }: Props) {
+export function BubbleBlast({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [showRules, setShowRules] = useState(false)
@@ -443,6 +447,7 @@ export function BubbleBlast({ best, onBest, onDailyStart, onDaily, onReward, onC
             <p className="bubble-coins">
               <img src={coinUrl} alt="" />+{summary.coins}
             </p>
+            <PowerBonusNote bonus={powerBonus} />
             <RunEnergy energy={energy} onShop={onShop} />
             <button type="button" className="bubble-btn" onClick={startRun} disabled={energy < PLAY_ENERGY_COST}>
               Play again

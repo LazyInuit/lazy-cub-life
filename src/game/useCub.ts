@@ -29,7 +29,16 @@ import { earnedBadges, hasProfileCard, type BadgeId } from './profileArt'
 import { isDemo } from './demo'
 import { countDemo } from './demoStats'
 import { supabase } from './supabase'
-import { addDailyScore, applyWallet, buyDrinkOnServer, claimDailyTask, grantGameCoins, payoutGap, payoutParts, purchaseTraitOnServer, rollDailyBonus as rollServerBonus, settleWeeklyPrize, touchDailyBoard, walletActive, type GameCoinSource, type WalletPatch } from './wallet'
+import { addDailyScore, applyWallet, buyDrinkOnServer, claimDailyTask, getCubPower, grantGameCoins, payoutGap, payoutParts, purchaseTraitOnServer, rollDailyBonus as rollServerBonus, settleWeeklyPrize, touchDailyBoard, walletActive, type GameCoinSource, type WalletPatch } from './wallet'
+import {
+  addBonusHundredths,
+  noteActiveGames,
+  powerNoticesFor,
+  readPowerSeen,
+  writePowerSeen,
+  type CubPower,
+  type PowerNotice,
+} from './cubPower'
 import { isTraitUnlocked, sanitizeOwnedOutfits, traitKey, traitPrice, traitXpBonus } from './traitShop'
 import type { CareAction, CubOutfits, CubPose, CubSave, NeedKey } from './types'
 import type { TraitCategory } from './cubTraits'
@@ -47,6 +56,11 @@ const POSE_FOR: Record<Exclude<CareAction, 'sleep'>, CubPose> = {
 
 const LEVEL_UP_MS = 1500
 const XP_FILL_MS = 450
+/** Wait after a run for its save and score to reach the server before reading Cub Power again. */
+const POWER_REFRESH_MS = 2500
+
+/** Whole bonus XP and Cub Cash Cub Power added since the current run started. */
+export type RunBonus = { xp: number; coins: number }
 
 export function useCub() {
   const [save, setSave] = useState<CubSave | null>(null)
@@ -62,6 +76,16 @@ export function useCub() {
   const [usernameChangedAt, setUsernameChangedAt] = useState<string | null>(null)
   const [earnedBadge, setEarnedBadge] = useState<BadgeId | null>(null)
   const [demoScore, setDemoScore] = useState<{ game: DailyGame; score: number } | null>(null)
+  const [cubPower, setCubPower] = useState<CubPower | null>(null)
+  const [powerNewGame, setPowerNewGame] = useState(false)
+  const [powerNotices, setPowerNotices] = useState<PowerNotice[]>([])
+  const [runBonus, setRunBonus] = useState<RunBonus>({ xp: 0, coins: 0 })
+  const cubPowerRef = useRef<CubPower | null>(null)
+  /** Expected leftover bonus hundredths, ahead of payouts still on their way to the server. */
+  const coinRemainderRef = useRef(0)
+  const serverRemainderRef = useRef<number | null>(null)
+  const pendingPayouts = useRef(0)
+  const powerTimer = useRef<number | null>(null)
   const accountNameRef = useRef<string | null>(null)
   accountNameRef.current = accountName
   const pendingBadges = useRef<Partial<Record<DailyGame, BadgeId>>>({})
@@ -108,6 +132,51 @@ export function useCub() {
     }
     void settleWeeklyPrize().then((result) => apply(result))
   }, [commit])
+
+  /** Reads Cub Power from the server, which also counts as today's login. */
+  const refreshCubPower = useCallback(async () => {
+    const name = accountNameRef.current
+    if (demoCub || !name) return null
+    const power = await getCubPower()
+    if (!power || accountNameRef.current !== name) return null
+    cubPowerRef.current = power
+    if (pendingPayouts.current === 0) coinRemainderRef.current = power.coinBonusHundredths
+    setCubPower(power)
+    if (noteActiveGames(name, power.activeGames)) setPowerNewGame(true)
+    const news = powerNoticesFor(power, readPowerSeen(name))
+    writePowerSeen(name, news.seen)
+    if (news.notices.length > 0) setPowerNotices((queue) => [...queue, ...news.notices])
+    return power
+  }, [])
+
+  /** After a run or purchase: upload the save (its XP sets the level), then read Cub Power again. */
+  const schedulePowerRefresh = useCallback(() => {
+    if (demoCub) return
+    if (powerTimer.current !== null) window.clearTimeout(powerTimer.current)
+    powerTimer.current = window.setTimeout(() => {
+      powerTimer.current = null
+      const latest = saveRef.current
+      void (latest ? flushCloudSaveNow(latest) : Promise.resolve()).then(() => refreshCubPower())
+    }, POWER_REFRESH_MS)
+  }, [refreshCubPower])
+
+  const dismissPowerNewGame = useCallback(() => setPowerNewGame(false), [])
+  const dismissPowerNotice = useCallback(() => setPowerNotices((queue) => queue.slice(1)), [])
+
+  useEffect(() => {
+    if (demoCub || !accountName) {
+      cubPowerRef.current = null
+      setCubPower(null)
+      setPowerNotices([])
+      return
+    }
+    void refreshCubPower()
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refreshCubPower()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [accountName, refreshCubPower])
 
   const tuckIn = useCallback(() => {
     const current = saveRef.current
@@ -488,6 +557,7 @@ export function useCub() {
     }
     const cost = playEnergyCost(game)
     if (current.energy < cost) return false
+    setRunBonus({ xp: 0, coins: 0 })
     const next: CubSave = { ...current, energy: current.energy - cost }
     const daily = dailyView(next.daily)
     if (daily.startedAt == null) {
@@ -523,6 +593,8 @@ export function useCub() {
       return
     }
     if (gained > 0) void submitLeaderboardScore(game, gained)
+    // A run can raise the level or reach a badge.
+    schedulePowerRefresh()
     if (gained === 0) return
     const daily = dailyView(current.daily)
     commit({
@@ -539,7 +611,14 @@ export function useCub() {
       const cash = noteEarnedCash(patch.cubCash)
       commit(applyWallet(latest, { ...patch, cubCash: cash }))
     })
-  }, [commit])
+  }, [commit, schedulePowerRefresh])
+
+  /** Keeps the expected bonus leftover in step with the server once no game payouts are pending. */
+  const noteServerRemainder = useCallback((patch: WalletPatch | null | undefined) => {
+    if (patch?.bonusHundredths === undefined) return
+    serverRemainderRef.current = patch.bonusHundredths
+    if (pendingPayouts.current === 0) coinRemainderRef.current = patch.bonusHundredths
+  }, [])
 
   const claimDaily = useCallback(async (taskId: string) => {
     const current = saveRef.current
@@ -551,6 +630,7 @@ export function useCub() {
       } else {
         const latest = saveRef.current
         if (!result.patch || !latest || !(result.patch.granted && result.patch.granted > 0)) return false
+        noteServerRemainder(result.patch)
         const cash = noteEarnedCash(result.patch.cubCash)
         commit(applyWallet(latest, { ...result.patch, cubCash: cash }))
         return true
@@ -567,7 +647,7 @@ export function useCub() {
       daily: { ...daily, claimed: [...daily.claimed, task.id] },
     })
     return true
-  }, [commit])
+  }, [commit, noteServerRemainder])
 
   const claimDailyBonus = useCallback((prize: { trait: BonusTrait | null; coins: number }) => {
     const current = saveRef.current
@@ -597,56 +677,77 @@ export function useCub() {
     const latest = saveRef.current
     if (spun.mode === 'local' || !latest) return null
     if (spun.mode !== 'server') return false
+    noteServerRemainder(spun.patch)
     const cash = noteEarnedCash(spun.patch.cubCash)
     commit(applyWallet(latest, { ...spun.patch, cubCash: cash }))
     return { trait: spun.trait, coins: spun.coins }
+  }, [commit, noteServerRemainder])
+
+  /** Pays a run's Cub Cash to the server in the parts it accepts, or to the phone when signed out. */
+  const payCubCash = useCallback(async (gain: number, source: GameCoinSource) => {
+    if (await walletActive()) {
+      const parts = payoutParts(source, gain)
+      const waitGap = () => new Promise((resolve) => window.setTimeout(resolve, payoutGap(source) + 400))
+      for (let index = 0; index < parts.length; index += 1) {
+        if (index > 0) await waitGap()
+        let result = await grantGameCoins(source, parts[index])
+        if (result.mode !== 'server') {
+          const latest = saveRef.current
+          if (!latest) return
+          const rest = parts.slice(index).reduce((sum, part) => sum + part, 0)
+          commit({ ...latest, cubCash: Math.max(0, latest.cubCash + rest) })
+          return
+        }
+        for (
+          let attempt = 0;
+          attempt < 4 && (!result.patch || !(result.patch.granted && result.patch.granted > 0));
+          attempt += 1
+        ) {
+          await waitGap()
+          result = await grantGameCoins(source, parts[index])
+          if (result.mode !== 'server') break
+        }
+        if (result.mode !== 'server') {
+          const latest = saveRef.current
+          if (!latest) return
+          const rest = parts.slice(index).reduce((sum, part) => sum + part, 0)
+          commit({ ...latest, cubCash: Math.max(0, latest.cubCash + rest) })
+          return
+        }
+        const latest = saveRef.current
+        if (!result.patch || !latest || !(result.patch.granted && result.patch.granted > 0)) continue
+        if (result.patch.bonusHundredths !== undefined) serverRemainderRef.current = result.patch.bonusHundredths
+        const cash = noteEarnedCash(result.patch.cubCash)
+        commit({ ...latest, cubCash: cash })
+      }
+      return
+    }
+    const latest = saveRef.current
+    if (!latest) return
+    commit({ ...latest, cubCash: Math.max(0, latest.cubCash + gain) })
   }, [commit])
 
   const addCubCash = useCallback((amount: number, source: GameCoinSource) => {
     const gain = Math.floor(amount)
     if (gain <= 0 || demoCub) return
-    cashQueue.current = cashQueue.current.then(async () => {
-      if (await walletActive()) {
-        const parts = payoutParts(source, gain)
-        const waitGap = () => new Promise((resolve) => window.setTimeout(resolve, payoutGap(source) + 400))
-        for (let index = 0; index < parts.length; index += 1) {
-          if (index > 0) await waitGap()
-          let result = await grantGameCoins(source, parts[index])
-          if (result.mode !== 'server') {
-            const latest = saveRef.current
-            if (!latest) return
-            const rest = parts.slice(index).reduce((sum, part) => sum + part, 0)
-            commit({ ...latest, cubCash: Math.max(0, latest.cubCash + rest) })
-            return
-          }
-          for (
-            let attempt = 0;
-            attempt < 4 && (!result.patch || !(result.patch.granted && result.patch.granted > 0));
-            attempt += 1
-          ) {
-            await waitGap()
-            result = await grantGameCoins(source, parts[index])
-            if (result.mode !== 'server') break
-          }
-          if (result.mode !== 'server') {
-            const latest = saveRef.current
-            if (!latest) return
-            const rest = parts.slice(index).reduce((sum, part) => sum + part, 0)
-            commit({ ...latest, cubCash: Math.max(0, latest.cubCash + rest) })
-            return
-          }
-          const latest = saveRef.current
-          if (!result.patch || !latest || !(result.patch.granted && result.patch.granted > 0)) continue
-          const cash = noteEarnedCash(result.patch.cubCash)
-          commit({ ...latest, cubCash: cash })
+    // The server adds the bonus as each part lands. Work out the same sum now for the results panel.
+    const percent = cubPowerRef.current?.percent ?? 0
+    if (percent > 0) {
+      const expected = addBonusHundredths(coinRemainderRef.current, gain, percent)
+      coinRemainderRef.current = expected.remainder
+      if (expected.whole > 0) setRunBonus((tally) => ({ ...tally, coins: tally.coins + expected.whole }))
+    }
+    pendingPayouts.current += 1
+    cashQueue.current = cashQueue.current
+      .then(() => payCubCash(gain, source))
+      .catch(() => undefined)
+      .finally(() => {
+        pendingPayouts.current -= 1
+        if (pendingPayouts.current === 0 && serverRemainderRef.current !== null) {
+          coinRemainderRef.current = serverRemainderRef.current
         }
-        return
-      }
-      const latest = saveRef.current
-      if (!latest) return
-      commit({ ...latest, cubCash: Math.max(0, latest.cubCash + gain) })
-    }).catch(() => undefined)
-  }, [commit])
+      })
+  }, [payCubCash])
 
   const purchaseTrait = useCallback(async (age: CharacterAge, category: TraitCategory, name: string) => {
     const current = saveRef.current
@@ -673,6 +774,7 @@ export function useCub() {
         const rewarded = applyReward(latest, xp, {})
         commit(applyWallet(rewarded, result.patch))
         noteLevel()
+        schedulePowerRefresh()
         return { ok: true as const, alreadyOwned: false as const, xp }
       }
     }
@@ -689,18 +791,22 @@ export function useCub() {
     })
     noteLevel()
     return { ok: true as const, alreadyOwned: false as const, xp }
-  }, [commit, noteLevel])
+  }, [commit, noteLevel, schedulePowerRefresh])
 
+  /** Game XP. xpGained is the game's own amount; Cub Power adds bonusXp on top. */
   const reward = useCallback(
     (baseXp: number, needs: Partial<Record<NeedKey, number>>) => {
       const current = saveRef.current
-      if (!current) return { xpGained: 0 }
+      if (!current) return { xpGained: 0, bonusXp: 0 }
       // Game XP is the same at every level.
       const xpGained = Math.max(0, baseXp)
-      const next = applyReward(current, xpGained, needs)
+      const percent = demoCub ? 0 : (cubPowerRef.current?.percent ?? 0)
+      const bonus = addBonusHundredths(current.xpBonusHundredths, xpGained, percent)
+      const next = { ...applyReward(current, xpGained + bonus.whole, needs), xpBonusHundredths: bonus.remainder }
       commit(next)
       noteLevel()
-      return { xpGained }
+      if (bonus.whole > 0) setRunBonus((tally) => ({ ...tally, xp: tally.xp + bonus.whole }))
+      return { xpGained, bonusXp: bonus.whole }
     },
     [commit, noteLevel],
   )
@@ -858,6 +964,13 @@ export function useCub() {
     rememberHalloween,
     earnedBadge,
     dismissEarnedBadge,
+    cubPower,
+    refreshCubPower,
+    runBonus,
+    powerNewGame,
+    dismissPowerNewGame,
+    powerNotice: powerNotices[0] ?? null,
+    dismissPowerNotice,
     demoScore,
     dismissDemoScore,
     setLevelUiVisible,

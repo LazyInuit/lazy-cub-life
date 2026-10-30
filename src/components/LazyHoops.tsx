@@ -45,6 +45,8 @@ import {
 import { PLAY_ENERGY_COST, PLAY_NEED_COST, moodFromScore } from '../game/progress'
 import type { NeedKey } from '../game/types'
 import { RunEnergy } from './EnergyBar'
+import { PowerBonusNote } from './PowerBonusNote'
+import type { RunBonus } from '../game/useCub'
 import { GamesButton, HomeButton } from './HomeButton'
 
 type Mode = 'home' | 'play' | 'over'
@@ -123,6 +125,8 @@ type Props = {
   onGames: () => void
   energy: number
   onShop: () => void
+  /** Cub Power bonus added to this run. */
+  powerBonus?: RunBonus
 }
 
 type CoinPop = {
@@ -206,7 +210,7 @@ function hudFrom(live: Live): Hud {
   }
 }
 
-export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop }: Props) {
+export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const [mode, setMode] = useState<Mode>('home')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
@@ -760,6 +764,7 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoi
             <p className="hoops-coins">
               <img src={coinUrl} alt="" />+{summary.coins}
             </p>
+            <PowerBonusNote bonus={powerBonus} />
             <RunEnergy energy={energy} onShop={onShop} />
             <button type="button" className="hoops-btn" onClick={playAgain} disabled={energy < PLAY_ENERGY_COST}>
               Play Again

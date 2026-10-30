@@ -3,6 +3,7 @@ import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import {
   LEADERBOARD_BOARDS,
   WEEKLY_OVERALL_PRIZES,
+  WEEKLY_OVERALL_RUNNERS_UP,
   formatCountdown,
   loadLastWeeklyWinners,
   loadLeaderboard,
@@ -15,6 +16,8 @@ import {
 import { hasProfileCard } from '../game/profileArt'
 import { isDemo } from '../game/demo'
 import { settleWeeklyPrize, type WeeklyWinner } from '../game/wallet'
+import { weeklyBoost } from '../game/cubPower'
+import { PowerBolt } from './CubPowerPanel'
 import type { WalletPatch } from '../game/wallet'
 import { GamesButton, HomeButton } from './HomeButton'
 import { PlayerProfileCard } from './PlayerProfileCard'
@@ -194,8 +197,12 @@ export function LeaderboardScreen({ onHome, onGames, onSettlePrize }: Props) {
           className="leaderboard-prize-banner"
           aria-label={WEEKLY_OVERALL_PRIZES.map((prize) => {
             const winner = lastWinners.find((row) => row.place === prize.place)?.username ?? 'not decided yet'
-            return `${prize.label} wins ${prize.amount} Cub Cash. Last week's ${prize.label} is ${winner}.`
-          }).join(' ')}
+            return `${prize.label} wins ${prize.amount} Cub Cash and ${weeklyBoost(prize.place)} Cub Power next week. Last week's ${prize.label} is ${winner}.`
+          })
+            .concat(
+              `${WEEKLY_OVERALL_RUNNERS_UP.label} each win ${WEEKLY_OVERALL_RUNNERS_UP.amount} Cub Cash and ${weeklyBoost(WEEKLY_OVERALL_RUNNERS_UP.from)} Cub Power next week.`,
+            )
+            .join(' ')}
         >
           <div className="leaderboard-prize-head">
             <span>This week prizes</span>
@@ -212,7 +219,11 @@ export function LeaderboardScreen({ onHome, onGames, onSettlePrize }: Props) {
                   </span>
                   <span className="leaderboard-prize-amount">
                     <img src={coinUrl} alt="" />
-                    {prize.amount}
+                    <span className="leaderboard-prize-num">{prize.amount}</span>
+                    <span className="leaderboard-prize-power">
+                      +<PowerBolt className="leaderboard-prize-bolt" />
+                      {weeklyBoost(prize.place)}
+                    </span>
                   </span>
                 </div>
                 <div className="leaderboard-prize-winner">
@@ -221,6 +232,19 @@ export function LeaderboardScreen({ onHome, onGames, onSettlePrize }: Props) {
               </div>
             )
           })}
+          <div className="leaderboard-prize-row leaderboard-prize-rest">
+            <div className="leaderboard-prize-offer">
+              <span className="leaderboard-prize-kicker">{WEEKLY_OVERALL_RUNNERS_UP.label}</span>
+              <span className="leaderboard-prize-amount">
+                <img src={coinUrl} alt="" />
+                <span className="leaderboard-prize-num">{WEEKLY_OVERALL_RUNNERS_UP.amount}</span>
+                <span className="leaderboard-prize-power">
+                  +<PowerBolt className="leaderboard-prize-bolt" />
+                  {weeklyBoost(WEEKLY_OVERALL_RUNNERS_UP.from)}
+                </span>
+              </span>
+            </div>
+          </div>
         </div>
       ) : null}
 

@@ -11,6 +11,7 @@ import type { CharacterAge } from '../game/homeScene'
 import { levelProgress } from '../game/progress'
 import { formatCubCash } from '../game/formatCubCash'
 import { isTraitUnlocked, traitPrice, traitXpBonus } from '../game/traitShop'
+import { discountedPrice } from '../game/cubPower'
 import type { CubController } from '../game/useCub'
 import type { OutfitTraits } from '../game/types'
 import { CubStage } from './CubStage'
@@ -146,6 +147,8 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
   const label = shown[age][category]
   const price = traitPrice(age, category, label)
   const cost = price ?? 0
+  const discount = cub.cubPower?.percent ?? 0
+  const pay = discount > 0 ? discountedPrice(cost, discount) : cost
   const xpBonus = price === null ? 0 : traitXpBonus(price)
   const owned = isTraitUnlocked(save, age, category, label)
   const isStarter = STARTER_OUTFIT[category] === label
@@ -370,16 +373,24 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
                 </strong>
                 <span
                   className="wardrobe-cost"
-                  aria-label={owned ? 'Owned' : `${formatCubCash(cost)} Cub Cash, plus ${xpBonus} XP`}
+                  aria-label={
+                    owned
+                      ? 'Owned'
+                      : pay < cost
+                        ? `${formatCubCash(pay)} Cub Cash with your Cub Power discount, was ${formatCubCash(cost)}, plus ${xpBonus} XP`
+                        : `${formatCubCash(cost)} Cub Cash, plus ${xpBonus} XP`
+                  }
                 >
                   {owned ? null : (
                     <>
                       <img src={coinUrl} alt="" />
-                      <span>{formatCubCash(cost)}</span>
+                      {pay < cost ? <s className="wardrobe-was">{formatCubCash(cost)}</s> : null}
+                      <span>{formatCubCash(pay)}</span>
                       <span className="wardrobe-xp">+{xpBonus} XP</span>
                     </>
                   )}
                 </span>
+                {!owned && pay < cost ? <span className="wardrobe-discount">Cub Power discount −{discount}%</span> : null}
                 {!owned ? <LockIcon /> : null}
               </div>
               <button
@@ -406,13 +417,13 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
                 <button
                   type="button"
                   className="wardrobe-buy"
-                  disabled={save.cubCash < cost}
+                  disabled={save.cubCash < pay}
                   onPointerDown={flashPress}
                   onAnimationEnd={clearPressGlow}
                   onClick={buyTrait}
                 >
                   <img src={coinUrl} alt="" />
-                  Buy · {formatCubCash(cost)}
+                  Buy · {formatCubCash(pay)}
                 </button>
                 {buyHint ? <span className="wardrobe-buy-hint">{buyHint}</span> : null}
               </div>

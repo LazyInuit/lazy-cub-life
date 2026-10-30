@@ -15,6 +15,9 @@ export const WEEKLY_OVERALL_PRIZES = [
 
 export const WEEKLY_OVERALL_PRIZE = WEEKLY_OVERALL_PRIZES[0].amount
 
+/** Every other top 10 place on the overall weekly board. Paid, but not named on the prize banner. */
+export const WEEKLY_OVERALL_RUNNERS_UP = { from: 4, to: 10, amount: 10, label: '4th–10th place' } as const
+
 export const LEADERBOARD_BOARDS: { id: LeaderboardBoard; label: string }[] = [
   { id: 'overall', label: 'Overall — All Games' },
   { id: 'flight', label: "Kovu's Space Dash" },
