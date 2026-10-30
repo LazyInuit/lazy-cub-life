@@ -8066,9 +8066,9 @@ h1 {
   pointer-events: auto;
   position: absolute;
   top: calc(146px + var(--safe-top));
-  left: 7px;
+  left: 11px;
   z-index: 2;
-  width: 94px;
+  width: 86px;
   aspect-ratio: 360 / 298;
   container-type: inline-size;
   padding: 0;
