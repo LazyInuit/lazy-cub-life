@@ -8079,8 +8079,13 @@ h1 {
   -webkit-tap-highlight-color: transparent;
 }
 
-.power-plate:active {
+button.power-plate:active {
   transform: scale(0.97);
+}
+
+/* On a visit the level badge sits lower, so the plate does too. */
+.power-plate.visit-power {
+  top: calc(164px + var(--safe-top));
 }
 
 .power-plate img {
@@ -8261,6 +8266,18 @@ h1 {
 
 .power-face {
   gap: 10px;
+}
+
+.power-owner {
+  flex: none;
+  max-width: calc(100% - 68px);
+  margin: 0 0 -10px;
+  overflow: hidden;
+  color: #ffe08a;
+  font-size: 0.8rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .power-total {

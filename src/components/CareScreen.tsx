@@ -49,7 +49,7 @@ import { DailyTraitRoll, ageCubLabel, traitsFromManifest } from './DailyTraitRol
 import { AccountPanel } from './AccountPanel'
 import { AchievementsPanel } from './AchievementsPanel'
 import { CubPowerPanel, multiplierText } from './CubPowerPanel'
-import cubPowerUiUrl from '../assets/home/cub-power-plate.png'
+import { PowerPlate } from './PowerPlate'
 import { PowerNoticePop } from './PowerNoticePop'
 import { PROFILE_PICTURES } from '../game/profileArt'
 import { useOwnProfile } from '../game/useOwnProfile'
@@ -712,30 +712,25 @@ export function CareScreen({
           </span>
         </div>
         {demo ? (
-          <button
-            type="button"
-            className="power-plate power-plate-locked"
+          <PowerPlate
+            className="power-plate-locked"
+            value="Sign up"
+            wordy
+            multiplier={100}
+            label="Cub Power. Create an account to start building it."
             onClick={requestSignUp}
-            aria-label="Cub Power. Create an account to start building it."
-          >
-            <img src={cubPowerUiUrl} alt="" />
-            <span className="power-plate-total power-plate-signup">Sign up</span>
-            <span className="power-plate-mult">{multiplierText(100)}</span>
-          </button>
+          />
         ) : cub.cubPower ? (
-          <button
-            type="button"
-            className="power-plate"
-            onClick={() => setPowerOpen(true)}
-            aria-label={`Cub Power ${cub.cubPower.total}, ${cub.cubPower.percent}% bonuses, login streak ${multiplierText(
+          <PowerPlate
+            value={cub.cubPower.total.toLocaleString('en-US')}
+            multiplier={cub.cubPower.streakMultiplier}
+            label={`Cub Power ${cub.cubPower.total}, ${cub.cubPower.percent}% bonuses, login streak ${multiplierText(
               cub.cubPower.streakMultiplier,
             )}${cub.cubPower.streakCount > 0 ? `, day ${cub.cubPower.streakCount}` : ''}`}
+            onClick={() => setPowerOpen(true)}
           >
-            <img src={cubPowerUiUrl} alt="" />
-            <span className="power-plate-total">{cub.cubPower.total.toLocaleString('en-US')}</span>
-            <span className="power-plate-mult">{multiplierText(cub.cubPower.streakMultiplier)}</span>
             {cub.powerNewGame ? <span className="account-open-dot" aria-hidden="true" /> : null}
-          </button>
+          </PowerPlate>
         ) : null}
         {cub.toast ? <p className="home-toast">{cub.toast}</p> : null}
         {powerOpen ? (

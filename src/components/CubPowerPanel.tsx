@@ -4,11 +4,13 @@ import loginStreakUrl from '../assets/home/login-streak.png'
 
 type Props = {
   power: CubPower | null
+  /** Set when showing another player's Cub Power on a visit. */
+  ownerName?: string
   /** More games now count towards badge Power than this phone last saw. */
-  newGame: boolean
-  onSeenNewGame: () => void
+  newGame?: boolean
+  onSeenNewGame?: () => void
   /** Must keep the same identity between renders: it runs once when the panel opens. */
-  onRefresh: () => unknown
+  onRefresh?: () => unknown
   onClose: () => void
 }
 
@@ -59,10 +61,11 @@ export function whenText(at: number | null) {
 }
 
 /** Cub Power: the total, what it is made of, and what it gives. */
-export function CubPowerPanel({ power, newGame, onSeenNewGame, onRefresh, onClose }: Props) {
+export function CubPowerPanel({ power, ownerName, newGame = false, onSeenNewGame, onRefresh, onClose }: Props) {
   useEffect(() => {
-    onRefresh()
+    onRefresh?.()
   }, [onRefresh])
+  const title = ownerName ? `${ownerName}'s Cub Power` : 'Cub Power'
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -81,13 +84,14 @@ export function CubPowerPanel({ power, newGame, onSeenNewGame, onRefresh, onClos
         className="profile-card achievements-card"
         role="dialog"
         aria-modal="true"
-        aria-label="Cub Power"
+        aria-label={title}
         onClick={(event) => event.stopPropagation()}
       >
-        <button type="button" className="profile-close" onClick={onClose} aria-label="Close Cub Power">
+        <button type="button" className="profile-close" onClick={onClose} aria-label={`Close ${title}`}>
           ×
         </button>
         <div className="profile-card-face achievements-face power-face">
+          {ownerName ? <p className="power-owner">{ownerName}'s</p> : null}
           <h2 className="achievements-title">Cub Power</h2>
           {!power ? (
             <p className="profile-empty">Loading...</p>
@@ -100,13 +104,15 @@ export function CubPowerPanel({ power, newGame, onSeenNewGame, onRefresh, onClos
               <LoginStreakBar days={power.streakCount} />
               <div className="power-streak-text">
                 <p className="power-streak-today">Cub Power {multiplierText(power.streakMultiplier)} today</p>
-                <p className="power-streak-next">
-                  {power.streakDays >= MAX_STREAK_DAYS
-                    ? 'Top streak bonus reached. Keep logging in to hold it!'
-                    : `Log in tomorrow for ${multiplierText(streakMultiplier(power.streakDays + 1))}.`}
-                </p>
+                {ownerName ? null : (
+                  <p className="power-streak-next">
+                    {power.streakDays >= MAX_STREAK_DAYS
+                      ? 'Top streak bonus reached. Keep logging in to hold it!'
+                      : `Log in tomorrow for ${multiplierText(streakMultiplier(power.streakDays + 1))}.`}
+                  </p>
+                )}
               </div>
-              {newGame ? (
+              {newGame && onSeenNewGame ? (
                 <div className="power-note" role="status">
                   <p>New game added! Earn its achievement badges to build your Cub Power.</p>
                   <button type="button" onClick={onSeenNewGame}>
@@ -130,7 +136,9 @@ export function CubPowerPanel({ power, newGame, onSeenNewGame, onRefresh, onClos
                     </li>
                   </ul>
                 ) : (
-                  <p className="power-quiet">Reach 100 Cub Power to unlock your first 1%.</p>
+                  <p className="power-quiet">
+                    {ownerName ? 'No bonuses yet. They start at 100 Cub Power.' : 'Reach 100 Cub Power to unlock your first 1%.'}
+                  </p>
                 )}
                 <p className="power-next">
                   {next === null

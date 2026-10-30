@@ -2,14 +2,17 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { showYellMouth, tryOnFromPicks } from '../game/cubTraits'
 import { setVisitHalloween } from '../game/halloween'
 import { getHomeCharacterAge, previewHomeCharacter, type CharacterAge } from '../game/homeScene'
-import type { PlayerProfile } from '../game/leaderboard'
+import type { CubPower } from '../game/cubPower'
+import { loadPlayerCubPower, type PlayerProfile } from '../game/leaderboard'
 import { BADGES, earnedBadges, type BadgeId } from '../game/profileArt'
 import { levelProgress } from '../game/progress'
 import { playRoar } from '../game/roarAudio'
 import { sanitizeOwnedOutfit } from '../game/traitShop'
 import type { CubPose } from '../game/types'
 import { BadgeShowcase } from './BadgeShowcase'
+import { CubPowerPanel, multiplierText } from './CubPowerPanel'
 import { CubStage } from './CubStage'
+import { PowerPlate } from './PowerPlate'
 
 type Props = {
   profile: PlayerProfile
@@ -27,6 +30,8 @@ export function VisitHome({ profile, onReturn }: Props) {
   const [age, setAge] = useState<CharacterAge>('old')
   const [pose, setPose] = useState<CubPose>('idle')
   const [shownBadge, setShownBadge] = useState<BadgeId | null>(null)
+  const [power, setPower] = useState<CubPower | null>(null)
+  const [powerOpen, setPowerOpen] = useState(false)
   const petTimer = useRef<number | null>(null)
 
   useEffect(() => {
@@ -43,6 +48,16 @@ export function VisitHome({ profile, onReturn }: Props) {
   useEffect(() => {
     previewHomeCharacter(age)
   }, [age])
+
+  useEffect(() => {
+    let cancel = false
+    void loadPlayerCubPower(profile.username).then((found) => {
+      if (!cancel) setPower(found)
+    })
+    return () => {
+      cancel = true
+    }
+  }, [profile.username])
 
   const pet = () => {
     if (petTimer.current !== null) return
@@ -131,6 +146,18 @@ export function VisitHome({ profile, onReturn }: Props) {
             <strong>{progress.level}</strong>
           </span>
         </div>
+        {power ? (
+          <PowerPlate
+            className="visit-power"
+            value={power.total.toLocaleString('en-US')}
+            multiplier={power.streakMultiplier}
+            label={`${profile.username}'s Cub Power ${power.total}, login streak ${multiplierText(power.streakMultiplier)}. Show breakdown`}
+            onClick={() => setPowerOpen(true)}
+          />
+        ) : null}
+        {powerOpen && power ? (
+          <CubPowerPanel power={power} ownerName={profile.username} onClose={() => setPowerOpen(false)} />
+        ) : null}
       </div>
       {shownBadge ? (
         <div className="badge-earned-pop" role="dialog" aria-modal="true" aria-label={BADGES[shownBadge].label}>

@@ -1,3 +1,4 @@
+import { readCubPower, type CubPower } from './cubPower'
 import type { DailyGame } from './dailyTasks'
 import { profilePhotoUrl } from './profilePhoto'
 import { sanitizeSave } from './progress'
@@ -117,6 +118,14 @@ export async function loadLastWeeklyWinners(): Promise<{ place: number; username
     if (place >= 1 && place <= 3 && username) winners.push({ place, username })
   }
   return winners
+}
+
+/** Another player's Cub Power and breakdown for a home visit. Null if unknown or not installed yet. */
+export async function loadPlayerCubPower(username: string): Promise<CubPower | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('player_cub_power', { p_username: username })
+  if (error) return null
+  return readCubPower(typeof data === 'string' ? parseJson(data) : data)
 }
 
 /** Where a score would sit on one game's boards, this week and all time. */
