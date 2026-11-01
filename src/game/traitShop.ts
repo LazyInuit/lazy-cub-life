@@ -8,13 +8,16 @@ export function traitKey(age: CharacterAge, category: TraitCategory, name: strin
   return `${age}:${category}:${name}`
 }
 
+/** Every wardrobe price is the rarity price times this. Must match trait_prices in supabase/shop-prices.sql. */
+export const WARDROBE_PRICE_MULTIPLIER = 2
+
 /**
  * Coin cost to unlock. `null` means free (always unlocked).
- * Starter looks stay free. Other styles cost 100 Cub Cash, more when the Lazy Lion trait is rarer than 5%.
+ * Starter looks stay free. Other styles cost 200 Cub Cash, more when the Lazy Lion trait is rarer than 5%.
  */
 export function traitPrice(_age: CharacterAge, category: TraitCategory, name: string): number | null {
   if (STARTER_OUTFIT[category] === name) return null
-  return rarityCoinPrice(category, name)
+  return rarityCoinPrice(category, name) * WARDROBE_PRICE_MULTIPLIER
 }
 
 /** XP granted when the trait is bought. 10% of its coin price. */

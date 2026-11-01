@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { MAX_STREAK_DAYS, powerToNextTier, streakMultiplier, weeklyPlaceLabel, type CubPower } from '../game/cubPower'
 import loginStreakUrl from '../assets/home/login-streak.png'
+import type { PlayerProfile } from '../game/leaderboard'
+import { CubPowerBoard } from './CubPowerBoard'
+import { PlayerProfileCard } from './PlayerProfileCard'
 
 type Props = {
   power: CubPower | null
@@ -11,6 +14,8 @@ type Props = {
   onSeenNewGame?: () => void
   /** Must keep the same identity between renders: it runs once when the panel opens. */
   onRefresh?: () => unknown
+  /** Lets names on the Cub Power leaderboard open a profile card with Visit. Leave out to turn that off. */
+  onVisit?: (profile: PlayerProfile) => void
   onClose: () => void
 }
 
@@ -112,11 +117,13 @@ export function whenText(at: number | null) {
 }
 
 /** Cub Power: the total, what it is made of, and what it gives. */
-export function CubPowerPanel({ power, ownerName, newGame = false, onSeenNewGame, onRefresh, onClose }: Props) {
+export function CubPowerPanel({ power, ownerName, newGame = false, onSeenNewGame, onRefresh, onVisit, onClose }: Props) {
   useEffect(() => {
     onRefresh?.()
   }, [onRefresh])
   const title = ownerName ? `${ownerName}'s Cub Power` : 'Cub Power'
+  const [showBoard, setShowBoard] = useState(false)
+  const [profileOpen, setProfileOpen] = useState<{ username: string; mine: boolean } | null>(null)
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -142,9 +149,15 @@ export function CubPowerPanel({ power, ownerName, newGame = false, onSeenNewGame
           ×
         </button>
         <div className="profile-card-face achievements-face power-face">
-          {ownerName ? <p className="power-owner">{ownerName}'s</p> : null}
-          <h2 className="achievements-title">Cub Power</h2>
-          {!power ? (
+          {showBoard ? (
+            <CubPowerBoard
+              onBack={() => setShowBoard(false)}
+              onOpenProfile={onVisit ? (username, mine) => setProfileOpen({ username, mine }) : undefined}
+            />
+          ) : null}
+          {showBoard ? null : ownerName ? <p className="power-owner">{ownerName}'s</p> : null}
+          {showBoard ? null : <h2 className="achievements-title">Cub Power</h2>}
+          {showBoard ? null : !power ? (
             <p className="profile-empty">Loading...</p>
           ) : (
             <>
@@ -152,6 +165,13 @@ export function CubPowerPanel({ power, ownerName, newGame = false, onSeenNewGame
                 <PowerBolt className="power-bolt" />
                 {power.total.toLocaleString('en-US')}
               </p>
+              <button type="button" className="power-board-open" onClick={() => setShowBoard(true)}>
+                <Trophy className="power-board-trophy" />
+                <span>Cub Power Leaderboard</span>
+                <span className="power-board-chevron" aria-hidden="true">
+                  ›
+                </span>
+              </button>
               <LoginStreakBar days={power.streakCount} />
               <div className="power-streak-text">
                 <p className="power-streak-today">Cub Power {multiplierText(power.streakMultiplier)} today</p>
@@ -271,6 +291,21 @@ export function CubPowerPanel({ power, ownerName, newGame = false, onSeenNewGame
           )}
         </div>
       </div>
+      {profileOpen && onVisit ? (
+        // Its own taps stay inside, so closing the profile does not close the Cub Power panel too.
+        <div className="power-profile-layer" onClick={(event) => event.stopPropagation()}>
+          <PlayerProfileCard
+            key={profileOpen.username}
+            username={profileOpen.username}
+            mine={profileOpen.mine}
+            onClose={() => setProfileOpen(null)}
+            onVisit={(profile) => {
+              setProfileOpen(null)
+              onVisit(profile)
+            }}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }

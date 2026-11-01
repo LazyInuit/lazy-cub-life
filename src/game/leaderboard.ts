@@ -106,6 +106,46 @@ export async function loadLeaderboard(
   }
 }
 
+export type CubPowerRow = { rank: number; username: string; power: number; mine: boolean }
+
+export type CubPowerBoardPage = {
+  rows: CubPowerRow[]
+  mine: { rank: number; username: string; power: number } | null
+  total: number
+}
+
+/** Every player ranked by Cub Power right now. Readable without signing in. */
+export async function loadCubPowerBoard(offset = 0): Promise<CubPowerBoardPage> {
+  if (!supabase) return { rows: [], mine: null, total: 0 }
+  const { data, error } = await supabase.rpc('cub_power_board', { p_limit: LEADERBOARD_PAGE, p_offset: offset })
+  if (error) {
+    const message = error.message.toLowerCase()
+    if (message.includes('could not find the function') || message.includes('schema cache')) {
+      throw new Error('The Cub Power leaderboard needs a database update.')
+    }
+    throw new Error('Could not load the Cub Power leaderboard.')
+  }
+  const payload = typeof data === 'string' ? parseJson(data) : data
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    throw new Error('The Cub Power leaderboard needs a database update.')
+  }
+  const page = payload as { rows?: unknown; mine?: unknown; total?: unknown }
+  const readEntry = (value: unknown) => {
+    if (!value || typeof value !== 'object') return null
+    const entry = value as { rank?: unknown; username?: unknown; power?: unknown; mine?: unknown }
+    const rank = readCount(entry.rank)
+    if (typeof entry.username !== 'string' || entry.username === '' || rank <= 0) return null
+    return { rank, username: entry.username, power: Math.max(0, readCount(entry.power)), mine: entry.mine === true }
+  }
+  const rows = Array.isArray(page.rows) ? page.rows.flatMap((row) => readEntry(row) ?? []) : []
+  const mine = readEntry(page.mine)
+  return {
+    rows,
+    mine: mine ? { rank: mine.rank, username: mine.username, power: mine.power } : null,
+    total: readCount(page.total),
+  }
+}
+
 /** Last week's overall top three, readable without signing in. */
 export async function loadLastWeeklyWinners(): Promise<{ place: number; username: string }[]> {
   if (!supabase) return []

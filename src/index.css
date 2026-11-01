@@ -8292,6 +8292,115 @@ button.power-plate:active {
   text-shadow: 0 3px 0 #1a0c06;
 }
 
+.power-board-open {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(100%, 300px);
+  margin: 0 auto;
+  padding: 7px 12px;
+  border: 2px solid #ffd23a;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 210, 58, 0.22), rgba(120, 70, 10, 0.35));
+  box-shadow: 0 3px 0 #1a0c06;
+  color: #fff3c4;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.power-board-open:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #1a0c06;
+}
+
+.power-board-open span:not(.power-board-chevron) {
+  flex: 1;
+  text-align: left;
+}
+
+.power-board-trophy {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  color: #ffd23a;
+}
+
+.power-board-chevron {
+  color: #ffd23a;
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.power-board {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.power-board-head {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.power-board-back {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 4px 11px;
+  border: 2px solid #ffd23a;
+  border-radius: 14px;
+  background: rgba(20, 12, 8, 0.8);
+  color: #fff3c4;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.power-board-note {
+  margin: -4px 0 0;
+  color: rgba(255, 243, 196, 0.8);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.power-board-list li.mine {
+  border-color: #7be36b;
+}
+
+.power-board-mine {
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 2px dashed rgba(255, 231, 168, 0.35);
+}
+
+.power-board-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #ffd23a;
+}
+
+.power-board-bolt {
+  width: 15px;
+  height: 15px;
+}
+
+.power-board-more {
+  align-self: center;
+}
+
+.power-profile-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
 .power-bolt {
   width: 30px;
   height: 30px;

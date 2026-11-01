@@ -57,6 +57,8 @@ import { useOwnProfile } from '../game/useOwnProfile'
 import { isDemo, requestSignUp } from '../game/demo'
 import { DemoLockBanner } from './DemoLockBanner'
 import { LeaderboardScreen } from './LeaderboardScreen'
+import { VisitHome } from './VisitHome'
+import type { PlayerProfile } from '../game/leaderboard'
 import { WardrobeScreen } from './WardrobeScreen'
 import { ShopScreen } from './ShopScreen'
 
@@ -115,6 +117,8 @@ export function CareScreen({
   const [accountOpen, setAccountOpen] = useState(false)
   const [achievementsOpen, setAchievementsOpen] = useState(startInAchievements)
   const [powerOpen, setPowerOpen] = useState(false)
+  /** A player's home opened from the Cub Power leaderboard. */
+  const [visiting, setVisiting] = useState<PlayerProfile | null>(null)
   const [bonusRoll, setBonusRoll] = useState<{ prize: BonusTrait | null; coins: number } | null>(null)
   const [diceShake, setDiceShake] = useState(false)
   const [age, setAge] = useState<CharacterAge>(() => getHomeCharacterAge())
@@ -200,6 +204,10 @@ export function CareScreen({
     }
     setEnergyWarn(null)
     start()
+  }
+
+  if (visiting) {
+    return <VisitHome profile={visiting} onReturn={() => setVisiting(null)} />
   }
 
   if (boardOpen) {
@@ -766,6 +774,7 @@ export function CareScreen({
             newGame={cub.powerNewGame}
             onSeenNewGame={cub.dismissPowerNewGame}
             onRefresh={cub.refreshCubPower}
+            onVisit={setVisiting}
             onClose={() => setPowerOpen(false)}
           />
         ) : null}
