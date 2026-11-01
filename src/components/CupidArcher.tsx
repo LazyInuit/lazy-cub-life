@@ -3,7 +3,20 @@ import backgroundUrl from '../assets/cupid-archer/background-2.png'
 import cubUrl from '../assets/cupid-archer/cub.png'
 import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import lionPawUrl from '../assets/lion-paw-ui.png'
-import { ARCHER_XP_PER_SCORE, LIVES, ROUND_SECONDS } from '../game/cupidArcher/config'
+import {
+  ARCHER_XP_PER_SCORE,
+  BULLS_FOR_COINS,
+  LIVES,
+  MOVE_AXIS_SCORE,
+  MOVE_FREE_SCORE,
+  RING_BLUE,
+  RING_GOLD,
+  RING_RED,
+  RING_WHITE,
+  ROUND_SECONDS,
+  TIME_RED,
+  UNPAID_OPENING_SHOTS,
+} from '../game/cupidArcher/config'
 import { canvasRatio, layoutPoint, layoutSize } from '../game/frameScale'
 import {
   playBullseye,
@@ -123,6 +136,7 @@ function LivesHud({ lives }: { lives: number }) {
 export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
+  const [showHowTo, setShowHowTo] = useState(false)
   const [hud, setHud] = useState({ lives: LIVES, score: 0, time: ROUND_SECONDS, shots: 0, aiming: false })
   const [pullHint, setPullHint] = useState({ x: 0, y: 0 })
   const [summary, setSummary] = useState<Summary | null>(null)
@@ -403,19 +417,53 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onC
             <div className="archer-home-cub-wrap" aria-hidden>
               <img className="archer-home-cub" src={cubUrl} alt="" />
             </div>
-            <div className="archer-panel">
-              <h2>Cupid Archery</h2>
-              <p>Drag back from the cub, then let go to shoot. 3 Lives - 60 second timer. Hit the bullseye to add time and lives.</p>
-              <p>
-                Cub Cash: after your first 5 shots, hit 2 bullseyes in a row for 1 Cub Cash, then 1 more for every bullseye
-                in a row after that. Any other ring or a miss ends the coin run, and you need 2 in a row again.
-              </p>
-              <p className="archer-best">Best Score {bestRef.current}</p>
-              {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
-              <button type="button" className="archer-btn" onClick={startRound}>
-                Play
-              </button>
-            </div>
+            {showHowTo ? (
+              <div className="archer-panel archer-how-panel">
+                <div className="archer-how-head">
+                  <button type="button" className="archer-how-back" onClick={() => setShowHowTo(false)}>
+                    ‹ Back
+                  </button>
+                  <h2>How to Play</h2>
+                </div>
+                <ul className="archer-how">
+                  <li>
+                    <strong>Shoot:</strong> drag back from the cub, then let go to fire an arrow at the target.
+                  </li>
+                  <li>
+                    <strong>Lives and time:</strong> you have {LIVES} lives and {ROUND_SECONDS} seconds. A miss costs a life.
+                    The game ends when you run out of lives or time.
+                  </li>
+                  <li>
+                    <strong>Points:</strong> bullseye {RING_RED}, gold ring {RING_GOLD}, blue ring {RING_BLUE}, white ring{' '}
+                    {RING_WHITE}.
+                  </li>
+                  <li>
+                    <strong>Bullseye bonus:</strong> +{TIME_RED} seconds and a life back (up to {LIVES}).
+                  </li>
+                  <li>
+                    <strong>Targets:</strong> they start still, slide from {MOVE_AXIS_SCORE} points and roam anywhere from{' '}
+                    {MOVE_FREE_SCORE}.
+                  </li>
+                  <li>
+                    <strong>Cub Cash:</strong> after your first {UNPAID_OPENING_SHOTS} shots, hit {BULLS_FOR_COINS} bullseyes in a
+                    row for 1 Cub Cash, then 1 more for every bullseye in a row after that. Any other ring or a miss ends the coin
+                    run, and you need {BULLS_FOR_COINS} in a row again.
+                  </li>
+                </ul>
+              </div>
+            ) : (
+              <div className="archer-panel">
+                <h2>Cupid Archery</h2>
+                <p className="archer-best">Best Score {bestRef.current}</p>
+                {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
+                <button type="button" className="archer-btn" onClick={startRound}>
+                  Play
+                </button>
+                <button type="button" className="archer-btn archer-btn-ghost" onClick={() => setShowHowTo(true)}>
+                  How to Play
+                </button>
+              </div>
+            )}
           </div>
         ) : null}
         {mode === 'over' && summary ? (

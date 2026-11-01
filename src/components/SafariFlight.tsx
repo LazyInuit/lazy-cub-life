@@ -86,6 +86,9 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
   const [summary, setSummary] = useState<Summary | null>(null)
   const [started, setStarted] = useState(false)
   const [lowEnergy, setLowEnergy] = useState(false)
+  /** The start panel, shown when the game opens until the first flight begins. */
+  const [introOpen, setIntroOpen] = useState(true)
+  const [showHowTo, setShowHowTo] = useState(false)
 
   const awardFlight = () => {
     if (rewarded.current || phase.current !== 'play') return null
@@ -261,6 +264,7 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
     playFlap()
     if (phase.current === 'ready') {
       setLowEnergy(false)
+      setIntroOpen(false)
       phase.current = 'play'
       ready.current = false
       gates.current = []
@@ -291,6 +295,22 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
     flap()
   }
 
+  const goGames = () => {
+    if (summary) {
+      onGames()
+      return
+    }
+    if (phase.current === 'play') {
+      settle('leave')
+      return
+    }
+    if (!rewarded.current) {
+      rewarded.current = true
+      onReward(0, { ...moodFromScore(score.current), ...PLAY_NEED_COST })
+    }
+    onGames()
+  }
+
   return (
     <section className="game-screen flight">
       <header className="arcade-bar">
@@ -309,24 +329,7 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
               onExit()
             }}
           />
-          <GamesButton
-            className="game-home game-games"
-            onClick={() => {
-              if (summary) {
-                onGames()
-                return
-              }
-              if (phase.current === 'play') {
-                settle('leave')
-                return
-              }
-              if (!rewarded.current) {
-                rewarded.current = true
-                onReward(0, { ...moodFromScore(score.current), ...PLAY_NEED_COST })
-              }
-              onGames()
-            }}
-          />
+          <GamesButton className="game-home game-games" onClick={goGames} />
         </div>
         <h1>Kovu's Space Dash</h1>
         <div className="arcade-scores" aria-label={`Score ${hudScore}, best ${Math.max(best, hudScore)}`}>
@@ -350,10 +353,55 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
           onPointerDown={pointer}
           aria-label="Tap to flap"
         />
-        {!started && !summary ? (
+        {!started && !summary && !introOpen ? (
           <div className="tap-hint" aria-hidden="true">
             <span className="tap-ring" />
             <img className="tap-paw" src={lionPawUrl} alt="" />
+          </div>
+        ) : null}
+        {introOpen && !summary ? (
+          <div className="flight-intro">
+            {showHowTo ? (
+              <div className="flight-panel">
+                <div className="flight-panel-head">
+                  <button type="button" className="flight-panel-back" onClick={() => setShowHowTo(false)}>
+                    ‹ Back
+                  </button>
+                  <h2>How to Play</h2>
+                </div>
+                <ul className="flight-how">
+                  <li>
+                    <strong>Fly:</strong> tap the screen (or press Space) to flap. Kovu falls when you stop.
+                  </li>
+                  <li>
+                    <strong>Score:</strong> fly through the gaps between the pillars. Each gap cleared is 1 point.
+                  </li>
+                  <li>
+                    <strong>Cub Cash:</strong> grab the coin in every 10th gap for {COIN_VALUE} Cub Cash.
+                  </li>
+                  <li>
+                    <strong>Crash:</strong> hitting a pillar, the top or the ground ends the run.
+                  </li>
+                </ul>
+              </div>
+            ) : (
+              <div className="flight-panel">
+                <div className="flight-panel-head">
+                  <button type="button" className="flight-panel-back" onClick={onGames}>
+                    ‹ Back
+                  </button>
+                  <h2>Kovu's Space Dash</h2>
+                </div>
+                <p className="flight-best">Best Score {Math.max(best, hudScore)}</p>
+                {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
+                <button type="button" className="cabinet-key flight-panel-btn" onClick={flap}>
+                  Play
+                </button>
+                <button type="button" className="cabinet-key flight-panel-btn flight-panel-btn-light" onClick={() => setShowHowTo(true)}>
+                  How to Play
+                </button>
+              </div>
+            )}
           </div>
         ) : null}
       </div>

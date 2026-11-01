@@ -167,7 +167,12 @@ export function LazyRiver({ best, onBest, onDailyStart, onDaily, onReward, onCoi
         <div className="river-home">
           {!showRules ? (
             <div className="river-panel">
-              <h2>Lazy River</h2>
+              <div className="river-rules-head">
+                <button type="button" className="river-btn river-btn-light river-rules-back" onClick={() => leave(onGames)}>
+                  ‹ Back
+                </button>
+                <h2>Lazy River</h2>
+              </div>
               <p className="river-best">Best Score {bestRef.current.toLocaleString('en-US')}</p>
               {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
               {failed ? <p className="energy-note">The river could not load. Check your connection and try again.</p> : null}

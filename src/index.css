@@ -4200,6 +4200,99 @@ h1 {
   margin-top: 0;
 }
 
+/* Start panel: shown when Space Dash opens, until the first flight. */
+.flight-intro {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  padding: 0 14px;
+  background: rgba(4, 6, 20, 0.35);
+}
+
+.flight-panel {
+  width: min(100%, 340px);
+  padding: 14px 14px 16px;
+  border: 1px solid rgba(126, 240, 255, 0.55);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(126, 240, 255, 0.18), transparent 28%),
+    linear-gradient(180deg, #161c44, #07091a);
+  box-shadow: 0 0 18px rgba(126, 240, 255, 0.25);
+  color: #f4fbff;
+  text-align: center;
+}
+
+.flight-panel-head {
+  position: relative;
+}
+
+.flight-panel-head h2 {
+  margin: 0 0 8px;
+  padding: 0 64px;
+  color: #7ef0ff;
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 8px rgba(126, 240, 255, 0.5);
+}
+
+.flight-panel-back {
+  position: absolute;
+  left: -2px;
+  top: -2px;
+  padding: 4px 10px;
+  border: 1px solid #7ef0ff;
+  border-radius: 6px;
+  background: rgba(126, 240, 255, 0.12);
+  color: #7ef0ff;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.flight-panel-back:active {
+  background: rgba(126, 240, 255, 0.28);
+}
+
+.flight-best {
+  margin: 0 0 6px;
+  color: #f0c14a;
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 8px rgba(240, 193, 74, 0.5);
+}
+
+.flight-panel-btn {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  font-size: 0.95rem;
+}
+
+.flight-panel-btn-light {
+  border-color: rgba(126, 240, 255, 0.5);
+  background: transparent;
+}
+
+.flight-how {
+  margin: 0;
+  padding: 0 0 0 16px;
+  text-align: left;
+  font-size: 0.86rem;
+  line-height: 1.38;
+  color: rgba(215, 247, 255, 0.9);
+}
+
+.flight-how li {
+  margin-bottom: 6px;
+}
+
+.flight-how strong {
+  color: #7ef0ff;
+}
+
 .flight-results-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -4959,6 +5052,49 @@ h1 {
 
 .archer-btn-ghost:active {
   box-shadow: none;
+}
+
+.archer-how-head {
+  position: relative;
+}
+
+.archer-how-back {
+  position: absolute;
+  left: -2px;
+  top: -2px;
+  z-index: 1;
+  padding: 4px 11px;
+  border: 2px solid #e08aa0;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  color: #b13d55;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  box-shadow: 0 2px 0 #e08aa0;
+}
+
+.archer-how-back:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.archer-how {
+  margin: 0;
+  padding: 0 0 0 16px;
+  max-height: min(52dvh, 360px);
+  overflow-y: auto;
+  text-align: left;
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.archer-how li {
+  margin-bottom: 6px;
+}
+
+.archer-how strong {
+  color: #b13d55;
 }
 
 @keyframes archer-pulse {

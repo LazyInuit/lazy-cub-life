@@ -378,7 +378,12 @@ export function BubbleBlast({ best, onBest, onDailyStart, onDaily, onReward, onC
             <img className="bubble-home-cub" src={homeCubUrl} alt="" aria-hidden />
             {!showRules ? (
               <div className="bubble-panel">
-                <h2>Bubble Blast</h2>
+                <div className="bubble-rules-head">
+                  <button type="button" className="bubble-btn bubble-rules-back" onClick={() => leave(onGames)}>
+                    ‹ Back
+                  </button>
+                  <h2>Bubble Blast</h2>
+                </div>
                 <p className="bubble-best">Best Score {bestRef.current.toLocaleString('en-US')}</p>
                 {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
                 <button type="button" className="bubble-btn" onClick={startRun}>
