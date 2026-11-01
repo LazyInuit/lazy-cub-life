@@ -82,7 +82,7 @@ interface Gem {
   y: number;
   vx: number;
   points: number;
-  gold: boolean;
+  kind: GemSpawn['kind'];
   active: boolean;
   taken: boolean;
   phase: number;
@@ -1252,8 +1252,8 @@ export class GameScene extends Phaser.Scene {
           gem.vx = -Math.abs(gem.vx);
         }
         this.bounceGem(gem, minX, maxX);
-        // A coin rocks gently; a silver gem spins.
-        gem.sprite.rotation = gem.gold ? Math.sin(gem.phase) * 0.18 : gem.phase;
+        // A Kovu coin rocks gently; paw coins spin.
+        gem.sprite.rotation = gem.kind === 'cash' ? Math.sin(gem.phase) * 0.18 : gem.phase;
       }
       gem.sprite.setPosition(gem.x, gem.y + Math.sin(gem.phase) * 12);
       gem.sprite.setDepth(1.3 + gem.y / GAME_HEIGHT);
@@ -1406,18 +1406,18 @@ export class GameScene extends Phaser.Scene {
   private activateGem(spec: GemSpawn): void {
     const gem = this.freeGems.pop();
     if (!gem) return;
-    const gold = spec.kind === 'gold';
+    const cash = spec.kind === 'cash';
     gem.active = true;
     gem.taken = false;
-    gem.gold = gold;
+    gem.kind = spec.kind;
     gem.x = spec.x;
     gem.y = spec.y;
-    gem.points = gold ? GOLD_POINTS : SILVER_POINTS;
+    gem.points = spec.kind === 'silver' ? SILVER_POINTS : GOLD_POINTS;
     const drift = lerp(62, 168, curve(this.distance));
     gem.vx = (Math.random() < 0.5 ? -1 : 1) * drift * (0.8 + Math.random() * 0.4);
     gem.phase = Math.random() * Math.PI * 2;
-    gem.sprite.setTexture(gold ? 'coin' : 'gem-silver');
-    fitSprite(gem.sprite, gold ? 46 : 40, gold ? 46 : 40, 1.15);
+    gem.sprite.setTexture(cash ? 'coin' : spec.kind === 'gold' ? 'gem-gold' : 'gem-silver');
+    fitSprite(gem.sprite, cash ? 46 : 40, cash ? 46 : 40, 1.15);
     gem.sprite.setAlpha(1);
     gem.sprite.setVisible(true);
     gem.sprite.setPosition(spec.x, spec.y);
@@ -1474,11 +1474,12 @@ export class GameScene extends Phaser.Scene {
     gem.taken = true;
     this.collectibles += 1;
     this.points += gem.points;
-    if (gem.gold) this.coins += 1;
+    if (gem.kind === 'cash') this.coins += 1;
     audio.collect();
     haptics.collect();
-    this.burst(gem.x, gem.y, gem.gold ? 0xffd56a : 0xd5e2ea, 10, 160);
-    this.floatText(gem.x, gem.y - 20, `+${gem.points}`, gem.gold ? '#ffd56a' : '#e7eef3');
+    const golden = gem.kind !== 'silver';
+    this.burst(gem.x, gem.y, golden ? 0xffd56a : 0xd5e2ea, 10, 160);
+    this.floatText(gem.x, gem.y - 20, `+${gem.points}`, golden ? '#ffd56a' : '#e7eef3');
     this.popScore();
     this.tweens.add({
       targets: gem.sprite,
@@ -1792,7 +1793,7 @@ export class GameScene extends Phaser.Scene {
     }
     for (let i = 0; i < 14; i += 1) {
       const sprite = this.add.image(0, -400, 'coin').setVisible(false);
-      const gem: Gem = { sprite, x: 0, y: 0, vx: 0, points: 0, gold: false, active: false, taken: false, phase: 0 };
+      const gem: Gem = { sprite, x: 0, y: 0, vx: 0, points: 0, kind: 'silver', active: false, taken: false, phase: 0 };
       this.gems.push(gem);
       this.freeGems.push(gem);
     }

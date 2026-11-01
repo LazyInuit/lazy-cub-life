@@ -28,6 +28,7 @@ export const LEADERBOARD_BOARDS: { id: LeaderboardBoard; label: string }[] = [
   { id: 'hoops', label: 'Lazy Hoops' },
   { id: 'bubble', label: 'Bubble Blast' },
   { id: 'river', label: 'Lazy River' },
+  { id: 'solitaire', label: 'Spellitaire' },
 ]
 
 export type LeaderboardBoard = DailyGame | 'overall'
@@ -54,7 +55,10 @@ export type LeaderboardPage = {
   serverNow: string | null
 }
 
-export async function submitLeaderboardScore(game: DailyGame, score: number) {
+/** Where a score is stored. Spellitaire Hard has its own key, added to Easy on the Spellitaire board. */
+export type LeaderboardGame = DailyGame | 'solitaire-hard'
+
+export async function submitLeaderboardScore(game: LeaderboardGame, score: number) {
   if (!supabase || score <= 0) return
   const { error } = await supabase.rpc('submit_score', { p_game: game, p_score: score })
   if (error) return
@@ -147,7 +151,7 @@ export type PlayerProfile = {
   xp: number
   overall: number
   rank: number | null
-  /** Best single score ever in each game, for badges. */
+  /** Best single score ever in each game, for badges. Spellitaire is best Easy plus best Hard. */
   bests: Partial<Record<DailyGame, number>>
   /** The player's uploaded photo, or null to show the default picture. */
   photoUrl: string | null
@@ -188,8 +192,9 @@ export async function loadPlayerProfile(username: string): Promise<PlayerProfile
     ? (entry.bests as Record<string, unknown>)
     : {}
   const bests: Partial<Record<DailyGame, number>> = {}
-  for (const game of ['flight', 'match', 'dojo', 'archer', 'hoops', 'bubble', 'river'] as const) {
-    const best = readCount(rawBests[game])
+  for (const game of ['flight', 'match', 'dojo', 'archer', 'hoops', 'bubble', 'river', 'solitaire'] as const) {
+    // Spellitaire badges go by the best Easy and best Hard scores added together.
+    const best = readCount(rawBests[game]) + (game === 'solitaire' ? readCount(rawBests['solitaire-hard']) : 0)
     if (best > 0) bests[game] = best
   }
   const avatar = entry.avatar && typeof entry.avatar === 'object' && !Array.isArray(entry.avatar)

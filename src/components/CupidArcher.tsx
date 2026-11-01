@@ -406,6 +406,10 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onC
             <div className="archer-panel">
               <h2>Cupid Archery</h2>
               <p>Drag back from the cub, then let go to shoot. 3 Lives - 60 second timer. Hit the bullseye to add time and lives.</p>
+              <p>
+                Cub Cash: after your first 5 shots, hit 2 bullseyes in a row for 1 Cub Cash, then 1 more for every bullseye
+                in a row after that. Any other ring or a miss ends the coin run, and you need 2 in a row again.
+              </p>
               <p className="archer-best">Best Score {bestRef.current}</p>
               {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
               <button type="button" className="archer-btn" onClick={startRound}>

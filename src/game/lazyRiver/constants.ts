@@ -37,8 +37,12 @@ export const COAST_DECAY_Y = 5.2;
 export const HORIZONTAL_DRAG = 0.8;
 export const VERTICAL_DRAG = 0.46;
 
+/** Points for a Kovu coin or a gold paw coin. */
 export const GOLD_POINTS = 50;
 export const SILVER_POINTS = 25;
+/** Share of pickups that are Kovu coins (the only ones paying Cub Cash) and gold paw coins. The rest are silver. */
+export const CASH_COIN_SHARE = 0.2;
+export const GOLD_PAW_SHARE = 0.2;
 export const NEAR_MISS_POINTS = 25;
 
 /** Chance a row past the calm start has a water pad in its gap, and how many of those push forward. */

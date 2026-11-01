@@ -3,7 +3,7 @@ import { sanitizeDaily, type DailyGame, type DailyProgress } from './dailyTasks'
 import { supabase } from './supabase'
 import type { CubSave } from './types'
 
-export type GameCoinSource = 'flight' | 'hoops' | 'archer' | 'dojo' | 'match' | 'bubble' | 'river'
+export type GameCoinSource = 'flight' | 'hoops' | 'archer' | 'dojo' | 'match' | 'bubble' | 'river' | 'solitaire'
 
 export type WalletPatch = {
   cubCash: number
@@ -114,7 +114,7 @@ export function payoutParts(source: GameCoinSource, amount: number) {
     }
     return parts
   }
-  const max = source === 'archer' ? 40 : 80
+  const max = source === 'archer' ? 40 : source === 'solitaire' ? 75 : 80
   const parts: number[] = []
   let left = gain
   while (left > 0) {
@@ -133,6 +133,7 @@ const PAYOUT_GAP_MS: Record<GameCoinSource, number> = {
   match: 8000,
   bubble: 20000,
   river: 20000,
+  solitaire: 20000,
 }
 
 export function payoutGap(source: GameCoinSource) {

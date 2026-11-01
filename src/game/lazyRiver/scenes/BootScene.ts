@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import coinUrl from '../../../assets/lazy-dojo/sprites/bonuses/kovu-coin.png';
 import pawUrl from '../../../assets/lion-paw-ui.png';
 import bankUrl from '../../../assets/lazy-river/bank.png';
+import gemGoldUrl from '../../../assets/lazy-river/gem-gold.png';
 import gemSilverUrl from '../../../assets/lazy-river/gem-silver.png';
 import glintUrl from '../../../assets/lazy-river/glint.png';
 import barrelSideUrl from '../../../assets/lazy-river/obstacles/barrel-side.png';
@@ -56,6 +57,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image('rapids', rapidsUrl);
     this.load.image('whirlpool', whirlpoolUrl);
     this.load.image('gem-silver', gemSilverUrl);
+    this.load.image('gem-gold', gemGoldUrl);
     this.load.image('paw', pawUrl);
   }
 

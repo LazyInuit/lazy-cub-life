@@ -14,6 +14,7 @@ import {
   TIME_RED,
   TIME_WHITE,
   UNPAID_OPENING_SHOTS,
+  BULLS_FOR_COINS,
 } from './config'
 import { headAim } from './layout'
 import type { ArcherRound, ArcherTarget } from './types'
@@ -258,6 +259,7 @@ export function createRound(w: number, h: number): ArcherRound {
     hits: 0,
     shots: 0,
     bullseyes: 0,
+    bullRun: 0,
     paidBullseyes: 0,
     target: { x: w * 0.7, y: h * 0.38, r: 48, vx: 0, vy: 0 },
     arrow: null,
@@ -468,10 +470,13 @@ export function stepRound(round: ArcherRound, dt: number): Shot {
         round.hits += 1
         const bonus = timeBonusForHit(hitBase)
         if (bonus > 0) round.timeLeft += bonus
+        if (hitBase !== RING_RED) round.bullRun = 0
         if (hitBase === RING_RED) {
           round.bullseyes += 1
           // round.shots already counts this arrow, so shot 1 is the first one fired.
-          if (round.shots > UNPAID_OPENING_SHOTS) {
+          // The coin run only starts counting after the opening shots.
+          if (round.shots > UNPAID_OPENING_SHOTS) round.bullRun += 1
+          if (round.bullRun >= BULLS_FOR_COINS) {
             round.paidBullseyes += 1
             round.coins.push({ x: tipX, y: tipY, life: 0.9, maxLife: 0.9 })
           }
@@ -524,6 +529,7 @@ export function stepRound(round: ArcherRound, dt: number): Shot {
     } else if (arrow.x > round.w + 40 || arrow.y > round.h + 30 || arrow.x < -80 || arrow.y < -120) {
       round.arrow = null
       round.lives = Math.max(0, round.lives - 1)
+      round.bullRun = 0
       shot.missed = true
       if (round.lives <= 0) shot.ended = true
     }

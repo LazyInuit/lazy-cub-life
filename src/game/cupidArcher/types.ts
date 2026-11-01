@@ -55,7 +55,12 @@ export type ArcherRound = {
   hits: number
   shots: number
   bullseyes: number
-  /** Bullseyes that pay 1 Cub Cash. Hits in the opening shots, while targets stand still, do not. */
+  /** Bullseyes in a row since the opening shots. Any other ring or a miss clears it. */
+  bullRun: number
+  /**
+   * Bullseyes that pay 1 Cub Cash: from the 2nd in a row on, and never in the opening shots
+   * while targets stand still.
+   */
   paidBullseyes: number
   target: ArcherTarget
   arrow: ArcherArrow | null

@@ -20,7 +20,7 @@ import {
 } from './progress'
 import { BONUS_COIN_AMOUNTS, DAILY_TASKS, bonusReady, dailyView, type BonusTrait, type DailyGame } from './dailyTasks'
 import { DRINKS, type DrinkId } from './drinks'
-import { submitLeaderboardScore } from './leaderboard'
+import { submitLeaderboardScore, type LeaderboardGame } from './leaderboard'
 import { readSave, writeSave } from './storage'
 import { reconcileCloudSave, scheduleCloudSave, flushCloudSave, flushCloudSaveNow, cloudBaseVisit, signInAccount, signOutAccount, signUpAccount, takeAdoptedSave, lockedCubCash, noteLockedCash, noteEarnedCash, ethFromUser, usernameFromUser, loadDisplayedUsername, loadUsernameChangedAt, updateAccountSettings, normalizeEthAddress } from './account'
 import { pumpkinLit, setPumpkinLit } from './halloween'
@@ -534,6 +534,18 @@ export function useCub() {
     announceBadge('river', current.riverBest, nextBest)
   }, [announceBadge, commit])
 
+  /** Easy and Hard keep their own bests; badges go by the two added together, like the leaderboard. */
+  const recordSolitaireBest = useCallback((score: number, hard: boolean) => {
+    const current = saveRef.current
+    if (!current) return
+    const nextBest = Math.max(0, Math.floor(score))
+    const field = hard ? 'solitaireHardBest' : 'solitaireBest'
+    if (nextBest <= current[field]) return
+    const next = { ...current, [field]: nextBest }
+    commit(next)
+    announceBadge('solitaire', current.solitaireBest + current.solitaireHardBest, next.solitaireBest + next.solitaireHardBest)
+  }, [announceBadge, commit])
+
   const setOutfits = useCallback((outfits: CubOutfits) => {
     const current = saveRef.current
     if (!current) return
@@ -577,7 +589,11 @@ export function useCub() {
     return true
   }, [commit])
 
-  const noteDaily = useCallback((game: DailyGame, score: number) => {
+  /**
+   * A run is over. `board` sends the score to a different leaderboard key (Spellitaire Hard), and
+   * `dailyPoints` replaces the score as the daily challenge progress (Spellitaire counts wins).
+   */
+  const noteDaily = useCallback((game: DailyGame, score: number, options: { board?: LeaderboardGame; dailyPoints?: number } = {}) => {
     // Every game reports here once its run is over, so this is when a badge earned in it pops up.
     const badge = pendingBadges.current[game]
     if (badge) {
@@ -592,20 +608,21 @@ export function useCub() {
       if (gained > 0) setDemoScore({ game, score: gained })
       return
     }
-    if (gained > 0) void submitLeaderboardScore(game, gained)
+    if (gained > 0) void submitLeaderboardScore(options.board ?? game, gained)
     // A run can raise the level or reach a badge.
     schedulePowerRefresh()
-    if (gained === 0) return
+    const points = Math.max(0, Math.floor(options.dailyPoints ?? gained))
+    if (points === 0) return
     const daily = dailyView(current.daily)
     commit({
       ...current,
       daily: {
         ...daily,
         startedAt: daily.startedAt ?? Date.now(),
-        scores: { ...daily.scores, [game]: (daily.scores[game] ?? 0) + gained },
+        scores: { ...daily.scores, [game]: (daily.scores[game] ?? 0) + points },
       },
     })
-    void addDailyScore(game, gained).then((patch) => {
+    void addDailyScore(game, points).then((patch) => {
       const latest = saveRef.current
       if (!patch || !latest) return
       const cash = noteEarnedCash(patch.cubCash)
@@ -952,6 +969,7 @@ export function useCub() {
     recordHoopsBest,
     recordBubbleBest,
     recordRiverBest,
+    recordSolitaireBest,
     startDaily,
     noteDaily,
     claimDaily,

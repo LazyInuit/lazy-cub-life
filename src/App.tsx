@@ -10,6 +10,7 @@ import { BadgeEarnedPop } from './components/BadgeShowcase'
 import { CareScreen } from './components/CareScreen'
 import { BubbleBlast } from './components/BubbleBlast'
 import { LazyRiver } from './components/LazyRiver'
+import { Spellitaire } from './components/Spellitaire'
 import { CupidArcher } from './components/CupidArcher'
 import { LazyHoops } from './components/LazyHoops'
 import { LazyDojo } from './components/LazyDojo'
@@ -25,7 +26,7 @@ import { DemoScorePop } from './components/DemoScorePop'
 import { useCub } from './game/useCub'
 import { supabase } from './game/supabase'
 
-type Screen = 'home' | 'flight' | 'match' | 'dojo' | 'archer' | 'hoops' | 'bubble' | 'river'
+type Screen = 'home' | 'flight' | 'match' | 'dojo' | 'archer' | 'hoops' | 'bubble' | 'river' | 'solitaire'
 
 export default function App() {
   if (window.location.pathname === '/admin' || window.location.pathname === '/admin/') {
@@ -339,6 +340,10 @@ function Game() {
             setOpenGames(false)
             setScreen('river')
           }}
+          onSolitaire={() => {
+            setOpenGames(false)
+            setScreen('solitaire')
+          }}
         />
       ) : null}
       {screen === 'flight' ? (
@@ -439,6 +444,23 @@ function Game() {
           onDaily={(score) => cub.noteDaily('river', score)}
           onReward={cub.reward}
           onCoins={(amount) => cub.addCubCash(amount, 'river')}
+          powerBonus={cub.runBonus}
+          onExit={goHome}
+          onGames={goGames}
+          energy={playEnergy}
+          onShop={goShop}
+        />
+      ) : null}
+      {screen === 'solitaire' ? (
+        <Spellitaire
+          bests={{ easy: cub.save.solitaireBest, hard: cub.save.solitaireHardBest }}
+          onBest={cub.recordSolitaireBest}
+          onDailyStart={() => cub.startDaily('solitaire')}
+          onDaily={(score, { won, hard }) =>
+            cub.noteDaily('solitaire', score, { board: hard ? 'solitaire-hard' : 'solitaire', dailyPoints: won ? 1 : 0 })
+          }
+          onReward={cub.reward}
+          onCoins={(amount) => cub.addCubCash(amount, 'solitaire')}
           powerBonus={cub.runBonus}
           onExit={goHome}
           onGames={goGames}

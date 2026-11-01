@@ -69,6 +69,10 @@ export type CubSave = {
   hoopsBest: number
   bubbleBest: number
   riverBest: number
+  /** Spellitaire best on Easy (draw 1). */
+  solitaireBest: number
+  /** Spellitaire best on Hard (draw 3). The leaderboard adds the two together. */
+  solitaireHardBest: number
   /** Task scores for the current 24 hour round, which rewards have been claimed, and the board bonus. */
   daily: DailyProgress
   /** Matches DAILY_BOARD_RESET after a one-time board clear. */

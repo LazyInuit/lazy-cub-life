@@ -66,6 +66,10 @@ type Live = {
   timePulse: number
   baskets: number
   perfects: number
+  /** Perfect shots in a row. A normal basket or a miss clears it. */
+  perfectRun: number
+  /** Cub Cash earned this match: 1 for each perfect shot from the 2nd in a row on. */
+  coins: number
   /** Made baskets in a row. A miss clears it. */
   streak: number
   hint: boolean
@@ -147,6 +151,8 @@ type Drag = {
 
 const CLOSE = SPOTS[0]
 const STREAK_BONUS = 100
+/** Perfect shots in a row before each one pays 1 Cub Cash. */
+const PERFECTS_FOR_COINS = 2
 const MAKE_MOVE_SECONDS = MOVE_SECONDS * 0.5
 
 /** Optional `?spot=far-left` for reviewing stadium from shot angles. */
@@ -173,6 +179,8 @@ function createMatch(): Live {
     timePulse: 0,
     baskets: 0,
     perfects: 0,
+    perfectRun: 0,
+    coins: 0,
     streak: 0,
     hint: true,
     pop: -1,
@@ -286,7 +294,7 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoi
       regulars * HOOPS_XP_BASKET + live.perfects * HOOPS_XP_PERFECT,
       { ...moodFromScore(score), ...PLAY_NEED_COST },
     )
-    const coins = live.perfects
+    const coins = live.coins
     if (coins > 0) onCoinsRef.current(coins)
     setSummary({
       score,
@@ -411,8 +419,12 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoi
             live.timePulse += 1
             live.baskets += 1
             live.perfects += 1
-            const at = court.project({ x: 0, y: RIM_Y, z: RIM_Z }, live.viewW, live.viewH)
-            setCoinPops((prev) => [...prev, { id: live.toastKey, x: at.x, y: at.y }])
+            live.perfectRun += 1
+            if (live.perfectRun >= PERFECTS_FOR_COINS) {
+              live.coins += 1
+              const at = court.project({ x: 0, y: RIM_Y, z: RIM_Z }, live.viewW, live.viewH)
+              setCoinPops((prev) => [...prev, { id: live.toastKey, x: at.x, y: at.y }])
+            }
             if (live.lives < LIVES) {
               live.lives += 1
               live.pop = live.lives - 1
@@ -425,6 +437,7 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoi
           } else {
             live.score += awarded
             live.baskets += 1
+            live.perfectRun = 0
             live.toast = hot ? 'hot' : 'ten'
             court.setFlash('normal')
           }
@@ -441,6 +454,7 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoi
           if (!live.shot.scored) {
             live.lives = Math.max(0, live.lives - 1)
             live.streak = 0
+            live.perfectRun = 0
             court.setHeat(false)
             publish(live)
           }
@@ -698,7 +712,11 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoi
                   <strong>60 Seconds:</strong> The game ends when the clock hits zero.
                 </li>
                 <li>
-                  <strong>Perfect Shot:</strong> Score a clean swish without touching the rim or backboard for 300 points, 5 extra seconds, and 1 Cub Cash.
+                  <strong>Perfect Shot:</strong> Score a clean swish without touching the rim or backboard for 300 points and 5 extra seconds.
+                </li>
+                <li>
+                  <strong>Cub Cash:</strong> Score 2 perfect shots in a row to earn 1 Cub Cash, then 1 more for every perfect shot after
+                  that. A normal basket or a miss ends the coin run, and you need 2 perfect shots in a row again.
                 </li>
                 <li>
                   <strong>3 Lives:</strong> You start with 3 lives. Every missed shot costs you one.

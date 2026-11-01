@@ -215,6 +215,9 @@ export function LazyRiver({ best, onBest, onDailyStart, onDaily, onReward, onCoi
                   <strong>Cub Cash:</strong> each Kovu coin is worth {GOLD_POINTS} points and {CASH_PER_COIN} Cub Cash.
                 </li>
                 <li>
+                  <strong>Gold coins:</strong> each gold paw coin is worth {GOLD_POINTS} points.
+                </li>
+                <li>
                   <strong>Silver coins:</strong> each silver paw coin is worth {SILVER_POINTS} points.
                 </li>
                 <li>

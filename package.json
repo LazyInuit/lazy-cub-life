@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "check:bubble": "esbuild scripts/bubble-blast-check.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/bubble-check.mjs --log-level=warning && node node_modules/.cache/bubble-check.mjs",
-    "check:power": "esbuild scripts/cub-power-check.ts --bundle --platform=node --format=esm --loader:.png=empty --outfile=node_modules/.cache/power-check.mjs --log-level=warning && node node_modules/.cache/power-check.mjs"
+    "check:power": "esbuild scripts/cub-power-check.ts --bundle --platform=node --format=esm --loader:.png=empty --outfile=node_modules/.cache/power-check.mjs --log-level=warning && node node_modules/.cache/power-check.mjs",
+    "check:solitaire": "esbuild scripts/solitaire-check.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/solitaire-check.mjs --log-level=warning && node node_modules/.cache/solitaire-check.mjs"
   },
   "dependencies": {
     "@fontsource/fredoka": "^5.3.0",

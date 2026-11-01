@@ -306,6 +306,8 @@ export function defaultSave(now = Date.now()): CubSave {
     hoopsBest: 0,
     bubbleBest: 0,
     riverBest: 0,
+    solitaireBest: 0,
+    solitaireHardBest: 0,
     daily: emptyDaily(),
     dailyBoardReset: DAILY_BOARD_RESET,
     wardrobePurchaseReset: WARDROBE_PURCHASE_RESET,
@@ -350,6 +352,8 @@ export function sanitizeSave(value: unknown, now = Date.now()): CubSave {
     hoopsBest: Math.max(0, Math.floor(num(raw.hoopsBest, 0))),
     bubbleBest: Math.max(0, Math.floor(num(raw.bubbleBest, 0))),
     riverBest: Math.max(0, Math.floor(num(raw.riverBest, 0))),
+    solitaireBest: Math.max(0, Math.floor(num(raw.solitaireBest, 0))),
+    solitaireHardBest: Math.max(0, Math.floor(num(raw.solitaireHardBest, 0))),
     daily:
       raw.dailyBoardReset === DAILY_BOARD_RESET ? sanitizeDaily(raw.daily, new Date(now)) : emptyDaily(),
     dailyBoardReset: DAILY_BOARD_RESET,

@@ -16,6 +16,8 @@ export const MOVE_FREE_SCORE = 650
 
 /** Bullseyes on this many opening shots, while targets stand still, pay no Cub Cash. */
 export const UNPAID_OPENING_SHOTS = 5
+/** Bullseyes in a row before each one pays 1 Cub Cash. */
+export const BULLS_FOR_COINS = 2
 
 export const RING_RED = 100
 export const RING_GOLD = 40

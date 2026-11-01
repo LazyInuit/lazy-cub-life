@@ -8327,6 +8327,49 @@ button.power-plate:active {
   font-weight: 800;
 }
 
+.power-streak-clock {
+  margin: 8px auto 0;
+  padding: 7px 10px;
+  max-width: 280px;
+  border: 2px solid rgba(255, 210, 58, 0.55);
+  border-radius: 14px;
+  background: rgba(20, 12, 40, 0.45);
+}
+
+.power-streak-clock p {
+  margin: 0;
+}
+
+.power-streak-done {
+  color: #7be36b;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.power-streak-done.waiting {
+  color: #fff3c4;
+}
+
+.power-streak-countdown {
+  margin-top: 2px;
+  color: #fff3c4;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.power-streak-countdown strong {
+  color: #ffd23a;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+}
+
+.power-streak-opens {
+  margin-top: 1px;
+  color: rgba(255, 243, 196, 0.75);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
 .power-streak-bar img {
   display: block;
   width: 100%;
@@ -8570,4 +8613,970 @@ button.power-plate:active {
   font-weight: 900;
   line-height: 1.1;
   text-shadow: 0 1px 0 #5a3010;
+}
+
+/* ===== Spellitaire. Placeholder theme: every piece can be swapped for artwork (see game/solitaire/theme.ts). ===== */
+.sol-screen {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: #fff6dc;
+  background: #1c0f33;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sol-bg-img,
+.sol-bg-ph {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.sol-bg-ph {
+  display: block;
+  background:
+    radial-gradient(60% 40% at 50% 0%, rgba(244, 197, 66, 0.16), transparent 70%),
+    radial-gradient(90% 60% at 50% 100%, rgba(120, 60, 200, 0.35), transparent 70%),
+    linear-gradient(180deg, #2a1550 0%, #1c0f33 55%, #150a27 100%);
+}
+
+/*
+ * Background artwork: always fills the screen, kept at the top and centred across. A screen shorter than the
+ * picture loses a little floor at the bottom; a narrower one loses a little at each side.
+ * Spots on the picture are fractions of its size.
+ */
+.sol-screen.art {
+  container-type: size;
+  --sol-art-w: max(100cqw, 100cqh * var(--sol-bg-aspect));
+  --sol-art-h: calc(var(--sol-art-w) / var(--sol-bg-aspect));
+  background: #150a26;
+}
+
+.sol-art {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  z-index: 0;
+  width: var(--sol-art-w);
+  height: var(--sol-art-h);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.sol-art-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sol-art-value {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  color: #fff6dc;
+  font-family: Fredoka, 'Trebuchet MS', sans-serif;
+  font-size: calc(var(--sol-art-w) * var(--sol-value-size));
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow:
+    0 2px 0 #22093f,
+    0 0 6px rgba(244, 197, 66, 0.55);
+}
+
+/* The header covers the painted title and bar, so the cards start just below them. */
+.sol-screen.art .sol-top {
+  height: calc(var(--sol-art-h) * var(--sol-table-top));
+  align-content: start;
+}
+
+.sol-screen.art .sol-board {
+  margin-top: 0;
+}
+
+/* Stacked down the left edge so they stay clear of the painted title. */
+.sol-screen.art .sol-nav {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sol-screen.art .sol-nav {
+  --sol-nav-btn: min(44px, 11.5cqw);
+}
+
+.sol-stats.hidden {
+  display: none;
+}
+
+.sol-top {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 6px 8px;
+  padding: calc(8px + var(--safe-top)) 10px 6px;
+}
+
+.sol-nav {
+  display: flex;
+  gap: 6px;
+}
+
+/* Smaller than the usual 50px buttons, so the pictures shrink with them in the same proportions. */
+.sol-nav {
+  --sol-nav-btn: 44px;
+}
+
+.sol-nav .game-home .wood-btn {
+  width: var(--sol-nav-btn);
+  height: var(--sol-nav-btn);
+}
+
+.sol-nav .wood-btn svg.house {
+  width: calc(var(--sol-nav-btn) * 0.82);
+  height: calc(var(--sol-nav-btn) * 0.82);
+}
+
+.sol-nav .wood-btn img.controller {
+  width: calc(var(--sol-nav-btn) * 0.84);
+  height: calc(var(--sol-nav-btn) * 0.56);
+}
+
+.sol-stats {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.sol-stat {
+  position: relative;
+  min-width: 74px;
+  padding: 4px 10px 5px;
+  border: 2px solid rgba(244, 197, 66, 0.75);
+  border-radius: 12px;
+  background: rgba(30, 12, 58, 0.78);
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.sol-stat-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  border-radius: inherit;
+}
+
+.sol-stat-label,
+.sol-stat strong {
+  position: relative;
+  display: block;
+}
+
+.sol-stat-label {
+  color: #f4c542;
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sol-stat strong {
+  font-family: Fredoka, 'Trebuchet MS', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+/* The table */
+.sol-board {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  margin-top: 4px;
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+
+.sol-slot,
+.sol-card {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.sol-slot-img,
+.sol-slot-ph,
+.sol-card-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+.sol-slot-ph {
+  position: relative;
+  border: 2px dashed rgba(244, 197, 66, 0.45);
+  border-radius: calc(var(--sol-card-w) * 0.1);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sol-slot-ph.home::after,
+.sol-slot-ph.recycle::after {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(244, 197, 66, 0.55);
+  font-family: Fredoka, 'Trebuchet MS', sans-serif;
+  font-size: calc(var(--sol-card-w) * 0.42);
+  font-weight: 700;
+}
+
+.sol-slot-ph.home::after {
+  content: 'A';
+}
+
+.sol-slot-ph.recycle::after {
+  content: '\21BB';
+}
+
+.sol-slot.hint-target .sol-slot-ph {
+  border-radius: calc(var(--sol-card-w) * 0.1);
+  box-shadow:
+    0 0 0 2px #ffe08a,
+    0 0 14px 4px rgba(255, 210, 90, 0.7);
+  animation: sol-glow 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes sol-glow {
+  from {
+    opacity: 0.55;
+  }
+}
+
+.sol-card {
+  overflow: hidden;
+  border-radius: calc(var(--sol-card-w) * 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  transition: transform var(--sol-move-ms) ease;
+  will-change: transform;
+  cursor: grab;
+}
+
+.sol-card.dragging {
+  transition: none;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.5);
+  cursor: grabbing;
+}
+
+.sol-card.selected {
+  box-shadow:
+    0 0 0 2px #f4c542,
+    0 0 12px 3px rgba(244, 197, 66, 0.75);
+}
+
+.sol-card.hinted {
+  animation: sol-hint 0.7s ease-in-out infinite alternate;
+}
+
+@keyframes sol-hint {
+  to {
+    box-shadow:
+      0 0 0 2px #ffe08a,
+      0 0 16px 5px rgba(255, 220, 110, 0.9);
+  }
+}
+
+/* Hint for a move: the cards slide to where they would go, pause, and slide back. */
+.sol-card.hint-move-a {
+  animation: sol-hint-move-a 1.3s ease-in-out both;
+}
+
+.sol-card.hint-move-b {
+  animation: sol-hint-move-b 1.3s ease-in-out both;
+}
+
+@keyframes sol-hint-move-a {
+  0%,
+  100% {
+    transform: translate3d(var(--x), var(--y), 0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  }
+  40%,
+  62% {
+    transform: translate3d(calc(var(--x) + var(--hx)), calc(var(--y) + var(--hy)), 0);
+    box-shadow:
+      0 0 0 2px #ffe08a,
+      0 8px 16px rgba(0, 0, 0, 0.45);
+  }
+}
+
+@keyframes sol-hint-move-b {
+  0%,
+  100% {
+    transform: translate3d(var(--x), var(--y), 0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  }
+  40%,
+  62% {
+    transform: translate3d(calc(var(--x) + var(--hx)), calc(var(--y) + var(--hy)), 0);
+    box-shadow:
+      0 0 0 2px #ffe08a,
+      0 8px 16px rgba(0, 0, 0, 0.45);
+  }
+}
+
+.sol-board.locked .sol-card {
+  cursor: default;
+}
+
+.sol-back {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 2px solid #f4c542;
+  border-radius: calc(var(--sol-card-w) * 0.1);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(244, 197, 66, 0.55) 0 14%, transparent 15%),
+    repeating-linear-gradient(45deg, rgba(244, 197, 66, 0.22) 0 2px, transparent 2px 7px),
+    repeating-linear-gradient(-45deg, rgba(244, 197, 66, 0.22) 0 2px, transparent 2px 7px),
+    linear-gradient(160deg, #5b2a9e, #331466);
+}
+
+.sol-face {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid #cfc3a5;
+  border-radius: calc(var(--sol-card-w) * 0.1);
+  background: #fffdf6;
+  color: #1d1b2c;
+}
+
+.sol-face.red {
+  color: #c8102e;
+}
+
+/* On the card-face artwork: its own border shows, and the rank and suit sit inside it. */
+.sol-face.art {
+  border: none;
+}
+
+.sol-face.art .sol-corner {
+  left: var(--sol-corner-x);
+  top: var(--sol-corner-y);
+}
+
+.sol-face.art .sol-corner-low {
+  left: auto;
+  top: auto;
+  right: var(--sol-corner-x);
+  bottom: var(--sol-corner-y);
+}
+
+.sol-face.art .sol-rank {
+  font-size: calc(var(--sol-card-w) * var(--sol-rank-size));
+}
+
+.sol-face.art .sol-corner-suit {
+  font-size: calc(var(--sol-card-w) * var(--sol-suit-size));
+}
+
+.sol-face.art .sol-pip {
+  top: var(--sol-pip-y);
+  font-size: calc(var(--sol-card-w) * var(--sol-pip-size));
+}
+
+.sol-face-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+.sol-corner {
+  position: absolute;
+  left: 6%;
+  top: 2%;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  font-family: Fredoka, 'Trebuchet MS', sans-serif;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.sol-rank {
+  font-size: calc(var(--sol-card-w) * 0.3);
+  letter-spacing: -0.04em;
+}
+
+.sol-corner-suit {
+  font-size: calc(var(--sol-card-w) * 0.24);
+}
+
+.sol-suit-img.sol-corner-suit {
+  width: calc(var(--sol-card-w) * 0.22);
+  height: calc(var(--sol-card-w) * 0.22);
+}
+
+.sol-corner-low {
+  left: auto;
+  top: auto;
+  right: 6%;
+  bottom: 2%;
+  transform: rotate(180deg);
+}
+
+.sol-pip {
+  position: absolute;
+  left: 50%;
+  top: 56%;
+  transform: translate(-50%, -50%);
+  font-size: calc(var(--sol-card-w) * 0.62);
+  line-height: 1;
+}
+
+.sol-suit-img.sol-pip {
+  width: calc(var(--sol-card-w) * 0.55);
+  height: calc(var(--sol-card-w) * 0.55);
+}
+
+/* Magic */
+/* Cub Cash earned in play: a coin pops up over the card and floats away. */
+.sol-coin-pop {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 650;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.sol-coin-pop img,
+.sol-coin-pop span {
+  position: absolute;
+  animation: sol-coin-pop 1s ease-out both;
+}
+
+.sol-coin-pop img {
+  left: calc(var(--sol-card-w) * -0.31);
+  top: calc(var(--sol-card-w) * -0.31);
+  width: calc(var(--sol-card-w) * 0.62);
+  height: calc(var(--sol-card-w) * 0.62);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 6px rgba(255, 214, 90, 0.8));
+}
+
+.sol-coin-pop span {
+  left: calc(var(--sol-card-w) * 0.24);
+  top: calc(var(--sol-card-w) * -0.44);
+  color: #ffe08a;
+  font-family: Fredoka, 'Trebuchet MS', sans-serif;
+  font-size: calc(var(--sol-card-w) * 0.3);
+  font-weight: 700;
+  white-space: nowrap;
+  text-shadow: 0 2px 0 #3a1466;
+}
+
+@keyframes sol-coin-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.3);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.15);
+  }
+  45% {
+    transform: translateY(-10px) scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(calc(var(--sol-card-w) * -0.9)) scale(0.9);
+  }
+}
+
+.sol-sparkle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 400;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.sol-sparkle-img,
+.sol-sparkle-ph {
+  position: absolute;
+  left: -28px;
+  top: -28px;
+  width: 56px;
+  height: 56px;
+  animation: sol-sparkle 0.75s ease-out forwards;
+}
+
+.sol-sparkle-ph {
+  display: block;
+  background: radial-gradient(circle, #fff6c8 0 18%, #f4c542 30%, transparent 62%);
+  clip-path: polygon(50% 0, 61% 38%, 100% 50%, 61% 62%, 50% 100%, 39% 62%, 0 50%, 39% 38%);
+}
+
+@keyframes sol-sparkle {
+  from {
+    opacity: 1;
+    transform: scale(0.3) rotate(0deg);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.5) rotate(90deg);
+  }
+}
+
+/* Controls */
+.sol-controls {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 8px calc(8px + var(--safe-bottom));
+}
+
+.sol-control {
+  position: relative;
+  flex: 1;
+  max-width: 72px;
+  height: 54px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 0;
+  border: 2px solid #f4c542;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #6a35b0, #3f1a78);
+  color: #fff6dc;
+  font: inherit;
+  box-shadow: 0 3px 0 #22093f;
+  touch-action: manipulation;
+}
+
+.sol-control:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #22093f;
+}
+
+.sol-control:disabled {
+  opacity: 0.42;
+}
+
+.sol-control-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  border-radius: inherit;
+}
+
+.sol-control-icon,
+.sol-control-label {
+  position: relative;
+}
+
+img.sol-control-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.sol-control-ph {
+  position: relative;
+  display: block;
+  color: #f4c542;
+  font-size: 1.15rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.sol-control-ph.iconEnd::before {
+  content: '\2691';
+}
+
+.sol-control-ph.iconUndo::before {
+  content: '\21B6';
+}
+
+.sol-control-ph.iconHint::before {
+  content: '?';
+}
+
+.sol-control-label {
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Panels */
+.sol-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(12, 4, 26, 0.6);
+}
+
+.sol-panel {
+  width: min(100%, 340px);
+  max-height: calc(var(--app-h, 100dvh) - 40px);
+  overflow-y: auto;
+  padding: 16px 18px;
+  border: 3px solid #f4c542;
+  border-radius: 22px;
+  background:
+    radial-gradient(120% 60% at 50% 0%, rgba(244, 197, 66, 0.18), transparent 70%),
+    linear-gradient(180deg, #4a2287, #2a1050 65%, #1e0b3a);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 240, 200, 0.18),
+    0 12px 28px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+.sol-panel h2 {
+  margin: 0 0 8px;
+  color: #ffe08a;
+  font-family: Fredoka, 'Trebuchet MS', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-shadow: 0 3px 0 #22093f;
+}
+
+.sol-best,
+.sol-new {
+  margin: 0 0 6px;
+  color: #ffe08a;
+  font-weight: 800;
+}
+
+.sol-note {
+  margin: 0 0 6px;
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.sol-panel-head {
+  position: relative;
+}
+
+/* Kept clear of the Back pill on both sides so the heading stays centred. */
+.sol-panel-head h2 {
+  padding: 0 64px;
+  font-size: clamp(1.2rem, 6.4cqw, 1.6rem);
+  white-space: nowrap;
+}
+
+.sol-btn.sol-panel-back {
+  position: absolute;
+  left: -4px;
+  top: -2px;
+  width: auto;
+  margin: 0;
+  padding: 4px 11px;
+  border-width: 3px;
+  border-radius: 14px;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  box-shadow: 0 3px 0 #3f1a78;
+}
+
+.sol-btn.sol-panel-back:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #3f1a78;
+}
+
+.sol-rules ul {
+  margin: 0 0 4px;
+  padding: 0 0 0 16px;
+  text-align: left;
+  font-size: 0.82rem;
+  line-height: 1.38;
+}
+
+.sol-rules li {
+  margin-bottom: 6px;
+}
+
+.sol-rules strong {
+  color: #ffe08a;
+}
+
+.sol-difficulty {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.sol-difficulty-option {
+  display: grid;
+  gap: 2px;
+  padding: 8px 6px;
+  border: 2px solid rgba(244, 197, 66, 0.45);
+  border-radius: 14px;
+  background: rgba(20, 8, 40, 0.55);
+  color: #e9dcff;
+  font-family: Fredoka, 'Trebuchet MS', sans-serif;
+}
+
+.sol-difficulty-option strong {
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sol-difficulty-option span {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.sol-difficulty-option.on {
+  border-color: #f4c542;
+  background: linear-gradient(180deg, #6a35b0, #3a1670);
+  color: #ffe9a8;
+  box-shadow: 0 0 10px rgba(244, 197, 66, 0.45);
+}
+
+.sol-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 14px;
+  border: 3px solid #22093f;
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0 24%, rgba(255, 255, 255, 0) 24%),
+    #f4c542;
+  color: #2a1050;
+  font-family: Fredoka, 'Trebuchet MS', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 0 #a8751a;
+}
+
+.sol-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #a8751a;
+}
+
+.sol-btn:disabled {
+  opacity: 0.5;
+}
+
+.sol-btn-light {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0 24%, rgba(255, 255, 255, 0) 24%),
+    #8a5ad0;
+  color: #fff6dc;
+  font-size: 0.98rem;
+  box-shadow: 0 4px 0 #3f1a78;
+}
+
+.sol-results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+
+.sol-results div {
+  padding: 6px 4px;
+  border-radius: 12px;
+  background: rgba(10, 2, 24, 0.4);
+  box-shadow: inset 0 0 0 1.5px rgba(244, 197, 66, 0.25);
+}
+
+.sol-results div:first-child {
+  grid-column: 1 / -1;
+}
+
+.sol-results dt {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #e7d6ff;
+}
+
+.sol-results dd {
+  margin: 1px 0 0;
+  color: #ffe08a;
+  font-family: Fredoka, 'Trebuchet MS', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.sol-gains {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin: 0 0 6px;
+}
+
+.sol-xp {
+  font-weight: 800;
+}
+
+.sol-coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #ffd56a;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.sol-coins img {
+  width: 26px;
+  height: 26px;
+}
+
+/* Win celebration */
+.sol-celebrate {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.sol-win-img,
+.sol-win-ph {
+  width: min(86%, 380px);
+  animation: sol-win-in 0.6s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+
+.sol-win-ph {
+  display: grid;
+  place-items: center;
+  padding: 26px 10px;
+  border: 3px solid #f4c542;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #6a35b0, #331466);
+  box-shadow: 0 0 40px 10px rgba(244, 197, 66, 0.45);
+}
+
+.sol-win-title {
+  color: #ffe08a;
+  font-family: Fredoka, 'Trebuchet MS', sans-serif;
+  font-size: 2.6rem;
+  font-weight: 700;
+  text-shadow: 0 4px 0 #22093f;
+}
+
+.sol-result-banner {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  margin: -10px auto 2px;
+}
+
+@keyframes sol-win-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+.sol-confetti {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  animation: sol-burst 1.6s ease-out infinite;
+  animation-delay: calc(var(--i) * 0.08s);
+  --angle: calc(var(--i) * 25.7deg);
+}
+
+.sol-confetti .sol-sparkle-img,
+.sol-confetti .sol-sparkle-ph {
+  animation: none;
+}
+
+@keyframes sol-burst {
+  from {
+    opacity: 1;
+    transform: rotate(var(--angle)) translateY(0) scale(0.4);
+  }
+  to {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateY(-160px) scale(1);
+  }
+}
+
+/* Games menu tile placeholder */
+.thumb-solitaire img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sol-thumb-ph {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(70% 60% at 50% 30%, rgba(244, 197, 66, 0.28), transparent 70%),
+    linear-gradient(160deg, #5b2a9e, #22093f);
+}
+
+.sol-thumb-card {
+  position: absolute;
+  width: 42%;
+  aspect-ratio: 1 / 1.4;
+  display: grid;
+  place-items: center;
+  border: 2px solid #f4c542;
+  border-radius: 10px;
+  background: #fffdf6;
+  color: #1d1b2c;
+  font-family: Fredoka, 'Trebuchet MS', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  transform: translateX(-22%) rotate(-12deg);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.sol-thumb-card.red {
+  color: #c8102e;
+  transform: translateX(22%) rotate(10deg);
 }

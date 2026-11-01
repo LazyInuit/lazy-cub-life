@@ -27,7 +27,8 @@ export interface ObstacleSpawn {
 export interface GemSpawn {
   x: number;
   y: number;
-  kind: 'gold' | 'silver';
+  /** cash: the Kovu coin, the only one that pays Cub Cash. gold: gold paw coin, same points. silver: silver paw coin. */
+  kind: 'cash' | 'gold' | 'silver';
 }
 
 export type PadKind = 'forward' | 'back';
@@ -54,9 +55,9 @@ export interface WhirlSpawn {
 export interface RunResult {
   score: number;
   distance: number;
-  /** Gold Kovu coins, each worth Cub Cash. */
+  /** Kovu coins, each worth Cub Cash. */
   coins: number;
-  /** Coins and silver gems together. */
+  /** Every coin picked up: Kovu, gold paw and silver paw. */
   collectibles: number;
 }
 

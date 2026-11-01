@@ -1,4 +1,6 @@
 import {
+  CASH_COIN_SHARE,
+  GOLD_PAW_SHARE,
   HIT_PAD_X,
   MAX_VX,
   PAD_CHANCE,
@@ -146,10 +148,11 @@ export function buildRow(
     });
   } else if (!calm && Math.random() < 0.58) {
     const along = 0.16 + Math.random() * 0.68;
+    const roll = Math.random();
     gems.push({
       x: clamp(gapL + 22 + along * (gapW - 44), gapL + 20, gapR - 20),
       y: y + (Math.random() * 2 - 1) * yRoom * 0.4,
-      kind: Math.random() < 0.4 ? 'gold' : 'silver',
+      kind: roll < CASH_COIN_SHARE ? 'cash' : roll < CASH_COIN_SHARE + GOLD_PAW_SHARE ? 'gold' : 'silver',
     });
   }
 

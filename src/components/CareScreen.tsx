@@ -4,6 +4,7 @@ import archerThumb from '../assets/cupid-archer/cover.jpg'
 import hoopsThumb from '../assets/lazy-hoops/cover-select.jpg'
 import bubbleThumb from '../assets/bubble-blast/thumb.jpg'
 import riverThumb from '../assets/lazy-river/game-thumb-cub.jpg'
+import { SolAsset } from './solitaire/SolAsset'
 import dojoBg from '../assets/lazy-dojo/backgrounds/dojo-1.png'
 import dojoCover from '../assets/lazy-dojo/ui/ninja-cub-cover.png'
 import controllerUrl from '../assets/controller-icon.png'
@@ -68,6 +69,7 @@ type Props = {
   onHoops: () => void
   onBubble: () => void
   onRiver: () => void
+  onSolitaire: () => void
   startInGames?: boolean
   startInShop?: boolean
   /** Open the Achievements list straight away, from the badge-earned pop-up. */
@@ -95,6 +97,7 @@ export function CareScreen({
   onHoops,
   onBubble,
   onRiver,
+  onSolitaire,
   startInGames = false,
   startInShop = false,
   startInAchievements = false,
@@ -298,6 +301,28 @@ export function CareScreen({
           </div>
         ) : null}
         <div className="game-picks">
+          <button
+            type="button"
+            className="game-pick"
+            onPointerDown={flashSilverPress}
+            onPointerUp={clearSilverPressGlow}
+            onPointerCancel={clearSilverPressGlow}
+            onClick={() => tryGame('solitaire', onSolitaire)}
+          >
+            <span className="game-thumb thumb-solitaire" aria-hidden="true">
+              <SolAsset
+                name="thumbnail"
+                fallback={
+                  <span className="sol-thumb-ph">
+                    <span className="sol-thumb-card">A♠</span>
+                    <span className="sol-thumb-card red">K♥</span>
+                  </span>
+                }
+              />
+              <span className="game-new-sash">New</span>
+            </span>
+            <span>Spellitaire</span>
+          </button>
           <button
             type="button"
             className="game-pick"
@@ -517,7 +542,9 @@ export function CareScreen({
                         ? onBubble
                         : task.game === 'river'
                           ? onRiver
-                          : onMatch
+                          : task.game === 'solitaire'
+                            ? onSolitaire
+                            : onMatch
             return (
               <article key={task.id} className="daily-task">
                 <h2>{task.gameLabel}</h2>

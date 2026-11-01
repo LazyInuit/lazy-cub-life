@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { MAX_STREAK_DAYS, powerToNextTier, streakMultiplier, weeklyPlaceLabel, type CubPower } from '../game/cubPower'
 import loginStreakUrl from '../assets/home/login-streak.png'
 
@@ -47,6 +47,57 @@ export function LoginStreakBar({ days }: { days: number }) {
       {STREAK_CIRCLES_X.map((x, index) => (
         <span key={x} className={index < filled ? 'on' : ''} style={{ left: `${x}%` }} />
       ))}
+    </div>
+  )
+}
+
+/** Today's date in UTC (YYYY-MM-DD). A new login day starts at midnight UTC. */
+function utcDay(at: number) {
+  return new Date(at).toISOString().slice(0, 10)
+}
+
+function countdownText(ms: number) {
+  const total = Math.max(0, Math.ceil(ms / 1000))
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(Math.floor(total / 3600))}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`
+}
+
+/**
+ * When the next day of the login streak can be collected, in the player's own time zone, with a live
+ * countdown. When it arrives the panel refreshes, which counts that day's login.
+ */
+function StreakClock({ power, onRefresh }: { power: CubPower; onRefresh?: () => unknown }) {
+  const [now, setNow] = useState(() => Date.now())
+  // The panel already refreshes when it opens, so only a new day starting while it is open asks again.
+  const askedFor = useRef(utcDay(Date.now()))
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  const today = utcDay(now)
+  const counted = power.lastLoginDay === today
+  useEffect(() => {
+    if (counted || askedFor.current === today) return
+    askedFor.current = today
+    onRefresh?.()
+  }, [counted, today, onRefresh])
+
+  const date = new Date(now)
+  const nextAt = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1)
+  const opensAt = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).format(nextAt)
+
+  return (
+    <div className="power-streak-clock" role="timer" aria-live="polite">
+      {counted ? (
+        <p className="power-streak-done">✓ Day {power.streakCount} login achieved today</p>
+      ) : (
+        <p className="power-streak-done waiting">Counting today's login...</p>
+      )}
+      <p className="power-streak-countdown">
+        Next login day in <strong>{countdownText(nextAt - now)}</strong>
+      </p>
+      <p className="power-streak-opens">Opens at {opensAt}</p>
     </div>
   )
 }
@@ -112,6 +163,7 @@ export function CubPowerPanel({ power, ownerName, newGame = false, onSeenNewGame
                   </p>
                 )}
               </div>
+              {ownerName ? null : <StreakClock power={power} onRefresh={onRefresh} />}
               {newGame && onSeenNewGame ? (
                 <div className="power-note" role="status">
                   <p>New game added! Earn its achievement badges to build your Cub Power.</p>
