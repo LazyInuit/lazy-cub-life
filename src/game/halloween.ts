@@ -2,7 +2,7 @@
  * Seasonal home theme. Set this to false to hide the pumpkin and use the
  * original day and night backgrounds again.
  */
-export const HALLOWEEN_THEME = true
+export const HALLOWEEN_THEME = false
 
 const LIT_KEY = 'lazy-lion-halloween-pumpkin'
 
