@@ -50,7 +50,7 @@ export interface TableRules<S extends TableState> {
   readonly columns: readonly PileId[]
   /** Piles a dragged card can be dropped on. Foundations and columns unless given. */
   readonly dropTargets?: readonly PileId[]
-  /** A tap on this card does this move straight away (such as a King in Pyramid). */
+  /** Where a double tap sends this card (such as a King in Pyramid). Without this, a double tap sends a card home. */
   tapMove?(state: S, pile: PileId, index: number): PileId | null
   /** Cards shown dimmed because they can't be played yet. */
   dimmed?(state: S, pile: PileId, index: number): boolean

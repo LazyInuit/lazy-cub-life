@@ -16,6 +16,7 @@ import type { CubController } from '../game/useCub'
 import type { OutfitTraits } from '../game/types'
 import { CubStage } from './CubStage'
 import { HouseIcon } from './HomeButton'
+import { LevelInfoPop } from './LevelInfoPop'
 import bodyIconUrl from '../assets/body-category.png'
 import bodyYoungIconUrl from '../assets/body-category-young.png'
 import bodygearIconUrl from '../assets/bodygear-jersey.png'
@@ -63,6 +64,8 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
   const [shown, setShown] = useState<Record<CharacterAge, Outfit>>(() => outfitsFromSave(cub))
   const [manifest, setManifest] = useState<Manifest | null>(null)
   const [diceShake, setDiceShake] = useState(false)
+  /** The level details pop-up, opened from the level badge. */
+  const [levelOpen, setLevelOpen] = useState(false)
   const [diceLook, setDiceLook] = useState<Outfit | null>(null)
   const [buyHint, setBuyHint] = useState<string | null>(null)
   const traitBoxRef = useRef<HTMLDivElement>(null)
@@ -264,10 +267,12 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
           </button>
         </div>
         <div className="top-stats">
-          <div
-            className={cub.levelUp ? 'level-badge level-up' : 'level-badge'}
+          <button
+            type="button"
+            className={cub.levelUp ? 'level-badge level-open level-up' : 'level-badge level-open'}
             key={cub.levelUp ?? 'level'}
-            aria-label={`Level ${progress.level}, ${progress.into} of ${progress.next} experience`}
+            aria-label={`Level ${progress.level}, ${progress.into} of ${progress.next} experience. Show level details`}
+            onClick={() => setLevelOpen(true)}
           >
             <svg className="xp-ring" viewBox="0 0 84 84" aria-hidden="true">
               <circle className="xp-ring-track" cx="42" cy="42" r={ringR} />
@@ -285,7 +290,7 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
               <span className="lvl-kicker">LVL</span>
               <strong>{progress.level}</strong>
             </span>
-          </div>
+          </button>
           <div className="cub-cash" aria-label={`${formatCubCash(save.cubCash)} Cub Cash`}>
             <span className="cub-cash-inner">
               <img src={coinUrl} alt="" />
@@ -431,6 +436,7 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
           </div>
         </div>
       </div>
+      {levelOpen ? <LevelInfoPop xp={cub.presentedXp} onClose={() => setLevelOpen(false)} /> : null}
     </section>
   )
 }

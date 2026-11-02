@@ -23,7 +23,7 @@ import {
   withWeekScore,
 } from './progress'
 import type { SpellitaireKey } from './solitaire/keys'
-import { BONUS_COIN_AMOUNTS, DAILY_TASKS, bonusReady, dailyView, type BonusTrait, type DailyGame } from './dailyTasks'
+import { BONUS_COIN_AMOUNTS, DAILY_TASKS, bonusReady, dailyView, extraReady, type BonusTrait, type DailyGame } from './dailyTasks'
 import { DRINKS, type DrinkId } from './drinks'
 import { submitLeaderboardScore, type LeaderboardGame } from './leaderboard'
 import { readSave, writeSave } from './storage'
@@ -34,7 +34,7 @@ import { earnedBadges, hasProfileCard, type BadgeId } from './profileArt'
 import { isDemo } from './demo'
 import { countDemo } from './demoStats'
 import { supabase } from './supabase'
-import { addDailyScore, applyWallet, buyDrinkOnServer, claimDailyTask, getCubPower, grantGameCoins, payoutGap, payoutParts, purchaseTraitOnServer, rollDailyBonus as rollServerBonus, settleWeeklyPrize, touchDailyBoard, walletActive, type GameCoinSource, type WalletPatch } from './wallet'
+import { addDailyScore, applyWallet, buyDrinkOnServer, claimDailyTask, getCubPower, grantGameCoins, payoutGap, payoutParts, purchaseTraitOnServer, rollDailyBonus as rollServerBonus, rollDailyExtra, settleWeeklyPrize, touchDailyBoard, walletActive, type GameCoinSource, type WalletPatch } from './wallet'
 import {
   addBonusHundredths,
   noteActiveGames,
@@ -675,11 +675,12 @@ export function useCub() {
     return true
   }, [commit, noteServerRemainder])
 
-  const claimDailyBonus = useCallback((prize: { trait: BonusTrait | null; coins: number }) => {
+  /** Records a roll's prize on the phone, for a player playing without the coin server. */
+  const claimRoll = useCallback((prize: { trait: BonusTrait | null; coins: number }, extra: boolean) => {
     const current = saveRef.current
     if (!current || demoCub) return false
     const daily = dailyView(current.daily)
-    if (!bonusReady(daily)) return false
+    if (extra ? !extraReady(daily) : !bonusReady(daily)) return false
     if (lockedCubCash() != null) return false
     const trait = prize.trait
     const coins = trait || !(BONUS_COIN_AMOUNTS as readonly number[]).includes(prize.coins) ? 0 : prize.coins
@@ -691,15 +692,21 @@ export function useCub() {
       ...current,
       cubCash: current.cubCash + coins,
       unlockedTraits,
-      daily: { ...daily, bonusClaimed: true, bonusTrait: trait, bonusCoins: coins },
+      daily: extra
+        ? { ...daily, extraClaimed: true, extraTrait: trait, extraCoins: coins }
+        : { ...daily, bonusClaimed: true, bonusTrait: trait, bonusCoins: coins },
     })
     return true
   }, [commit])
 
-  const rollDailyBonus = useCallback(async () => {
+  const claimDailyBonus = useCallback((prize: { trait: BonusTrait | null; coins: number }) => claimRoll(prize, false), [claimRoll])
+  const claimDailyExtra = useCallback((prize: { trait: BonusTrait | null; coins: number }) => claimRoll(prize, true), [claimRoll])
+
+  /** Rolls on the coin server: the usual roll, or the extra one for finishing every challenge. */
+  const rollOnServer = useCallback(async (extra: boolean) => {
     const current = saveRef.current
     if (!current || demoCub) return null
-    const spun = await rollServerBonus()
+    const spun = extra ? await rollDailyExtra() : await rollServerBonus()
     const latest = saveRef.current
     if (spun.mode === 'local' || !latest) return null
     if (spun.mode !== 'server') return false
@@ -708,6 +715,9 @@ export function useCub() {
     commit(applyWallet(latest, { ...spun.patch, cubCash: cash }))
     return { trait: spun.trait, coins: spun.coins }
   }, [commit, noteServerRemainder])
+
+  const rollDailyBonus = useCallback(() => rollOnServer(false), [rollOnServer])
+  const rollDailyExtraBonus = useCallback(() => rollOnServer(true), [rollOnServer])
 
   /** Pays a run's Cub Cash to the server in the parts it accepts, or to the phone when signed out. */
   const payCubCash = useCallback(async (gain: number, source: GameCoinSource) => {
@@ -983,7 +993,9 @@ export function useCub() {
     noteDaily,
     claimDaily,
     claimDailyBonus,
+    claimDailyExtra,
     rollDailyBonus,
+    rollDailyExtraBonus,
     setOutfits,
     addCubCash,
     purchaseTrait,

@@ -6,6 +6,7 @@ import bubbleThumb from '../assets/bubble-blast/thumb.jpg'
 import riverThumb from '../assets/lazy-river/game-thumb-cub.jpg'
 import { SolAsset } from './solitaire/SolAsset'
 import { LeaderboardOpenButton } from './LeaderboardOpenButton'
+import { LevelInfoPop } from './LevelInfoPop'
 import dojoBg from '../assets/lazy-dojo/backgrounds/dojo-1.png'
 import dojoCover from '../assets/lazy-dojo/ui/ninja-cub-cover.png'
 import controllerUrl from '../assets/controller-icon.png'
@@ -29,9 +30,12 @@ import {
   rollBonusCoins,
   type BonusTrait,
   type DailyGame,
+  type DailyProgress,
+  type DailyTask,
   bonusReady,
   dailyNeedsAttention,
   dailyView,
+  extraReady,
   formatResetCountdown,
   msUntilDailyReset,
   taskReady,
@@ -79,6 +83,12 @@ type Props = {
   startInAchievements?: boolean
 }
 
+/** Where a challenge sits in the list: ready to claim first, then still going, then claimed. */
+function taskRank(daily: DailyProgress, task: DailyTask) {
+  if (taskReady(daily, task)) return 0
+  return daily.claimed.includes(task.id) ? 2 : 1
+}
+
 function DailyResetClock({ startedAt, now }: { startedAt: number | null; now: number }) {
   const remain = msUntilDailyReset(startedAt, new Date(now))
   if (remain == null || remain <= 0) return <span className="daily-reset-gap" aria-hidden="true" />
@@ -117,10 +127,13 @@ export function CareScreen({
   const [accountOpen, setAccountOpen] = useState(false)
   const [achievementsOpen, setAchievementsOpen] = useState(startInAchievements)
   const [powerOpen, setPowerOpen] = useState(false)
+  /** The level details pop-up, opened from the level badge. */
+  const [levelOpen, setLevelOpen] = useState(false)
   /** A player's home opened from the Cub Power leaderboard. */
   const [visiting, setVisiting] = useState<PlayerProfile | null>(null)
-  const [bonusRoll, setBonusRoll] = useState<{ prize: BonusTrait | null; coins: number } | null>(null)
-  const [diceShake, setDiceShake] = useState(false)
+  const [bonusRoll, setBonusRoll] = useState<{ prize: BonusTrait | null; coins: number; extra: boolean } | null>(null)
+  /** Which roll's dice is shaking. */
+  const [diceShake, setDiceShake] = useState<'bonus' | 'extra' | null>(null)
   const [age, setAge] = useState<CharacterAge>(() => getHomeCharacterAge())
   const save = cub.save
   const [profileRefresh, setProfileRefresh] = useState(0)
@@ -267,18 +280,7 @@ export function CareScreen({
             onPointerCancel={clearSilverPressGlow}
             onClick={() => tryGame('solitaire', onSolitaire)}
           >
-            <span className="game-thumb thumb-solitaire" aria-hidden="true">
-              <SolAsset
-                name="thumbnail"
-                fallback={
-                  <span className="sol-thumb-ph">
-                    <span className="sol-thumb-card">A♠</span>
-                    <span className="sol-thumb-card red">K♥</span>
-                  </span>
-                }
-              />
-              <span className="game-new-sash">New</span>
-            </span>
+            <GameThumb game="solitaire" sash />
             <span>Spellitaire</span>
           </button>
           <button
@@ -289,10 +291,7 @@ export function CareScreen({
             onPointerCancel={clearSilverPressGlow}
             onClick={() => tryGame('river', onRiver)}
           >
-            <span className="game-thumb thumb-river" aria-hidden="true">
-              <img src={riverThumb} alt="" />
-              <span className="game-new-sash">New</span>
-            </span>
+            <GameThumb game="river" sash />
             <span>Lazy River</span>
           </button>
           <button
@@ -303,10 +302,7 @@ export function CareScreen({
             onPointerCancel={clearSilverPressGlow}
             onClick={() => tryGame('bubble', onBubble)}
           >
-            <span className="game-thumb thumb-bubble" aria-hidden="true">
-              <img src={bubbleThumb} alt="" />
-              <span className="game-new-sash">New</span>
-            </span>
+            <GameThumb game="bubble" sash />
             <span>Bubble Blast</span>
           </button>
           <button
@@ -317,9 +313,7 @@ export function CareScreen({
             onPointerCancel={clearSilverPressGlow}
             onClick={() => tryGame('flight', onFlight)}
           >
-            <span className="game-thumb thumb-flight" aria-hidden="true">
-              <img src={dashThumb} alt="" />
-            </span>
+            <GameThumb game="flight" />
             <span>Kovu's Space Dash</span>
           </button>
           <button
@@ -330,9 +324,7 @@ export function CareScreen({
             onPointerCancel={clearSilverPressGlow}
             onClick={() => tryGame('hoops', onHoops)}
           >
-            <span className="game-thumb thumb-hoops" aria-hidden="true">
-              <img src={hoopsThumb} alt="" />
-            </span>
+            <GameThumb game="hoops" />
             <span>Lazy Hoops</span>
           </button>
           <button
@@ -343,10 +335,7 @@ export function CareScreen({
             onPointerCancel={clearSilverPressGlow}
             onClick={() => tryGame('dojo', onDojo)}
           >
-            <span className="game-thumb thumb-dojo" aria-hidden="true">
-              <img className="thumb-dojo-bg" src={dojoBg} alt="" />
-              <img className="thumb-dojo-cover" src={dojoCover} alt="" />
-            </span>
+            <GameThumb game="dojo" />
             <span>Ninja Cub Dojo</span>
           </button>
           <button
@@ -357,11 +346,7 @@ export function CareScreen({
             onPointerCancel={clearSilverPressGlow}
             onClick={() => tryGame('archer', onArcher)}
           >
-            <span
-              className="game-thumb thumb-archer"
-              aria-hidden="true"
-              style={{ backgroundImage: `url("${archerThumb}")` }}
-            />
+            <GameThumb game="archer" />
             <span>Cupid Archery</span>
           </button>
           <button
@@ -372,12 +357,7 @@ export function CareScreen({
             onPointerCancel={clearSilverPressGlow}
             onClick={() => tryGame('match', onMatch)}
           >
-            <span className="game-thumb thumb-match" aria-hidden="true">
-              <PrideThumbBack />
-              <PrideThumbCell body="Zebra" />
-              <PrideThumbCell body="Zebra" />
-              <PrideThumbBack />
-            </span>
+            <GameThumb game="match" />
             <span>Pride Pairs</span>
           </button>
         </div>
@@ -390,36 +370,99 @@ export function CareScreen({
     const done = DAILY_TASKS.filter((task) => daily.claimed.includes(task.id)).length
     const complete = tasksComplete(daily)
     const bonusClaimed = daily.bonusClaimed
-    const bonusTrait = daily.bonusTrait
-    const bonusCoins = daily.bonusCoins
-    const canSpin = bonusReady(daily)
-      const spinBonus = () => {
-        if (!canSpin || bonusRoll) return
-        playDiceRattle()
-        setDiceShake(false)
-        requestAnimationFrame(() => setDiceShake(true))
-        void (async () => {
-          const spun = await cub.rollDailyBonus()
-          if (spun) {
-            setBonusRoll({ prize: spun.trait, coins: spun.coins })
-            return
-          }
-          if (spun === false) {
-            setDiceShake(false)
-            return
-          }
-          try {
-            const res = await fetch('/traits/manifest.json')
-            const manifest = (await res.json()) as Record<TraitCategory, Record<CharacterAge, string[]>>
-            const catalog = traitsFromManifest(manifest)
-            const unowned = catalog.filter((trait) => !isTraitUnlocked(save, trait.age, trait.category, trait.name))
-            const prize = unowned.length > 0 && Math.random() < BONUS_TRAIT_CHANCE ? pickBonusTrait(unowned) : null
-            setBonusRoll({ prize, coins: prize ? 0 : rollBonusCoins() })
-          } catch {
-            setDiceShake(false)
-          }
-        })()
-      }
+    const allTasks = DAILY_TASKS.length
+    /** The usual roll (any 3 challenges) or the extra one (every challenge). */
+    const spinBonus = (extra: boolean) => {
+      if (!(extra ? extraReady(daily) : bonusReady(daily)) || bonusRoll) return
+      playDiceRattle()
+      setDiceShake(null)
+      requestAnimationFrame(() => setDiceShake(extra ? 'extra' : 'bonus'))
+      void (async () => {
+        const spun = await (extra ? cub.rollDailyExtraBonus() : cub.rollDailyBonus())
+        if (spun) {
+          setBonusRoll({ prize: spun.trait, coins: spun.coins, extra })
+          return
+        }
+        if (spun === false) {
+          setDiceShake(null)
+          return
+        }
+        try {
+          const res = await fetch('/traits/manifest.json')
+          const manifest = (await res.json()) as Record<TraitCategory, Record<CharacterAge, string[]>>
+          const catalog = traitsFromManifest(manifest)
+          const unowned = catalog.filter((trait) => !isTraitUnlocked(save, trait.age, trait.category, trait.name))
+          const prize = unowned.length > 0 && Math.random() < BONUS_TRAIT_CHANCE ? pickBonusTrait(unowned) : null
+          setBonusRoll({ prize, coins: prize ? 0 : rollBonusCoins(), extra })
+        } catch {
+          setDiceShake(null)
+        }
+      })()
+    }
+    const rollCard = (extra: boolean) => {
+      const need = extra ? allTasks : BONUS_TASKS_REQUIRED
+      const progress = Math.min(complete, need)
+      const claimed = extra ? daily.extraClaimed : daily.bonusClaimed
+      const trait = extra ? daily.extraTrait : daily.bonusTrait
+      const coins = extra ? daily.extraCoins : daily.bonusCoins
+      const canSpin = extra ? extraReady(daily) : bonusReady(daily)
+      return (
+        <article className={extra ? 'daily-task daily-bonus daily-extra' : 'daily-task daily-bonus'}>
+          <h2>{extra ? 'Extra Bonus Roll' : 'Daily Bonus Prize'}</h2>
+          <p>{extra ? `Complete all ${allTasks} challenges` : `Complete any ${BONUS_TASKS_REQUIRED} challenges`}</p>
+          <p className="daily-count">
+            {progress} / {need}
+          </p>
+          <div className="daily-meter" aria-hidden="true">
+            <span style={{ width: `${(progress / need) * 100}%` }} />
+          </div>
+          <div className="daily-row">
+            {claimed && trait ? (
+              <span className="daily-won">
+                <strong>{trait.name}</strong>
+                <span>
+                  {ageCubLabel(trait.age)} · {trait.category}
+                </span>
+              </span>
+            ) : claimed && coins > 0 ? (
+              <span className="daily-reward">
+                <img src={coinUrl} alt="" />
+                {coins}
+              </span>
+            ) : (
+              <span className="daily-reward">
+                {extra ? 'Another Bonus Roll! - Win Wardrobe Items or Coins' : 'Bonus Roll! - Win Wardrobe Items or Coins'}
+              </span>
+            )}
+            {claimed ? (
+              <button type="button" className="daily-claim done" disabled>
+                ✓ Won
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="daily-dice"
+                aria-label={canSpin && !demo ? 'Spin the bonus dice' : `Complete ${extra ? 'all' : `any ${BONUS_TASKS_REQUIRED}`} challenges to spin`}
+                disabled={!canSpin || demo}
+                onClick={() => spinBonus(extra)}
+              >
+                <span className="wood-btn">
+                  <img
+                    className={diceShake === (extra ? 'extra' : 'bonus') ? 'dice shake' : 'dice'}
+                    src={diceIconUrl}
+                    alt=""
+                    onAnimationEnd={(event) => {
+                      event.stopPropagation()
+                      setDiceShake(null)
+                    }}
+                  />
+                </span>
+              </button>
+            )}
+          </div>
+        </article>
+      )
+    }
     return (
       <section className={demo ? 'game-screen game-picks-screen daily-screen demo-locked' : 'game-screen game-picks-screen daily-screen'}>
         <header className="top">
@@ -429,60 +472,11 @@ export function CareScreen({
         </header>
         <div className="daily-list">
           {demo ? <DemoLockBanner text="Create an account to complete daily challenges and win their prizes." /> : null}
-          <article className="daily-task daily-bonus">
-            <h2>Daily Bonus Prize</h2>
-            <p>Complete any 3 challenges</p>
-            <p className="daily-count">
-              {Math.min(complete, BONUS_TASKS_REQUIRED)} / {BONUS_TASKS_REQUIRED}
-            </p>
-            <div className="daily-meter" aria-hidden="true">
-              <span style={{ width: `${(Math.min(complete, BONUS_TASKS_REQUIRED) / BONUS_TASKS_REQUIRED) * 100}%` }} />
-            </div>
-            <div className="daily-row">
-              {bonusClaimed && bonusTrait ? (
-                <span className="daily-won">
-                  <strong>{bonusTrait.name}</strong>
-                  <span>
-                    {ageCubLabel(bonusTrait.age)} · {bonusTrait.category}
-                  </span>
-                </span>
-              ) : bonusClaimed && bonusCoins > 0 ? (
-                <span className="daily-reward">
-                  <img src={coinUrl} alt="" />
-                  {bonusCoins}
-                </span>
-              ) : (
-                <span className="daily-reward">Bonus Roll! - Win Wardrobe Items or Coins</span>
-              )}
-              {bonusClaimed ? (
-                <button type="button" className="daily-claim" disabled>
-                  Won
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="daily-dice"
-                  aria-label={canSpin && !demo ? 'Spin the bonus dice' : 'Complete any 3 challenges to spin'}
-                  disabled={!canSpin || demo}
-                  onClick={spinBonus}
-                >
-                  <span className="wood-btn">
-                    <img
-                      className={diceShake ? 'dice shake' : 'dice'}
-                      src={diceIconUrl}
-                      alt=""
-                      onAnimationEnd={(event) => {
-                        event.stopPropagation()
-                        setDiceShake(false)
-                      }}
-                    />
-                  </span>
-                </button>
-              )}
-            </div>
-          </article>
+          {rollCard(false)}
+          {rollCard(true)}
           {[...DAILY_TASKS]
-            .sort((a, b) => Number(daily.claimed.includes(a.id)) - Number(daily.claimed.includes(b.id)))
+            // Ready to claim at the top, then those still going, then those already claimed.
+            .sort((a, b) => taskRank(daily, a) - taskRank(daily, b))
             .map((task) => {
             const score = taskScore(daily, task)
             const claimed = daily.claimed.includes(task.id)
@@ -504,7 +498,10 @@ export function CareScreen({
                             ? onSolitaire
                             : onMatch
             return (
-              <article key={task.id} className="daily-task">
+              <article key={task.id} className="daily-task has-thumb">
+                <span className="daily-thumb">
+                  <GameThumb game={task.game} />
+                </span>
                 <h2>{task.gameLabel}</h2>
                 <p>{task.detail}</p>
                 <p className="daily-count">
@@ -519,13 +516,13 @@ export function CareScreen({
                     {task.reward}
                   </span>
                   {claimed ? (
-                    <button type="button" className="daily-claim" disabled>
-                      Claimed
+                    <button type="button" className="daily-claim done" disabled>
+                      ✓ Claimed
                     </button>
                   ) : ready ? (
                     <button
                       type="button"
-                      className="daily-claim"
+                      className="daily-claim ready"
                       disabled={demo}
                       onClick={() => {
                         void (async () => {
@@ -535,11 +532,11 @@ export function CareScreen({
                         })()
                       }}
                     >
-                      Claim
+                      ★ Claim
                     </button>
                   ) : (
                     <button type="button" className="daily-play" onClick={play} disabled={demo}>
-                      Play
+                      ▶ Play
                     </button>
                   )}
                   {coinBurst?.id === task.id ? <CoinBurst key={coinBurst.key} /> : null}
@@ -554,13 +551,14 @@ export function CareScreen({
               homeAge={age}
               prize={bonusRoll.prize}
               coins={bonusRoll.coins}
+              extra={bonusRoll.extra}
               onDone={() => setBonusRoll(null)}
             />
           ) : null}
           <p className="daily-note">
             {daily.startedAt == null
               ? 'Play a challenge to start the 24 hour timer.'
-              : done === DAILY_TASKS.length && bonusClaimed
+              : done === DAILY_TASKS.length && bonusClaimed && daily.extraClaimed
                 ? 'All claimed for this round.'
                 : 'Same challenges until the timer ends.'}
           </p>
@@ -674,10 +672,12 @@ export function CareScreen({
             </span>
           </div>
         </div>
-        <div
-          className={cub.levelUp ? 'level-badge level-up' : 'level-badge'}
+        <button
+          type="button"
+          className={cub.levelUp ? 'level-badge level-open level-up' : 'level-badge level-open'}
           key={cub.levelUp ?? 'level'}
-          aria-label={`Level ${progress.level}, ${progress.into} of ${progress.next} experience`}
+          aria-label={`Level ${progress.level}, ${progress.into} of ${progress.next} experience. Show level details`}
+          onClick={() => setLevelOpen(true)}
         >
           <svg className="xp-ring" viewBox="0 0 84 84" aria-hidden="true">
             <circle className="xp-ring-track" cx="42" cy="42" r={ringR} />
@@ -695,7 +695,7 @@ export function CareScreen({
             <span className="lvl-kicker">LVL</span>
             <strong>{progress.level}</strong>
           </span>
-        </div>
+        </button>
         {demo ? (
           <PowerPlate
             className="power-plate-locked"
@@ -859,6 +859,7 @@ export function CareScreen({
           </button>
         </div>
       </div>
+      {levelOpen ? <LevelInfoPop xp={cub.presentedXp} onClose={() => setLevelOpen(false)} /> : null}
     </section>
   )
 }
@@ -900,6 +901,72 @@ function MoonIcon() {
 
 function DropIcon() {
   return <img className="drop" src={dropUrl} alt="" />
+}
+
+/** A game's picture from the games menu. `sash` adds the "New" ribbon the menu shows on new games. */
+function GameThumb({ game, sash = false }: { game: DailyGame; sash?: boolean }) {
+  const ribbon = sash ? <span className="game-new-sash">New</span> : null
+  switch (game) {
+    case 'solitaire':
+      return (
+        <span className="game-thumb thumb-solitaire" aria-hidden="true">
+          <SolAsset
+            name="thumbnail"
+            fallback={
+              <span className="sol-thumb-ph">
+                <span className="sol-thumb-card">A♠</span>
+                <span className="sol-thumb-card red">K♥</span>
+              </span>
+            }
+          />
+          {ribbon}
+        </span>
+      )
+    case 'river':
+      return (
+        <span className="game-thumb thumb-river" aria-hidden="true">
+          <img src={riverThumb} alt="" />
+          {ribbon}
+        </span>
+      )
+    case 'bubble':
+      return (
+        <span className="game-thumb thumb-bubble" aria-hidden="true">
+          <img src={bubbleThumb} alt="" />
+          {ribbon}
+        </span>
+      )
+    case 'flight':
+      return (
+        <span className="game-thumb thumb-flight" aria-hidden="true">
+          <img src={dashThumb} alt="" />
+        </span>
+      )
+    case 'hoops':
+      return (
+        <span className="game-thumb thumb-hoops" aria-hidden="true">
+          <img src={hoopsThumb} alt="" />
+        </span>
+      )
+    case 'dojo':
+      return (
+        <span className="game-thumb thumb-dojo" aria-hidden="true">
+          <img className="thumb-dojo-bg" src={dojoBg} alt="" />
+          <img className="thumb-dojo-cover" src={dojoCover} alt="" />
+        </span>
+      )
+    case 'archer':
+      return <span className="game-thumb thumb-archer" aria-hidden="true" style={{ backgroundImage: `url("${archerThumb}")` }} />
+    case 'match':
+      return (
+        <span className="game-thumb thumb-match" aria-hidden="true">
+          <PrideThumbBack />
+          <PrideThumbCell body="Zebra" />
+          <PrideThumbCell body="Zebra" />
+          <PrideThumbBack />
+        </span>
+      )
+  }
 }
 
 function prideLayer(part: string, name: string) {

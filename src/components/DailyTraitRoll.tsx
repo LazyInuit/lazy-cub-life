@@ -20,6 +20,8 @@ type Props = {
   homeAge: CharacterAge
   prize: BonusTrait | null
   coins: number
+  /** The extra roll for finishing every challenge, rather than the usual one. */
+  extra?: boolean
   onDone: () => void
 }
 
@@ -39,10 +41,10 @@ export function ageCubLabel(age: CharacterAge) {
   return age === 'young' ? 'Young cub' : 'Old cub'
 }
 
-export function DailyTraitRoll({ cub, appearance, homeAge, prize, coins, onDone }: Props) {
+export function DailyTraitRoll({ cub, appearance, homeAge, prize, coins, extra = false, onDone }: Props) {
   const [phase, setPhase] = useState<'roll' | 'trait' | 'coins'>('roll')
   const claimed = useRef(false)
-  const claimBonus = cub.claimDailyBonus
+  const claimBonus = extra ? cub.claimDailyExtra : cub.claimDailyBonus
 
   useEffect(() => {
     let alive = true

@@ -18,9 +18,10 @@ export const FREECELL_SETTINGS = {
   cells: 4,
   /**
    * After each move, send cards home that can no longer be needed in the columns: Aces and 2s, and
-   * any card whose opposite-colour cards one rank lower are already home.
+   * any card whose opposite-colour cards one rank lower are already home. Off: players put every
+   * card home themselves, right up to the winning card.
    */
-  autoFoundation: true,
+  autoFoundation: false,
 } as const
 
 export const FC_CELLS = ['c0', 'c1', 'c2', 'c3'] as const
@@ -119,8 +120,8 @@ export function dealFreecell(seed: number, difficulty: FreecellDifficulty): Free
   const checked = FREECELL_DEALS[difficulty]
   const pick = checked.length > 0 ? checked[Math.abs(Math.floor(seed)) % checked.length] : seed
   const state = freshFreecell(pick, difficulty)
-  // Aces (and anything else safe) dealt to the bottom of a column go home straight away, rather
-  // than jumping there on the first move.
+  // With auto moves on, Aces (and anything else safe) dealt to the bottom of a column go home
+  // straight away, rather than jumping there on the first move.
   return { ...state, ...autoHome(state, state) }
 }
 
@@ -359,6 +360,14 @@ export const HINT_SETTINGS = { budget: 8000 }
  */
 export function fcFindHint(state: FreecellState): TableHint {
   if (state.won) return { kind: 'none' }
+  // The look-ahead counts safe cards as home already, so point those out first.
+  for (const from of [...FC_CELLS, ...FC_TABLEAU] as PileId[]) {
+    const cards = fcPileCards(state, from)
+    const card = top(cards)
+    if (!card || !safeHome(state, card)) continue
+    const to = fcFoundationFor(state, from, cards.length - 1)
+    if (to) return { kind: 'move', from, index: cards.length - 1, to }
+  }
   const planned = solveFrom(nodeFromState(state), HINT_SETTINGS.budget)?.first
   if (planned) {
     const to = planned.to === 'home' ? fcFoundationFor(state, planned.from, planned.index) : planned.to

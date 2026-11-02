@@ -759,8 +759,8 @@ for (const level of ['easy', 'hard'] as const) {
   check(`FreeCell ${level}: columns of 7,7,7,7,6,6,6,6`, freshFreecell(d.seed, level).tableau.map((p) => p.length).join(',') === '7,7,7,7,6,6,6,6')
   check(`FreeCell ${level}: every card starts face up`, fcAll(d).every((c) => c.faceUp))
   check(
-    `FreeCell ${level}: free cells start empty, and only Aces and 2s dealt to the bottom go home at once`,
-    d.cells.every((c) => c === null) && d.foundations.flat().every((c) => c.rank <= 2) && d.moves === 0,
+    `FreeCell ${level}: free cells and foundations start empty (no card goes home by itself)`,
+    d.cells.every((c) => c === null) && d.foundations.every((p) => p.length === 0) && d.moves === 0 && d.points === 0,
   )
   check(`FreeCell ${level}: the same deal again (Restart) is identical`, JSON.stringify(dealFreecell(31, level).tableau) === JSON.stringify(d.tableau))
 }
@@ -816,16 +816,20 @@ check(
 const fcCellMove = fcMove(fcUndoStart, 't0', 2, 'c2')!
 check('FreeCell: undo empties a free cell again', fcUndo(fcCellMove)!.cells[2] === null && fcUndo(fcCellMove)!.tableau[0].length === 3)
 
-// Safe auto-foundation
-const fcAuto = fcMove(fcPosition({ tableau: [[card(1, 'spades'), card(9, 'hearts')], [card(10, 'clubs')], ...filler(6)] }), 't0', 1, 't1')!
-check('FreeCell: an Ace freed by a move goes home by itself', fcAuto.foundations.some((p) => p[0]?.rank === 1) && fcAuto.tableau[0].length === 0)
-check('FreeCell: the auto move is part of the same move for undo', fcAuto.moves === 1 && fcUndo(fcAuto)!.tableau[0].length === 2)
-const fcUnsafe = fcMove(
-  fcPosition({ foundations: [suitUpTo('hearts', 4), [], [], []], tableau: [[card(5, 'hearts'), card(9, 'hearts')], [card(10, 'clubs')], ...filler(6)] }),
-  't0', 1, 't1',
-)!
-check('FreeCell: a red 5 stays out while black 4s may still need it', fcUnsafe.tableau[0].length === 1 && fcUnsafe.foundations[0].length === 4)
-check('FreeCell: a card can still be sent home by hand', fcCanMove(fcUnsafe, 't0', 0, 'f0'))
+// Every card goes home by hand
+const fcFreed = fcMove(fcPosition({ tableau: [[card(1, 'spades'), card(9, 'hearts')], [card(10, 'clubs')], ...filler(6)] }), 't0', 1, 't1')!
+check('FreeCell: an Ace freed by a move stays for the player to send home', fcFreed.tableau[0].length === 1 && fcFreed.foundations.every((p) => p.length === 0))
+check('FreeCell: the hint points it out', (() => {
+  const h = fcFindHint(fcFreed)
+  return h.kind === 'move' && h.from === 't0' && h.to.startsWith('f')
+})())
+const fcLastCards = fcPosition({
+  foundations: [suitUpTo('spades', 13), suitUpTo('hearts', 13), suitUpTo('diamonds', 12), suitUpTo('clubs', 11)],
+  tableau: [[card(13, 'clubs'), card(12, 'clubs')], [card(13, 'diamonds')], ...filler(6).map(() => [])],
+})
+const fcOneLeft = fcMove(fcLastCards, 't0', 1, 'f3')!
+check('FreeCell: the game never finishes itself, even with the last cards in order', !fcOneLeft.won && fcOneLeft.tableau[0].length === 1 && fcOneLeft.tableau[1].length === 1)
+check('FreeCell: the player plays the winning card', fcMove(fcMove(fcOneLeft, 't0', 0, 'f3')!, 't1', 0, 'f2')!.won)
 
 // Taps
 const fcTapGame = fcPosition({ foundations: [[card(1, 'hearts')], [], [], []], tableau: [[card(2, 'hearts')], [card(10, 'hearts'), card(9, 'spades')], [card(4, 'clubs')], [card(5, 'hearts')], ...filler(4)] })

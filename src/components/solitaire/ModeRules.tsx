@@ -73,8 +73,8 @@ function PyramidRules() {
         <strong>Every deal can be won</strong>, so look ahead before you pair.
       </li>
       <li>
-        <strong>Playing:</strong> tap a card, then tap the card that makes 13 with it, or drag one onto the other. Tap a free
-        King to remove it.
+        <strong>Playing:</strong> tap a card, then tap the card that makes 13 with it, or drag one onto the other. Double-tap a
+        free King to remove it.
       </li>
       <li>
         <strong>Points:</strong> +{PYRAMID_SCORING.clearPyramidCard} for each pyramid card removed, +{PYRAMID_SCORING.uncoverCard}{' '}
@@ -107,8 +107,8 @@ function FreecellRules() {
         let you move longer runs: (free cells + 1) doubled for every empty column.
       </li>
       <li>
-        <strong>Playing:</strong> tap a card to send it to the best spot it can go: home, onto a column, or a free cell. Or drag
-        it where you want it. Cards that can't be needed any more go home by themselves.
+        <strong>Playing:</strong> tap a card, then tap where it should go, or drag it there. Double-tap a card to send it to the
+        best spot it can go: home, onto a column, or a free cell. You put every card home yourself, right up to the last one.
       </li>
       <li>
         <strong>Easy and Hard:</strong> every deal can be won. Hard deals need much more planning.
@@ -150,8 +150,8 @@ function SpiderRules() {
         <strong>Easy and Hard:</strong> Easy uses one suit (spades only), Hard uses two (spades and hearts).
       </li>
       <li>
-        <strong>Playing:</strong> tap a card to move it, with the cards on top of it, to the best place it can go. Or drag it
-        where you want it.
+        <strong>Playing:</strong> tap a card, then tap where it should go, or drag it there; the cards on top of it come too.
+        Double-tap a card to move it to the best place it can go.
       </li>
       <li>
         <strong>Points:</strong> +{SPIDER_SCORING.revealCard} for each card turned over and +{SPIDER_SCORING.completeRun} for
@@ -176,9 +176,9 @@ function GolfRules() {
         <strong>Goal:</strong> clear all 35 cards from the seven columns. Cards left in the stock don't matter.
       </li>
       <li>
-        <strong>Playing:</strong> tap the bottom card of a column to play it onto the waste when it is one higher or one lower
-        than the waste card, in any suit, like a 6 or an 8 on a 7. Cards higher up are dimmed until the ones below them are
-        gone.
+        <strong>Playing:</strong> double-tap the bottom card of a column (or drag it) to play it onto the waste when it is one
+        higher or one lower than the waste card, in any suit, like a 6 or an 8 on a 7. Cards higher up are dimmed until the
+        ones below them are gone.
       </li>
       <li>
         <strong>Stock:</strong> tap it to turn the next card onto the waste, any time. Each stock card comes up once, and

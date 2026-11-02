@@ -221,18 +221,18 @@ export function CardTable<S extends TableState>({ state, rules, hint, locked = f
     const cardId = p.cardId
     const doubleTap = cardId !== null && lastTap.current?.id === cardId && now - lastTap.current.at < L.doubleTapMs
     lastTap.current = cardId ? { id: cardId, at: now } : null
+    // A single tap only picks a card up; it takes a double tap to send one to its best spot.
     if (doubleTap && p.index >= 0) {
-      const home = rules.foundationFor(state, p.pile, p.index)
-      if (home && tryMove(p.pile, p.index, home)) {
-        lastTap.current = null
+      lastTap.current = null
+      const target = rules.tapMove ? rules.tapMove(state, p.pile, p.index) : rules.foundationFor(state, p.pile, p.index)
+      if (target && tryMove(p.pile, p.index, target)) return
+      if (rules.tapFeedback) {
+        shake([cardId])
+        setSelected(null)
         return
       }
     }
     if (selected && selected.pile !== p.pile && tryMove(selected.pile, selected.index, p.pile)) return
-    if (p.index >= 0) {
-      const quick = rules.tapMove?.(state, p.pile, p.index)
-      if (quick && tryMove(p.pile, p.index, quick)) return
-    }
     if (rules.tapFeedback && p.index >= 0 && selected && selected.pile !== p.pile) {
       const first = rules.pileCards(state, selected.pile)[selected.index]
       shake([first?.id, cardId])

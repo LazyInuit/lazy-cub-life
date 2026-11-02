@@ -229,6 +229,19 @@ export async function rollDailyBonus() {
   }
 }
 
+/** The extra roll for finishing every challenge. */
+export async function rollDailyExtra() {
+  const result = await call('roll_daily_extra_bonus', {})
+  if (result.mode === 'local') return { mode: 'local' as const }
+  if (!result.row || result.row.ok === false || !result.patch) return { mode: 'rejected' as const }
+  return {
+    mode: 'server' as const,
+    patch: result.patch,
+    trait: result.patch.daily?.extraTrait ?? null,
+    coins: result.patch.daily?.extraCoins ?? 0,
+  }
+}
+
 export async function buyDrinkOnServer(drink: 'milk' | 'juice') {
   const result = await call('buy_drink', { p_drink: drink })
   if (result.mode === 'local') return { mode: 'local' as const }

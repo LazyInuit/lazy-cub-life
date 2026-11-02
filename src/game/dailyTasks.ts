@@ -33,6 +33,12 @@ export type DailyProgress = {
   bonusTrait: BonusTrait | null
   /** Cub Cash from the dice. 0 when the bonus paid a trait. */
   bonusCoins: number
+  /** The extra roll for finishing every challenge has been paid this round. */
+  extraClaimed: boolean
+  /** Trait won from the extra roll. Null when it paid coins instead. */
+  extraTrait: BonusTrait | null
+  /** Cub Cash from the extra roll. 0 when it paid a trait. */
+  extraCoins: number
 }
 
 /** Chance the dice unlocks a trait the player does not own. */
@@ -146,15 +152,25 @@ function todayKey(now = new Date()) {
 }
 
 export function emptyDaily(): DailyProgress {
-  return { startedAt: null, scores: {}, claimed: [], bonusClaimed: false, bonusTrait: null, bonusCoins: 0 }
+  return {
+    startedAt: null,
+    scores: {},
+    claimed: [],
+    bonusClaimed: false,
+    bonusTrait: null,
+    bonusCoins: 0,
+    extraClaimed: false,
+    extraTrait: null,
+    extraCoins: 0,
+  }
 }
 
-function readBonusCoins(raw: Partial<DailyProgress>): number {
-  return (BONUS_COIN_AMOUNTS as readonly number[]).includes(raw.bonusCoins ?? -1) ? (raw.bonusCoins as number) : 0
+function readBonusCoins(value: unknown): number {
+  return (BONUS_COIN_AMOUNTS as readonly number[]).includes(typeof value === 'number' ? value : -1) ? (value as number) : 0
 }
 
-function readBonusTrait(raw: Partial<DailyProgress>): BonusTrait | null {
-  const trait = raw.bonusTrait
+function readBonusTrait(value: unknown): BonusTrait | null {
+  const trait = value as Partial<BonusTrait> | null | undefined
   if (!trait || typeof trait !== 'object') return null
   const age = trait.age === 'young' || trait.age === 'old' ? trait.age : null
   const category = TRAIT_CATEGORIES.find((item) => item === trait.category) ?? null
@@ -195,17 +211,21 @@ export function sanitizeDaily(value: unknown, now = new Date()): DailyProgress {
   const scores = readScores(raw)
   const claimed = readClaimed(raw)
   const bonusClaimed = raw.bonusClaimed === true
-  const bonusTrait = readBonusTrait(raw)
-  const bonusCoins = bonusTrait ? 0 : readBonusCoins(raw)
+  const bonusTrait = readBonusTrait(raw.bonusTrait)
+  const bonusCoins = bonusTrait ? 0 : readBonusCoins(raw.bonusCoins)
+  const extraClaimed = raw.extraClaimed === true
+  const extraTrait = readBonusTrait(raw.extraTrait)
+  const extraCoins = extraTrait ? 0 : readBonusCoins(raw.extraCoins)
+  const prizes = { bonusClaimed, bonusTrait, bonusCoins, extraClaimed, extraTrait, extraCoins }
   const startedAt =
     typeof raw.startedAt === 'number' && Number.isFinite(raw.startedAt) ? Math.floor(raw.startedAt) : null
   if (startedAt != null) {
     if (now.getTime() >= startedAt + DAILY_WINDOW_MS) return emptyDaily()
-    return { startedAt, scores, claimed, bonusClaimed, bonusTrait, bonusCoins }
+    return { startedAt, scores, claimed, ...prizes }
   }
   const hasProgress = claimed.length > 0 || bonusClaimed || Object.values(scores).some((score) => (score ?? 0) > 0)
   if (hasProgress && raw.day === todayKey(now)) {
-    return { startedAt: now.getTime(), scores, claimed, bonusClaimed, bonusTrait, bonusCoins }
+    return { startedAt: now.getTime(), scores, claimed, ...prizes }
   }
   return emptyDaily()
 }
@@ -230,8 +250,13 @@ export function bonusReady(daily: DailyProgress) {
   return tasksComplete(daily) >= BONUS_TASKS_REQUIRED && !daily.bonusClaimed
 }
 
+/** Every challenge finished: the extra roll is ready until it is used. */
+export function extraReady(daily: DailyProgress) {
+  return tasksComplete(daily) === DAILY_TASKS.length && !daily.extraClaimed
+}
+
 export function claimableCount(daily: DailyProgress) {
-  return DAILY_TASKS.filter((task) => taskReady(daily, task)).length + (bonusReady(daily) ? 1 : 0)
+  return DAILY_TASKS.filter((task) => taskReady(daily, task)).length + (bonusReady(daily) ? 1 : 0) + (extraReady(daily) ? 1 : 0)
 }
 
 /** True while a challenge is unfinished or a prize is still unclaimed. */
@@ -239,7 +264,7 @@ export function dailyNeedsAttention(daily: DailyProgress) {
   const tasksOpen = DAILY_TASKS.some(
     (task) => (daily.scores[task.game] ?? 0) < task.goal || !daily.claimed.includes(task.id),
   )
-  return tasksOpen || !daily.bonusClaimed
+  return tasksOpen || !daily.bonusClaimed || !daily.extraClaimed
 }
 
 /** Milliseconds left in the round. Null until the player starts a challenge. */
