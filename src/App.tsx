@@ -23,7 +23,7 @@ import { endDemo, isDemo, onSignUpRequest, requestSignUp, startDemo } from './ga
 import { openDemoCub, wakeStoredCub } from './game/storage'
 import { DemoChoice } from './components/DemoChoice'
 import { DemoScorePop } from './components/DemoScorePop'
-import { spellitaireBests } from './game/progress'
+import { spellitaireBests, spellitaireWeekBests, weekBest } from './game/progress'
 import { useCub } from './game/useCub'
 import { supabase } from './game/supabase'
 
@@ -350,6 +350,7 @@ function Game() {
       {screen === 'flight' ? (
         <SafariFlight
           best={cub.save.flightBest}
+          weekBest={weekBest(cub.save, 'flight')}
           onBest={cub.recordFlightBest}
           onDailyStart={() => cub.startDaily('flight')}
           onDaily={(score) => cub.noteDaily('flight', score)}
@@ -365,6 +366,7 @@ function Game() {
       {screen === 'match' ? (
         <TraitMatch
           best={cub.save.matchBest}
+          weekBest={weekBest(cub.save, 'match')}
           onBest={cub.recordMatchBest}
           onDailyStart={() => cub.startDaily('match')}
           onDaily={(score) => cub.noteDaily('match', score)}
@@ -380,6 +382,7 @@ function Game() {
       {screen === 'dojo' ? (
         <LazyDojo
           best={cub.save.dojoBest}
+          weekBest={weekBest(cub.save, 'dojo')}
           onBest={cub.recordDojoBest}
           onDailyStart={() => cub.startDaily('dojo')}
           onDaily={(score) => cub.noteDaily('dojo', score)}
@@ -395,6 +398,7 @@ function Game() {
       {screen === 'archer' ? (
         <CupidArcher
           best={cub.save.archerBest}
+          weekBest={weekBest(cub.save, 'archer')}
           onBest={cub.recordArcherBest}
           onDailyStart={() => cub.startDaily('archer')}
           onDaily={(score) => cub.noteDaily('archer', score)}
@@ -410,6 +414,7 @@ function Game() {
       {screen === 'hoops' ? (
         <LazyHoops
           best={cub.save.hoopsBest}
+          weekBest={weekBest(cub.save, 'hoops')}
           onBest={cub.recordHoopsBest}
           onDailyStart={() => cub.startDaily('hoops')}
           onDaily={(score) => cub.noteDaily('hoops', score)}
@@ -425,6 +430,7 @@ function Game() {
       {screen === 'bubble' ? (
         <BubbleBlast
           best={cub.save.bubbleBest}
+          weekBest={weekBest(cub.save, 'bubble')}
           onBest={cub.recordBubbleBest}
           onDailyStart={() => cub.startDaily('bubble')}
           onDaily={(score) => cub.noteDaily('bubble', score)}
@@ -440,6 +446,7 @@ function Game() {
       {screen === 'river' ? (
         <LazyRiver
           best={cub.save.riverBest}
+          weekBest={weekBest(cub.save, 'river')}
           onBest={cub.recordRiverBest}
           onDailyStart={() => cub.startDaily('river')}
           onDaily={(score) => cub.noteDaily('river', score)}
@@ -455,6 +462,7 @@ function Game() {
       {screen === 'solitaire' ? (
         <Spellitaire
           bests={spellitaireBests(cub.save)}
+          weekBests={spellitaireWeekBests(cub.save)}
           onBest={cub.recordSolitaireBest}
           onDailyStart={() => cub.startDaily('solitaire')}
           onDaily={(score, { won, key }) => cub.noteDaily('solitaire', score, { board: key, dailyPoints: won ? 1 : 0 })}

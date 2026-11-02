@@ -52,6 +52,8 @@ type Mode = 'start' | 'play' | 'over'
 
 type Props = {
   best: number
+  /** Best score this leaderboard week. */
+  weekBest: number
   onBest: (score: number) => void
   onDailyStart: () => boolean
   onDaily: (score: number) => void
@@ -133,7 +135,7 @@ function LivesHud({ lives }: { lives: number }) {
   )
 }
 
-export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+export function CupidArcher({ best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [showHowTo, setShowHowTo] = useState(false)
@@ -455,6 +457,7 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onC
               <div className="archer-panel">
                 <h2>Cupid Archery</h2>
                 <p className="archer-best">Best Score {bestRef.current}</p>
+                <p className="archer-best week-best">Weekly Best {weekBest}</p>
                 {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
                 <button type="button" className="archer-btn" onClick={startRound}>
                   Play
@@ -475,6 +478,9 @@ export function CupidArcher({ best, onBest, onDailyStart, onDaily, onReward, onC
             </p>
             <p>
               Best score <strong>{summary.best}</strong>
+            </p>
+            <p>
+              Weekly best <strong>{Math.max(weekBest, summary.score)}</strong>
             </p>
             <p>
               Bullseyes <strong>{summary.bullseyes}</strong>

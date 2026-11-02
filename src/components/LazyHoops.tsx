@@ -117,6 +117,8 @@ type Summary = {
 
 type Props = {
   best: number
+  /** Best score this leaderboard week. */
+  weekBest: number
   onBest: (score: number) => void
   onDailyStart: () => boolean
   onDaily: (score: number) => void
@@ -218,7 +220,7 @@ function hudFrom(live: Live): Hud {
   }
 }
 
-export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+export function LazyHoops({ best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const [mode, setMode] = useState<Mode>('home')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
@@ -691,6 +693,7 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoi
             <img className="hoops-home-cub hoops-home-cub-right" src={homeCubRightUrl} alt="" />
             <p className="hoops-lead">Ready to shoot some hoops? You have 60 seconds. Swipe up on the ball and aim for the basket!</p>
             <p className="hoops-best">Best Score {bestRef.current}</p>
+            <p className="hoops-best week-best">Weekly Best {weekBest}</p>
             {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
             <button type="button" className="hoops-btn" onClick={playAgain}>
               Play
@@ -771,6 +774,9 @@ export function LazyHoops({ best, onBest, onDailyStart, onDaily, onReward, onCoi
             </p>
             <p>
               Best score <strong>{summary.best}</strong>
+            </p>
+            <p>
+              Weekly best <strong>{Math.max(weekBest, summary.score)}</strong>
             </p>
             <p>
               Baskets <strong>{summary.baskets}</strong>

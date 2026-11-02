@@ -25,6 +25,8 @@ type Mode = 'start' | 'howto' | 'play' | 'pause' | 'over'
 
 type Props = {
   best: number
+  /** Best score this leaderboard week. */
+  weekBest: number
   onBest: (score: number) => void
   onDailyStart: () => boolean
   onDaily: (score: number) => void
@@ -41,7 +43,7 @@ type Props = {
   powerBonus?: RunBonus
 }
 
-export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+export function LazyDojo({ best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [hudScore, setHudScore] = useState(0)
@@ -373,6 +375,7 @@ export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onCoin
             <h2>NINJA CUB DOJO</h2>
             <p className="dojo-sub">Train your Cub. Master the blade.</p>
             <p className="dojo-best">Best Score {bestRef.current}</p>
+            <p className="dojo-best week-best">Weekly Best {weekBest}</p>
             {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
             <button type="button" className="dojo-btn" onClick={startTraining}>
               START TRAINING
@@ -494,6 +497,9 @@ export function LazyDojo({ best, onBest, onDailyStart, onDaily, onReward, onCoin
             </p>
             <p className="dojo-over-best">
               Best <strong>{summary.best}</strong>
+            </p>
+            <p className="dojo-over-best">
+              Weekly Best <strong>{Math.max(weekBest, summary.score)}</strong>
             </p>
             <p className="dojo-over-xp">+{summary.xp} XP</p>
             <p className="dojo-over-coins">

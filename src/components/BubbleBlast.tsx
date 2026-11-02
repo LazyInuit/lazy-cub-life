@@ -39,6 +39,8 @@ type Mode = 'start' | 'play' | 'over'
 
 type Props = {
   best: number
+  /** Best score this leaderboard week. */
+  weekBest: number
   onBest: (score: number) => void
   onDailyStart: () => boolean
   onDaily: (score: number) => void
@@ -84,7 +86,7 @@ function showsDragHint(game: BubbleState) {
   return game.shots === 0 && game.phase !== 'aiming' && game.phase !== 'over'
 }
 
-export function BubbleBlast({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+export function BubbleBlast({ best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [showRules, setShowRules] = useState(false)
@@ -385,6 +387,7 @@ export function BubbleBlast({ best, onBest, onDailyStart, onDaily, onReward, onC
                   <h2>Bubble Blast</h2>
                 </div>
                 <p className="bubble-best">Best Score {bestRef.current.toLocaleString('en-US')}</p>
+                <p className="bubble-best week-best">Weekly Best {weekBest.toLocaleString('en-US')}</p>
                 {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
                 <button type="button" className="bubble-btn" onClick={startRun}>
                   Play
@@ -441,6 +444,9 @@ export function BubbleBlast({ best, onBest, onDailyStart, onDaily, onReward, onC
             </p>
             <p>
               Best score <strong>{summary.best.toLocaleString('en-US')}</strong>
+            </p>
+            <p>
+              Weekly best <strong>{Math.max(weekBest, summary.score).toLocaleString('en-US')}</strong>
             </p>
             <p>
               Bubbles popped <strong>{summary.popped}</strong>

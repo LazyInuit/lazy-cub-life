@@ -52,6 +52,30 @@ type BoardBests = {
   solitaire: number
   solitaireHard: number
   solitaireModes: CubSave['solitaireModeBests']
+  /** This week's bests from the board; null when the server can't say (keep what the phone has). */
+  week: CubSave['weekBests'] | null
+}
+
+/** This account's best in each game this leaderboard week. */
+async function loadWeekBests(): Promise<CubSave['weekBests'] | null> {
+  if (!supabase) return null
+  try {
+    const { data, error } = await supabase.rpc('my_week_bests')
+    if (error || !data || typeof data !== 'object' || Array.isArray(data)) return null
+    const entry = data as { week?: unknown; bests?: unknown }
+    if (typeof entry.week !== 'string') return null
+    const raw = entry.bests && typeof entry.bests === 'object' && !Array.isArray(entry.bests)
+      ? (entry.bests as Record<string, unknown>)
+      : {}
+    const scores: Record<string, number> = {}
+    for (const [key, value] of Object.entries(raw)) {
+      const score = typeof value === 'number' ? value : Number(value)
+      if (Number.isFinite(score) && score > 0) scores[key] = Math.floor(score)
+    }
+    return { week: entry.week, scores }
+  } catch {
+    return null
+  }
 }
 
 /**
@@ -86,6 +110,7 @@ async function loadBoardBests(username: string | null): Promise<BoardBests | nul
       solitaireModes: Object.fromEntries(
         LATER_MODE_KEYS.map((key) => [key, read(raw[key])] as const).filter(([, best]) => best > 0),
       ),
+      week: await loadWeekBests(),
     }
   } catch {
     return null
@@ -106,7 +131,16 @@ function withBoardBests(save: CubSave, board: BoardBests | null): CubSave {
     solitaireBest: board.solitaire,
     solitaireHardBest: board.solitaireHard,
     solitaireModeBests: board.solitaireModes,
+    weekBests: board.week ? mergeWeek(save.weekBests, board.week) : save.weekBests,
   }
+}
+
+/** The board's week wins; scores this phone has for that same week (not yet sent) are kept if higher. */
+function mergeWeek(local: CubSave['weekBests'], server: CubSave['weekBests']): CubSave['weekBests'] {
+  if (local.week !== server.week) return server
+  const scores = { ...server.scores }
+  for (const [key, score] of Object.entries(local.scores)) scores[key] = Math.max(score ?? 0, scores[key] ?? 0)
+  return { week: server.week, scores }
 }
 
 function sameBests(a: CubSave, b: CubSave) {
@@ -120,7 +154,9 @@ function sameBests(a: CubSave, b: CubSave) {
     a.riverBest === b.riverBest &&
     a.solitaireBest === b.solitaireBest &&
     a.solitaireHardBest === b.solitaireHardBest &&
-    LATER_MODE_KEYS.every((key) => (a.solitaireModeBests[key] ?? 0) === (b.solitaireModeBests[key] ?? 0))
+    LATER_MODE_KEYS.every((key) => (a.solitaireModeBests[key] ?? 0) === (b.solitaireModeBests[key] ?? 0)) &&
+    a.weekBests.week === b.weekBests.week &&
+    JSON.stringify(a.weekBests.scores) === JSON.stringify(b.weekBests.scores)
   )
 }
 

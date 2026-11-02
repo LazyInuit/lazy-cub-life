@@ -19,6 +19,7 @@ const DAILY_BOARD_RESET = 2
 const WARDROBE_PURCHASE_RESET = 1
 import { pumpkinLit } from './halloween'
 import { LATER_MODE_KEYS, SPELLITAIRE_KEYS, type SpellitaireKey } from './solitaire/keys'
+import { easternWeekStart } from './week'
 import { sanitizeOwnedOutfits, starterUnlockedKeys } from './traitShop'
 
 const DECAY_PER_MIN: Record<Exclude<NeedKey, 'energy'>, number> = {
@@ -245,6 +246,38 @@ function sanitizeModeBests(value: unknown): CubSave['solitaireModeBests'] {
   return bests
 }
 
+/** This week's bests; a save from an earlier week starts the new week empty. */
+function sanitizeWeekBests(value: unknown, now: number): CubSave['weekBests'] {
+  const week = easternWeekStart(new Date(now))
+  const raw = value && typeof value === 'object' ? (value as { week?: unknown; scores?: unknown }) : {}
+  if (raw.week !== week || !raw.scores || typeof raw.scores !== 'object') return { week, scores: {} }
+  const scores: Record<string, number> = {}
+  for (const [key, score] of Object.entries(raw.scores as Record<string, unknown>)) {
+    const best = Math.max(0, Math.floor(num(score, 0)))
+    if (best > 0) scores[key] = best
+  }
+  return { week, scores }
+}
+
+/** This leaderboard week's best for a game (or a Spellitaire mode and difficulty), 0 in a new week. */
+export function weekBest(save: CubSave, key: string, now = Date.now()): number {
+  if (save.weekBests.week !== easternWeekStart(new Date(now))) return 0
+  return save.weekBests.scores[key] ?? 0
+}
+
+/** The save with this score counted towards this week's best, starting the week again if it has moved on. */
+export function withWeekScore(save: CubSave, key: string, score: number, now = Date.now()): CubSave {
+  const week = easternWeekStart(new Date(now))
+  const scores = save.weekBests.week === week ? save.weekBests.scores : {}
+  if (score <= (scores[key] ?? 0) && save.weekBests.week === week) return save
+  return { ...save, weekBests: { week, scores: { ...scores, [key]: Math.max(score, scores[key] ?? 0) } } }
+}
+
+/** Every Spellitaire mode and difficulty's best this week. */
+export function spellitaireWeekBests(save: CubSave): Record<SpellitaireKey, number> {
+  return Object.fromEntries(SPELLITAIRE_KEYS.map((key) => [key, weekBest(save, key)])) as Record<SpellitaireKey, number>
+}
+
 /** This player's best Spellitaire score for one mode and difficulty. */
 export function spellitaireBest(save: CubSave, key: SpellitaireKey): number {
   if (key === 'solitaire') return save.solitaireBest
@@ -342,6 +375,7 @@ export function defaultSave(now = Date.now()): CubSave {
     solitaireBest: 0,
     solitaireHardBest: 0,
     solitaireModeBests: {},
+    weekBests: { week: easternWeekStart(new Date(now)), scores: {} },
     daily: emptyDaily(),
     dailyBoardReset: DAILY_BOARD_RESET,
     wardrobePurchaseReset: WARDROBE_PURCHASE_RESET,
@@ -389,6 +423,7 @@ export function sanitizeSave(value: unknown, now = Date.now()): CubSave {
     solitaireBest: Math.max(0, Math.floor(num(raw.solitaireBest, 0))),
     solitaireHardBest: Math.max(0, Math.floor(num(raw.solitaireHardBest, 0))),
     solitaireModeBests: sanitizeModeBests(raw.solitaireModeBests),
+    weekBests: sanitizeWeekBests(raw.weekBests, now),
     daily:
       raw.dailyBoardReset === DAILY_BOARD_RESET ? sanitizeDaily(raw.daily, new Date(now)) : emptyDaily(),
     dailyBoardReset: DAILY_BOARD_RESET,

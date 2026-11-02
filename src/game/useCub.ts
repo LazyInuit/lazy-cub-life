@@ -20,6 +20,7 @@ import {
   spellitaireBest,
   spellitaireTotal,
   withSpellitaireBest,
+  withWeekScore,
 } from './progress'
 import type { SpellitaireKey } from './solitaire/keys'
 import { BONUS_COIN_AMOUNTS, DAILY_TASKS, bonusReady, dailyView, type BonusTrait, type DailyGame } from './dailyTasks'
@@ -611,14 +612,19 @@ export function useCub() {
       if (gained > 0) setDemoScore({ game, score: gained })
       return
     }
-    if (gained > 0) void submitLeaderboardScore(options.board ?? game, gained)
+    const board = options.board ?? game
+    if (gained > 0) void submitLeaderboardScore(board, gained)
     // A run can raise the level or reach a badge.
     schedulePowerRefresh()
+    const withWeek = gained > 0 ? withWeekScore(current, board, gained) : current
     const points = Math.max(0, Math.floor(options.dailyPoints ?? gained))
-    if (points === 0) return
+    if (points === 0) {
+      if (withWeek !== current) commit(withWeek)
+      return
+    }
     const daily = dailyView(current.daily)
     commit({
-      ...current,
+      ...withWeek,
       daily: {
         ...daily,
         startedAt: daily.startedAt ?? Date.now(),

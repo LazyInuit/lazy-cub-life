@@ -35,6 +35,8 @@ type StartStep = 'modes' | 'level' | 'rules'
 type Props = {
   /** Best score for each mode and difficulty. */
   bests: Record<SpellitaireKey, number>
+  /** Best score this leaderboard week for each mode and difficulty. */
+  weekBests: Record<SpellitaireKey, number>
   onBest: (score: number, key: SpellitaireKey) => void
   onDailyStart: () => boolean
   /** A game is over: its score, whether it was won, and the leaderboard key of its mode and difficulty. */
@@ -59,6 +61,8 @@ type Summary = KlondikeRewards & {
   neuBest: boolean
   /** Such as "Flipflop Hard". */
   label: string
+  /** The leaderboard key the game was scored under. */
+  key: SpellitaireKey
   seconds: number
   moves: number
   hints: number
@@ -161,7 +165,7 @@ function ControlButton({
 }
 
 /** Spellitaire: a choice of solitaire modes, each with Easy and Hard. Placeholder looks for any artwork not yet added. */
-export function Spellitaire({ bests, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus, seed }: Props) {
+export function Spellitaire({ bests, weekBests, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus, seed }: Props) {
   const [phase, setPhase] = useState<Phase>('start')
   const [step, setStep] = useState<StartStep>('modes')
   const [difficulty, setDifficulty] = useState<Difficulty>(readDifficulty)
@@ -219,6 +223,7 @@ export function Spellitaire({ bests, onBest, onDailyStart, onDaily, onReward, on
           best: bestRef.current[key] ?? 0,
           neuBest,
           label: `${modeInfo(played.mode).name} ${levelName(level)}`,
+          key,
           seconds: playedSeconds,
           moves: state.moves,
           hints: state.hints,
@@ -510,6 +515,7 @@ export function Spellitaire({ bests, onBest, onDailyStart, onDaily, onReward, on
               <p className="sol-best">
                 {levelName(difficulty)} Best Score {levelBest.toLocaleString('en-US')}
               </p>
+              <p className="sol-best week-best">Weekly Best {(weekBests[boardKey(mode, difficulty)] ?? 0).toLocaleString('en-US')}</p>
               {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
               <button
                 type="button"
@@ -592,6 +598,10 @@ export function Spellitaire({ bests, onBest, onDailyStart, onDaily, onReward, on
                 <div>
                   <dt>{summary.label} best</dt>
                   <dd>{summary.best.toLocaleString('en-US')}</dd>
+                </div>
+                <div>
+                  <dt>Weekly best</dt>
+                  <dd>{Math.max(weekBests[summary.key] ?? 0, summary.score).toLocaleString('en-US')}</dd>
                 </div>
                 <div>
                   <dt>Time</dt>

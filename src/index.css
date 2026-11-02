@@ -4305,6 +4305,18 @@ h1 {
 }
 
 .results p { margin: 0 0 6px; }
+
+/* This week's best, under a game's all-time best: the same style, a touch smaller and softer. */
+.week-best {
+  font-size: 0.88em;
+  opacity: 0.88;
+}
+
+.results-week {
+  font-size: 0.92rem;
+  font-weight: 800;
+  opacity: 0.85;
+}
 .results-xp { font-size: 1.3rem; font-weight: 800; color: #a86418; }
 .results .action { width: 100%; margin-top: 6px; }
 

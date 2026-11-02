@@ -67,6 +67,8 @@ function coinsForBoards(boards: number) {
 
 type Props = {
   best: number
+  /** Best score this leaderboard week. */
+  weekBest: number
   onBest: (score: number) => void
   onDailyStart: () => boolean
   onDaily: (score: number) => void
@@ -134,7 +136,7 @@ function MatchBust({ body }: { body: string }) {
   )
 }
 
-export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+export function TraitMatch({ best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const [pairs, setPairs] = useState(2)
   const [cards, setCards] = useState<Card[]>(() => deal(2))
   const [left, setLeft] = useState(() => secondsForPairs(2))
@@ -540,6 +542,9 @@ export function TraitMatch({ best, onBest, onDailyStart, onDaily, onReward, onCo
               : summary.reason === 'You stopped early.'
                 ? `${summary.cleared} board${summary.cleared === 1 ? '' : 's'} cleared`
                 : `Failed on level ${summary.level} · ${summary.cleared} cleared`}
+          </p>
+          <p className="results-week">
+            Best {Math.max(best, score)} · Weekly Best {Math.max(weekBest, score)}
           </p>
           <p className="results-xp">+{summary.xpGained} XP</p>
           <p className="pride-results-coins">

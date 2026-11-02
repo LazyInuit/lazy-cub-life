@@ -76,6 +76,8 @@ export type CubSave = {
   solitaireHardBest: number
   /** Spellitaire bests for the later modes, by leaderboard key such as 'solitaire-flipflop-hard'. */
   solitaireModeBests: Partial<Record<SpellitaireKey, number>>
+  /** This leaderboard week's best in each game, by leaderboard key. Starts again each Monday (US Eastern). */
+  weekBests: { week: string; scores: Partial<Record<string, number>> }
   /** Task scores for the current 24 hour round, which rewards have been claimed, and the board bonus. */
   daily: DailyProgress
   /** Matches DAILY_BOARD_RESET after a one-time board clear. */

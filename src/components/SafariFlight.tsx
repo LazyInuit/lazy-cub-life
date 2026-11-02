@@ -41,6 +41,8 @@ const KINDS: Gate['kind'][] = ['tree', 'rock', 'grass', 'green', 'orange', 'blue
 
 type Props = {
   best: number
+  /** Best score this leaderboard week. */
+  weekBest: number
   onBest: (score: number) => void
   onDailyStart: () => boolean
   onDaily: (score: number) => void
@@ -57,7 +59,7 @@ type Props = {
   powerBonus?: RunBonus
 }
 
-export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+export function SafariFlight({ best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const onRewardRef = useRef(onReward)
   const onBestRef = useRef(onBest)
@@ -393,6 +395,7 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
                   <h2>Kovu's Space Dash</h2>
                 </div>
                 <p className="flight-best">Best Score {Math.max(best, hudScore)}</p>
+                <p className="flight-best week-best">Weekly Best {weekBest}</p>
                 {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
                 <button type="button" className="cabinet-key flight-panel-btn" onClick={flap}>
                   Play
@@ -408,6 +411,9 @@ export function SafariFlight({ best, onBest, onDailyStart, onDaily, onReward, on
       {summary ? (
         <div className="results">
           <p>{summary.score} gap{summary.score === 1 ? '' : 's'} cleared.</p>
+          <p className="results-week">
+            Best {Math.max(best, summary.score)} · Weekly Best {Math.max(weekBest, summary.score)}
+          </p>
           <p className="results-xp">+{summary.xpGained} XP</p>
           <p className="results-coins">
             <img src={coinUrl} alt="" />

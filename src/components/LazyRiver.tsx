@@ -14,6 +14,8 @@ type Mode = 'start' | 'play' | 'over'
 
 type Props = {
   best: number
+  /** Best score this leaderboard week. */
+  weekBest: number
   onBest: (score: number) => void
   onDailyStart: () => boolean
   onDaily: (score: number) => void
@@ -40,7 +42,7 @@ type Summary = RunResult & {
 /** Time to see the cub stop in the water before the results panel opens. */
 const OVER_PANEL_MS = 500
 
-export function LazyRiver({ best, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+export function LazyRiver({ best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [showRules, setShowRules] = useState(false)
@@ -174,6 +176,7 @@ export function LazyRiver({ best, onBest, onDailyStart, onDaily, onReward, onCoi
                 <h2>Lazy River</h2>
               </div>
               <p className="river-best">Best Score {bestRef.current.toLocaleString('en-US')}</p>
+              <p className="river-best week-best">Weekly Best {weekBest.toLocaleString('en-US')}</p>
               {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
               {failed ? <p className="energy-note">The river could not load. Check your connection and try again.</p> : null}
               <button type="button" className="river-btn" onClick={startRun} disabled={failed || !ready}>
@@ -246,6 +249,10 @@ export function LazyRiver({ best, onBest, onDailyStart, onDaily, onReward, onCoi
               <div>
                 <dt>Best score</dt>
                 <dd>{summary.best.toLocaleString('en-US')}</dd>
+              </div>
+              <div>
+                <dt>Weekly best</dt>
+                <dd>{Math.max(weekBest, summary.score).toLocaleString('en-US')}</dd>
               </div>
               <div>
                 <dt>Distance</dt>
