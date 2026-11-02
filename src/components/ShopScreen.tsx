@@ -87,7 +87,6 @@ export function ShopScreen({ cub, onBack, onGames }: Props) {
           </span>
           <span className="shop-nft-copy">
             <strong>Lazy Cubs NFT's</strong>
-            <em>Play &amp; Earn Real NFT's!</em>
           </span>
           <span className="nft-soon">Coming soon</span>
         </button>

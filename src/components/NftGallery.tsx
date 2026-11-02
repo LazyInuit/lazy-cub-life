@@ -34,7 +34,6 @@ export function NftGallery({ onBack }: Props) {
       </header>
       <p className="nft-soon-banner">
         <strong>Coming soon</strong>
-        <span>These Lazy Cubs NFT's will be available to purchase here soon with coins you earn in game!</span>
       </p>
       <ul className="nft-grid">
         {SHOP_NFTS.map((nft) => (
