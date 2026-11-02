@@ -9857,6 +9857,113 @@ img.sol-control-icon {
   gap: 8px;
 }
 
+/* Spellitaire's leaderboard: opened from under the title, one board per mode and difficulty. */
+.leaderboard-open.sol-lb-open {
+  display: block;
+  width: 100%;
+  margin: 0 0 10px;
+}
+.sol-lb {
+  margin-top: 4px;
+}
+
+.sol-lb-modes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+
+.sol-lb-modes button.wide {
+  grid-column: 1 / -1;
+}
+
+.sol-lb-toggles {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 7px 0 8px;
+}
+
+.sol-lb-toggles > div {
+  display: flex;
+  gap: 4px;
+}
+
+.sol-lb-modes button,
+.sol-lb-toggles button {
+  padding: 5px 6px;
+  border: 1.5px solid rgba(244, 197, 66, 0.45);
+  border-radius: 10px;
+  background: rgba(20, 8, 40, 0.55);
+  color: #e9dcff;
+  font-family: Fredoka, 'Trebuchet MS', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.sol-lb-modes button.on,
+.sol-lb-toggles button.on {
+  border-color: #f4c542;
+  background: linear-gradient(180deg, #6a35b0, #3a1670);
+  color: #ffe9a8;
+}
+
+.sol-lb-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sol-lb-list li {
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 9px;
+  font-size: 0.86rem;
+  text-align: left;
+}
+
+.sol-lb-list li:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sol-lb-list li.mine {
+  background: rgba(244, 197, 66, 0.22);
+  outline: 1px solid rgba(244, 197, 66, 0.6);
+}
+
+.sol-lb-rank {
+  color: #ffe08a;
+  font-weight: 800;
+  text-align: center;
+}
+
+.sol-lb-name {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sol-lb-score {
+  color: #ffe9a8;
+  font-weight: 800;
+}
+
+.sol-lb-note,
+.sol-lb-mine {
+  margin: 6px 0 0;
+  font-size: 0.84rem;
+  opacity: 0.9;
+}
+
+.sol-lb-mine {
+  color: #ffe08a;
+  font-weight: 800;
+}
+
 /* Like the main games screen: a picture with the game's name under it. */
 .sol-mode {
   display: flex;

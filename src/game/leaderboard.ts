@@ -70,15 +70,22 @@ export async function loadLeaderboard(
   period: LeaderboardPeriod,
   offset = 0,
 ): Promise<LeaderboardPage> {
+  return loadBoardPage('leaderboard', { p_game: game, p_period: period, p_limit: LEADERBOARD_PAGE, p_offset: offset })
+}
+
+/**
+ * A Spellitaire board over some mode-and-difficulty keys: each player's best in each key added
+ * together. One key is a single mode and difficulty; a mode's two keys its total; every key overall.
+ */
+export async function loadSpellitaireBoard(keys: readonly SpellitaireKey[], period: LeaderboardPeriod, limit = 10): Promise<LeaderboardPage> {
+  return loadBoardPage('spellitaire_board', { p_keys: keys, p_period: period, p_limit: limit, p_offset: 0 })
+}
+
+async function loadBoardPage(rpc: string, params: Record<string, unknown>): Promise<LeaderboardPage> {
   if (!supabase) {
     return { rows: [], mine: null, total: 0, resetsAt: null, serverNow: null }
   }
-  const { data, error } = await supabase.rpc('leaderboard', {
-    p_game: game,
-    p_period: period,
-    p_limit: LEADERBOARD_PAGE,
-    p_offset: offset,
-  })
+  const { data, error } = await supabase.rpc(rpc, params)
   if (error) {
     const message = error.message.toLowerCase()
     if (message.includes('could not find the function') || message.includes('schema cache')) {

@@ -22,15 +22,17 @@ import type { NeedKey } from '../game/types'
 import type { RunBonus } from '../game/useCub'
 import { RunEnergy } from './EnergyBar'
 import { GamesButton, HomeButton } from './HomeButton'
+import { LeaderboardOpenButton } from './LeaderboardOpenButton'
 import { PowerBonusNote } from './PowerBonusNote'
 import { CardTable } from './solitaire/CardTable'
 import { ModeRules } from './solitaire/ModeRules'
 import { ModeThumb } from './solitaire/ModeThumb'
+import { SpellitaireBoard } from './solitaire/SpellitaireBoard'
 import { hasSolAsset, SolAsset } from './solitaire/SolAsset'
 
 type Phase = 'start' | 'play' | 'won' | 'over'
-/** The start screen: pick a mode, then a difficulty (with that mode's rules one tap away). */
-type StartStep = 'modes' | 'level' | 'rules'
+/** The start screen: pick a mode, then a difficulty (with that mode's rules one tap away), or open the leaderboard. */
+type StartStep = 'modes' | 'level' | 'rules' | 'board'
 
 type Props = {
   /** Best score for each mode and difficulty. */
@@ -486,6 +488,11 @@ export function Spellitaire({ bests, weekBests, onBest, onDailyStart, onDaily, o
           {step === 'modes' ? (
             <div className="sol-panel">
               {backHead('Spellitaire', () => leave(onGames))}
+              <LeaderboardOpenButton
+                className="sol-lb-open"
+                sub="Every card game • Weekly & All-Time"
+                onOpen={() => setStep('board')}
+              />
               <p className="sol-pick-label">Choose a game</p>
               <div className="sol-modes">
                 {SPELL_MODES.map((option) => (
@@ -507,6 +514,11 @@ export function Spellitaire({ bests, weekBests, onBest, onDailyStart, onDaily, o
                   </button>
                 ))}
               </div>
+            </div>
+          ) : step === 'board' ? (
+            <div className="sol-panel">
+              {backHead('Leaderboard', () => setStep('modes'))}
+              <SpellitaireBoard mode={mode} difficulty={difficulty} />
             </div>
           ) : step === 'level' ? (
             <div className="sol-panel">
