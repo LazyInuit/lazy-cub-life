@@ -23,6 +23,7 @@ import { endDemo, isDemo, onSignUpRequest, requestSignUp, startDemo } from './ga
 import { openDemoCub, wakeStoredCub } from './game/storage'
 import { DemoChoice } from './components/DemoChoice'
 import { DemoScorePop } from './components/DemoScorePop'
+import { spellitaireBests } from './game/progress'
 import { useCub } from './game/useCub'
 import { supabase } from './game/supabase'
 
@@ -453,12 +454,10 @@ function Game() {
       ) : null}
       {screen === 'solitaire' ? (
         <Spellitaire
-          bests={{ easy: cub.save.solitaireBest, hard: cub.save.solitaireHardBest }}
+          bests={spellitaireBests(cub.save)}
           onBest={cub.recordSolitaireBest}
           onDailyStart={() => cub.startDaily('solitaire')}
-          onDaily={(score, { won, hard }) =>
-            cub.noteDaily('solitaire', score, { board: hard ? 'solitaire-hard' : 'solitaire', dailyPoints: won ? 1 : 0 })
-          }
+          onDaily={(score, { won, key }) => cub.noteDaily('solitaire', score, { board: key, dailyPoints: won ? 1 : 0 })}
           onReward={cub.reward}
           onCoins={(amount) => cub.addCubCash(amount, 'solitaire')}
           powerBonus={cub.runBonus}

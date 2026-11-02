@@ -17,7 +17,11 @@ import {
   isNeedy,
   levelProgress,
   playEnergyCost,
+  spellitaireBest,
+  spellitaireTotal,
+  withSpellitaireBest,
 } from './progress'
+import type { SpellitaireKey } from './solitaire/keys'
 import { BONUS_COIN_AMOUNTS, DAILY_TASKS, bonusReady, dailyView, type BonusTrait, type DailyGame } from './dailyTasks'
 import { DRINKS, type DrinkId } from './drinks'
 import { submitLeaderboardScore, type LeaderboardGame } from './leaderboard'
@@ -534,16 +538,15 @@ export function useCub() {
     announceBadge('river', current.riverBest, nextBest)
   }, [announceBadge, commit])
 
-  /** Easy and Hard keep their own bests; badges go by the two added together, like the leaderboard. */
-  const recordSolitaireBest = useCallback((score: number, hard: boolean) => {
+  /** Each mode and difficulty keeps its own best; badges go by them all added together, like the leaderboard. */
+  const recordSolitaireBest = useCallback((score: number, key: SpellitaireKey) => {
     const current = saveRef.current
     if (!current) return
     const nextBest = Math.max(0, Math.floor(score))
-    const field = hard ? 'solitaireHardBest' : 'solitaireBest'
-    if (nextBest <= current[field]) return
-    const next = { ...current, [field]: nextBest }
+    if (nextBest <= spellitaireBest(current, key)) return
+    const next = withSpellitaireBest(current, key, nextBest)
     commit(next)
-    announceBadge('solitaire', current.solitaireBest + current.solitaireHardBest, next.solitaireBest + next.solitaireHardBest)
+    announceBadge('solitaire', spellitaireTotal(current), spellitaireTotal(next))
   }, [announceBadge, commit])
 
   const setOutfits = useCallback((outfits: CubOutfits) => {

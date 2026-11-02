@@ -8,6 +8,7 @@ import {
   seenBadges,
   type GameBests,
 } from './profileArt'
+import { spellitaireTotal } from './progress'
 import type { CubSave } from './types'
 
 /** Bests saved on this phone, which can be ahead of the leaderboard right after a run. */
@@ -21,7 +22,7 @@ export function saveBests(save: CubSave | null): GameBests {
     hoops: save.hoopsBest,
     bubble: save.bubbleBest,
     river: save.riverBest,
-    solitaire: save.solitaireBest + save.solitaireHardBest,
+    solitaire: spellitaireTotal(save),
   }
 }
 

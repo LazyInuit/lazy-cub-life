@@ -18,6 +18,7 @@ const DAILY_BOARD_RESET = 2
 /** Bump this to clear purchased wardrobe traits once on the next load. */
 const WARDROBE_PURCHASE_RESET = 1
 import { pumpkinLit } from './halloween'
+import { LATER_MODE_KEYS, SPELLITAIRE_KEYS, type SpellitaireKey } from './solitaire/keys'
 import { sanitizeOwnedOutfits, starterUnlockedKeys } from './traitShop'
 
 const DECAY_PER_MIN: Record<Exclude<NeedKey, 'energy'>, number> = {
@@ -234,6 +235,38 @@ function num(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback
 }
 
+function sanitizeModeBests(value: unknown): CubSave['solitaireModeBests'] {
+  const raw = value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
+  const bests: CubSave['solitaireModeBests'] = {}
+  for (const key of LATER_MODE_KEYS) {
+    const best = Math.max(0, Math.floor(num(raw[key], 0)))
+    if (best > 0) bests[key] = best
+  }
+  return bests
+}
+
+/** This player's best Spellitaire score for one mode and difficulty. */
+export function spellitaireBest(save: CubSave, key: SpellitaireKey): number {
+  if (key === 'solitaire') return save.solitaireBest
+  if (key === 'solitaire-hard') return save.solitaireHardBest
+  return save.solitaireModeBests[key] ?? 0
+}
+
+export function spellitaireBests(save: CubSave): Record<SpellitaireKey, number> {
+  return Object.fromEntries(SPELLITAIRE_KEYS.map((key) => [key, spellitaireBest(save, key)])) as Record<SpellitaireKey, number>
+}
+
+/** Every Spellitaire best added together, as on the leaderboard and for badges. */
+export function spellitaireTotal(save: CubSave): number {
+  return SPELLITAIRE_KEYS.reduce((sum, key) => sum + spellitaireBest(save, key), 0)
+}
+
+export function withSpellitaireBest(save: CubSave, key: SpellitaireKey, best: number): CubSave {
+  if (key === 'solitaire') return { ...save, solitaireBest: best }
+  if (key === 'solitaire-hard') return { ...save, solitaireHardBest: best }
+  return { ...save, solitaireModeBests: { ...save.solitaireModeBests, [key]: best } }
+}
+
 function sanitizeOutfit(value: unknown): OutfitTraits {
   const next = { ...DEFAULT_OUTFIT }
   if (!value || typeof value !== 'object') return next
@@ -308,6 +341,7 @@ export function defaultSave(now = Date.now()): CubSave {
     riverBest: 0,
     solitaireBest: 0,
     solitaireHardBest: 0,
+    solitaireModeBests: {},
     daily: emptyDaily(),
     dailyBoardReset: DAILY_BOARD_RESET,
     wardrobePurchaseReset: WARDROBE_PURCHASE_RESET,
@@ -354,6 +388,7 @@ export function sanitizeSave(value: unknown, now = Date.now()): CubSave {
     riverBest: Math.max(0, Math.floor(num(raw.riverBest, 0))),
     solitaireBest: Math.max(0, Math.floor(num(raw.solitaireBest, 0))),
     solitaireHardBest: Math.max(0, Math.floor(num(raw.solitaireHardBest, 0))),
+    solitaireModeBests: sanitizeModeBests(raw.solitaireModeBests),
     daily:
       raw.dailyBoardReset === DAILY_BOARD_RESET ? sanitizeDaily(raw.daily, new Date(now)) : emptyDaily(),
     dailyBoardReset: DAILY_BOARD_RESET,

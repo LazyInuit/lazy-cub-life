@@ -1,4 +1,5 @@
 import type { DailyProgress } from './dailyTasks'
+import type { SpellitaireKey } from './solitaire/keys'
 
 export type NeedKey = 'hunger' | 'happiness' | 'energy' | 'cleanliness'
 
@@ -71,8 +72,10 @@ export type CubSave = {
   riverBest: number
   /** Spellitaire best on Easy (draw 1). */
   solitaireBest: number
-  /** Spellitaire best on Hard (draw 3). The leaderboard adds the two together. */
+  /** Spellitaire best on Hard (draw 3). The leaderboard adds every Spellitaire best together. */
   solitaireHardBest: number
+  /** Spellitaire bests for the later modes, by leaderboard key such as 'solitaire-flipflop-hard'. */
+  solitaireModeBests: Partial<Record<SpellitaireKey, number>>
   /** Task scores for the current 24 hour round, which rewards have been claimed, and the board bonus. */
   daily: DailyProgress
   /** Matches DAILY_BOARD_RESET after a one-time board clear. */

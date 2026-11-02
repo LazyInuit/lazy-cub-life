@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react'
-import { isRed, rankLabel, SUIT_SYMBOLS, type Card, type Suit } from '../../game/cards/deck'
+import { cardArtId, isRed, rankLabel, SUIT_SYMBOLS, type Card, type Suit } from '../../game/cards/deck'
 import { cardFaceAsset, SOLITAIRE_LAYOUT, type SolitaireAssetName } from '../../game/solitaire/theme'
 import { hasSolAsset, SolAsset } from './SolAsset'
 
@@ -54,7 +54,7 @@ function DrawnFace({ card }: { card: Card }) {
 
 /** One playing card, face up or face down. Shared by every solitaire variant. */
 export function CardFace({ card }: { card: Card }) {
-  const faceUrl = card.faceUp ? cardFaceAsset(card.id) : null
+  const faceUrl = card.faceUp ? cardFaceAsset(cardArtId(card)) : null
   const [broken, setBroken] = useState(false)
   if (!card.faceUp) {
     return <SolAsset name="cardBack" className="sol-card-img" fallback={<span className="sol-back" />} />

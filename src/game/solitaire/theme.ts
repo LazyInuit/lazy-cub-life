@@ -74,6 +74,12 @@ export const SOLITAIRE_ASSETS = {
   winBanner: { file: 'win-banner', width: 1024, height: 512, note: 'Banner shown when the game is won, and on the results.' },
   sparkle: { file: 'sparkle', width: 128, height: 128, note: 'Magic sparkle used for effects.' },
   thumbnail: { file: 'game-thumb', width: 512, height: 512, note: 'Games menu tile (square). JPG is fine.' },
+  modeClassic: { file: 'mode-classic', width: 600, height: 450, note: 'Classic tile on the Spellitaire choose-a-game screen (4:3). JPG is fine.' },
+  modeFlipflop: { file: 'mode-flipflop', width: 600, height: 450, note: 'Flipflop tile on the choose-a-game screen (4:3).' },
+  modePyramid: { file: 'mode-pyramid', width: 600, height: 450, note: 'Pyramid tile on the choose-a-game screen (4:3).' },
+  modeFreecell: { file: 'mode-freecell', width: 600, height: 450, note: 'FreeCell tile on the choose-a-game screen (4:3).' },
+  modeSpider: { file: 'mode-spider', width: 600, height: 450, note: 'Spider tile on the choose-a-game screen (4:3).' },
+  modeGolf: { file: 'mode-golf', width: 600, height: 450, note: 'Golf tile on the choose-a-game screen (4:3).' },
 } as const satisfies Record<string, AssetSpec>
 
 export type SolitaireAssetName = keyof typeof SOLITAIRE_ASSETS

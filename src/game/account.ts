@@ -1,4 +1,5 @@
 import { defaultSave, sanitizeSave } from './progress'
+import { LATER_MODE_KEYS } from './solitaire/keys'
 import { supabase } from './supabase'
 import type { CubSave } from './types'
 
@@ -50,6 +51,7 @@ type BoardBests = {
   river: number
   solitaire: number
   solitaireHard: number
+  solitaireModes: CubSave['solitaireModeBests']
 }
 
 /**
@@ -81,6 +83,9 @@ async function loadBoardBests(username: string | null): Promise<BoardBests | nul
       river: read(raw.river),
       solitaire: read(raw.solitaire),
       solitaireHard: read(raw['solitaire-hard']),
+      solitaireModes: Object.fromEntries(
+        LATER_MODE_KEYS.map((key) => [key, read(raw[key])] as const).filter(([, best]) => best > 0),
+      ),
     }
   } catch {
     return null
@@ -100,6 +105,7 @@ function withBoardBests(save: CubSave, board: BoardBests | null): CubSave {
     riverBest: board.river,
     solitaireBest: board.solitaire,
     solitaireHardBest: board.solitaireHard,
+    solitaireModeBests: board.solitaireModes,
   }
 }
 
@@ -113,7 +119,8 @@ function sameBests(a: CubSave, b: CubSave) {
     a.bubbleBest === b.bubbleBest &&
     a.riverBest === b.riverBest &&
     a.solitaireBest === b.solitaireBest &&
-    a.solitaireHardBest === b.solitaireHardBest
+    a.solitaireHardBest === b.solitaireHardBest &&
+    LATER_MODE_KEYS.every((key) => (a.solitaireModeBests[key] ?? 0) === (b.solitaireModeBests[key] ?? 0))
   )
 }
 

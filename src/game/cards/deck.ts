@@ -44,6 +44,33 @@ export function cardId(rank: Rank, suit: Suit) {
   return `${RANK_CODES[rank]}${SUIT_CODES[suit]}`
 }
 
+/** The artwork name for a card ("QH"), the same for every copy when a deck holds duplicates. */
+export function cardArtId(card: Pick<Card, 'rank' | 'suit'>) {
+  return cardId(card.rank, card.suit)
+}
+
+/**
+ * 52 cards using only some suits, repeated so every rank still appears four times. Copies get ids
+ * like "QH~2" so each card stays unique on the table.
+ */
+export function makeSuitDeck(suits: readonly Suit[]): Card[] {
+  return makeCopies(suits, Math.max(1, Math.round(SUITS.length / suits.length)))
+}
+
+/** `copies` of every rank in each suit given, such as 8 sets of spades for one-suit Spider. Ids stay unique. */
+export function makeCopies(suits: readonly Suit[], copies: number): Card[] {
+  const deck: Card[] = []
+  for (let copy = 0; copy < copies; copy += 1) {
+    for (const suit of suits) {
+      for (const rank of RANKS) {
+        const id = copy === 0 ? cardId(rank, suit) : `${cardId(rank, suit)}~${copy + 1}`
+        deck.push({ id, suit, rank, faceUp: false })
+      }
+    }
+  }
+  return deck
+}
+
 export function isRed(suit: Suit) {
   return suit === 'hearts' || suit === 'diamonds'
 }

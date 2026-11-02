@@ -9092,6 +9092,20 @@ button.power-plate:active {
   content: 'A';
 }
 
+/* FreeCell: an empty free cell, marked so it reads as a place to park one card. */
+.sol-slot-ph.cell::after {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(244, 197, 66, 0.5);
+  font-family: Fredoka, 'Trebuchet MS', sans-serif;
+  font-size: calc(var(--sol-card-w) * 0.2);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  content: 'FREE';
+}
+
 .sol-slot-ph.recycle::after {
   content: '\21BB';
 }
@@ -9184,6 +9198,209 @@ button.power-plate:active {
 
 .sol-board.locked .sol-card {
   cursor: default;
+}
+
+/* How many cards are left in the stock, on its bottom-right corner. Taps go through to the stock. */
+.sol-stock-count {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 400;
+  pointer-events: none;
+}
+
+.sol-stock-count span {
+  position: absolute;
+  right: -6%;
+  bottom: -5%;
+  min-width: calc(var(--sol-card-w) * 0.42);
+  padding: 1px 4px;
+  border: 2px solid #f4c542;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #5a2a9c, #2a1050);
+  color: #ffe9a8;
+  font-family: Fredoka, 'Trebuchet MS', sans-serif;
+  font-size: calc(var(--sol-card-w) * 0.24);
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* A card that has just turned face up flips over (the face only, so the card's position is untouched). */
+.sol-card.flipping > :first-child {
+  animation: sol-flip 0.34s ease-out;
+}
+
+@keyframes sol-flip {
+  from {
+    transform: scaleX(0.05);
+    filter: brightness(1.5);
+  }
+  to {
+    transform: scaleX(1);
+    filter: brightness(1);
+  }
+}
+
+/* Golf: the active waste card glows softly. */
+.sol-card.glow {
+  box-shadow:
+    0 0 0 2px rgba(255, 224, 138, 0.9),
+    0 0 14px 4px rgba(244, 197, 66, 0.55);
+}
+
+/* Status lines pop in when they change (each line is keyed by its text). */
+.sol-table-note span {
+  animation: sol-note-pop 0.28s ease-out;
+}
+
+@keyframes sol-note-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Spider: runs cleared and deals left, between the stock and the cleared runs. */
+.sol-table-note {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  pointer-events: none;
+  color: #ffe9a8;
+  font-family: Fredoka, 'Trebuchet MS', sans-serif;
+  font-weight: 700;
+  text-align: center;
+  text-shadow: 0 2px 3px rgba(20, 6, 40, 0.9);
+}
+
+.sol-table-note span:first-child {
+  font-size: calc(var(--sol-card-w) * 0.5);
+}
+
+.sol-table-note span + span {
+  font-size: calc(var(--sol-card-w) * 0.36);
+  opacity: 0.85;
+}
+
+/* A short message on the table, such as why the stock can't be dealt yet. */
+.sol-toast {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  z-index: 60;
+  max-width: 82%;
+  padding: 10px 14px;
+  border: 2px solid #f4c542;
+  border-radius: 14px;
+  background: rgba(42, 16, 80, 0.94);
+  color: #ffe9a8;
+  font-family: Fredoka, 'Trebuchet MS', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  animation: sol-toast 2.2s ease both;
+}
+
+@keyframes sol-toast {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -40%);
+  }
+  12%,
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* An odd mode tile at the end of the grid sits centred under the others, the same size. */
+.sol-mode:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: calc(50% - 4px);
+}
+
+/* Pyramid: the value of an Ace, Jack, Queen or King, faint in the top-right corner. */
+.sol-card-value {
+  position: absolute;
+  top: 4%;
+  right: 9%;
+  color: rgba(255, 246, 220, 0.82);
+  font-family: Fredoka, 'Trebuchet MS', sans-serif;
+  font-size: calc(var(--sol-card-w) * 0.24);
+  font-weight: 700;
+  line-height: 1;
+  text-shadow:
+    0 0 3px rgba(30, 10, 60, 0.85),
+    0 1px 1px rgba(30, 10, 60, 0.9);
+  pointer-events: none;
+}
+
+/* Pyramid: cards still covered by others are dimmed, so the free ones stand out. */
+.sol-card.covered {
+  filter: brightness(0.62) saturate(0.75);
+  transition:
+    transform var(--sol-move-ms) ease,
+    filter 0.25s ease;
+}
+
+/* A card that can't be played gives a short shake. Two copies so a second tap replays it. */
+.sol-card.denied-a {
+  animation: sol-denied-a 0.36s ease-in-out;
+}
+
+.sol-card.denied-b {
+  animation: sol-denied-b 0.36s ease-in-out;
+}
+
+@keyframes sol-denied-a {
+  0%,
+  100% {
+    transform: translate3d(var(--x), var(--y), 0);
+  }
+  20%,
+  60% {
+    transform: translate3d(calc(var(--x) - 4px), var(--y), 0);
+    box-shadow: 0 0 0 2px #ff6b6b;
+  }
+  40%,
+  80% {
+    transform: translate3d(calc(var(--x) + 4px), var(--y), 0);
+    box-shadow: 0 0 0 2px #ff6b6b;
+  }
+}
+
+@keyframes sol-denied-b {
+  0%,
+  100% {
+    transform: translate3d(var(--x), var(--y), 0);
+  }
+  20%,
+  60% {
+    transform: translate3d(calc(var(--x) - 4px), var(--y), 0);
+    box-shadow: 0 0 0 2px #ff6b6b;
+  }
+  40%,
+  80% {
+    transform: translate3d(calc(var(--x) + 4px), var(--y), 0);
+    box-shadow: 0 0 0 2px #ff6b6b;
+  }
 }
 
 .sol-back {
@@ -9613,6 +9830,111 @@ img.sol-control-icon {
   background: linear-gradient(180deg, #6a35b0, #3a1670);
   color: #ffe9a8;
   box-shadow: 0 0 10px rgba(244, 197, 66, 0.45);
+}
+
+.sol-pick-label {
+  margin: 0 0 8px;
+  color: #e9dcff;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.sol-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* Like the main games screen: a picture with the game's name under it. */
+.sol-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 6px 7px;
+  border: 2px solid rgba(244, 197, 66, 0.55);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #5a2a9c, #321362);
+  color: #e9dcff;
+  font-family: Fredoka, 'Trebuchet MS', sans-serif;
+  box-shadow: 0 3px 0 #1e0b3a;
+}
+
+.sol-mode strong {
+  color: #ffe08a;
+  font-size: 0.98rem;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.sol-mode-thumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 2px solid rgba(255, 240, 200, 0.85);
+  border-radius: 12px;
+  background:
+    radial-gradient(120% 90% at 50% 20%, rgba(150, 90, 230, 0.55), transparent 70%),
+    linear-gradient(180deg, #2c1060, #160736);
+}
+
+.sol-mode-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Until a mode has its own picture: a small preview of its table, made from the real cards. */
+.sol-mode-preview {
+  position: absolute;
+  inset: 0;
+  --sol-card-w: 22px;
+}
+
+.sol-mode-mini {
+  position: absolute;
+  aspect-ratio: 1 / 1.45;
+  overflow: hidden;
+  border-radius: 3px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.sol-mode-mini .sol-card-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sol-mode-mini.slot {
+  border: 1px dashed rgba(244, 197, 66, 0.6);
+  box-shadow: none;
+}
+
+.sol-mode.last {
+  border-color: #f4c542;
+  box-shadow:
+    0 3px 0 #1e0b3a,
+    0 0 10px rgba(244, 197, 66, 0.4);
+}
+
+.sol-mode:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #1e0b3a;
+}
+
+.sol-mode.soon {
+  border-style: dashed;
+  border-color: rgba(233, 220, 255, 0.3);
+  background: rgba(20, 8, 40, 0.45);
+  box-shadow: none;
+}
+
+.sol-mode.soon strong {
+  color: rgba(233, 220, 255, 0.55);
 }
 
 .sol-btn {

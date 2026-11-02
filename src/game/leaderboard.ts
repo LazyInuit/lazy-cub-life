@@ -2,6 +2,7 @@ import { readCubPower, type CubPower } from './cubPower'
 import type { DailyGame } from './dailyTasks'
 import { profilePhotoUrl } from './profilePhoto'
 import { sanitizeSave } from './progress'
+import { SPELLITAIRE_KEYS, type SpellitaireKey } from './solitaire/keys'
 import { supabase } from './supabase'
 import type { CubSave } from './types'
 
@@ -55,8 +56,8 @@ export type LeaderboardPage = {
   serverNow: string | null
 }
 
-/** Where a score is stored. Spellitaire Hard has its own key, added to Easy on the Spellitaire board. */
-export type LeaderboardGame = DailyGame | 'solitaire-hard'
+/** Where a score is stored. Each Spellitaire mode and difficulty has its own key, all added together on the Spellitaire board. */
+export type LeaderboardGame = DailyGame | SpellitaireKey
 
 export async function submitLeaderboardScore(game: LeaderboardGame, score: number) {
   if (!supabase || score <= 0) return
@@ -233,8 +234,11 @@ export async function loadPlayerProfile(username: string): Promise<PlayerProfile
     : {}
   const bests: Partial<Record<DailyGame, number>> = {}
   for (const game of ['flight', 'match', 'dojo', 'archer', 'hoops', 'bubble', 'river', 'solitaire'] as const) {
-    // Spellitaire badges go by the best Easy and best Hard scores added together.
-    const best = readCount(rawBests[game]) + (game === 'solitaire' ? readCount(rawBests['solitaire-hard']) : 0)
+    // Spellitaire badges go by the best score in every mode and difficulty added together.
+    const best =
+      game === 'solitaire'
+        ? SPELLITAIRE_KEYS.reduce((sum, key) => sum + readCount(rawBests[key]), 0)
+        : readCount(rawBests[game])
     if (best > 0) bests[game] = best
   }
   const avatar = entry.avatar && typeof entry.avatar === 'object' && !Array.isArray(entry.avatar)

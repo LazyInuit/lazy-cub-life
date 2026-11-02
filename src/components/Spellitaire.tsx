@@ -2,43 +2,43 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import { newSeed } from '../game/cards/deck'
 import { PLAY_ENERGY_COST, PLAY_NEED_COST, moodFromScore } from '../game/progress'
+import { createPayOnce, type KlondikeRewards } from '../game/solitaire/klondike'
 import {
-  canUndo,
-  createPayOnce,
-  deal,
-  draw,
-  hasUsefulMove,
-  liveScore,
-  move,
-  rewardsFor,
-  undo,
-  takeHint,
-  type DrawCount,
-  type Hint,
-  type KlondikeRewards,
-  type KlondikeState,
-  type PileId,
-} from '../game/solitaire/klondike'
+  boardKey,
+  COMING_SOON_MODES,
+  ENGINES,
+  isSpellMode,
+  modeInfo,
+  SPELL_MODES,
+  type Difficulty,
+  type SpellGame,
+  type SpellitaireKey,
+  type SpellMode,
+} from '../game/solitaire/modes'
 import { startSpellitaireBgm, stopSpellitaireBgm } from '../game/solitaire/music'
-import { KLONDIKE_SCORING, SOLITAIRE_REWARDS } from '../game/solitaire/scoring'
+import type { PileId, TableHint } from '../game/solitaire/table'
 import { SOLITAIRE_ASSETS, SOLITAIRE_LAYOUT, solitaireAsset, type SolitaireAssetName } from '../game/solitaire/theme'
 import type { NeedKey } from '../game/types'
 import type { RunBonus } from '../game/useCub'
 import { RunEnergy } from './EnergyBar'
 import { GamesButton, HomeButton } from './HomeButton'
 import { PowerBonusNote } from './PowerBonusNote'
-import { KlondikeBoard } from './solitaire/KlondikeBoard'
+import { CardTable } from './solitaire/CardTable'
+import { ModeRules } from './solitaire/ModeRules'
+import { ModeThumb } from './solitaire/ModeThumb'
 import { hasSolAsset, SolAsset } from './solitaire/SolAsset'
 
-type Mode = 'start' | 'play' | 'won' | 'over'
+type Phase = 'start' | 'play' | 'won' | 'over'
+/** The start screen: pick a mode, then a difficulty (with that mode's rules one tap away). */
+type StartStep = 'modes' | 'level' | 'rules'
 
 type Props = {
-  /** Best scores kept apart for each difficulty. */
-  bests: { easy: number; hard: number }
-  onBest: (score: number, hard: boolean) => void
+  /** Best score for each mode and difficulty. */
+  bests: Record<SpellitaireKey, number>
+  onBest: (score: number, key: SpellitaireKey) => void
   onDailyStart: () => boolean
-  /** A game is over: its score, whether it was won, and whether it was played on Hard. */
-  onDaily: (score: number, game: { won: boolean; hard: boolean }) => void
+  /** A game is over: its score, whether it was won, and the leaderboard key of its mode and difficulty. */
+  onDaily: (score: number, game: { won: boolean; key: SpellitaireKey }) => void
   onReward: (baseXp: number, needs: Partial<Record<NeedKey, number>>) => { xpGained: number }
   onCoins: (amount: number) => void
   onExit: () => void
@@ -51,10 +51,14 @@ type Props = {
   seed?: number
 }
 
+/** A game together with the mode whose rules it follows. */
+type Table = { mode: SpellMode; game: SpellGame }
+
 type Summary = KlondikeRewards & {
   best: number
   neuBest: boolean
-  hard: boolean
+  /** Such as "Flipflop Hard". */
+  label: string
   seconds: number
   moves: number
   hints: number
@@ -74,40 +78,64 @@ function clock(seconds: number) {
 }
 
 const DIFFICULTY_KEY = 'lazy-cub-spellitaire-difficulty'
+const MODE_KEY = 'lazy-cub-spellitaire-mode'
 
-/** The last difficulty chosen on this phone: Easy (draw 1) unless Hard (draw 3) was picked. */
-function readDifficulty(): DrawCount {
+function readStored(key: string) {
   try {
-    return window.localStorage.getItem(DIFFICULTY_KEY) === 'hard' ? 3 : 1
+    return window.localStorage.getItem(key)
   } catch {
-    return 1
+    return null
   }
 }
 
-function writeDifficulty(drawCount: DrawCount) {
+function writeStored(key: string, value: string) {
   try {
-    window.localStorage.setItem(DIFFICULTY_KEY, drawCount === 3 ? 'hard' : 'easy')
+    window.localStorage.setItem(key, value)
   } catch {
     // Private browsing: the choice just isn't remembered.
   }
 }
 
-function DifficultyPicker({ value, onChange }: { value: DrawCount; onChange: (next: DrawCount) => void }) {
-  const option = (drawCount: DrawCount, label: string, detail: string) => (
+/** The last difficulty chosen on this phone, Easy unless Hard was picked. */
+const readDifficulty = (): Difficulty => (readStored(DIFFICULTY_KEY) === 'hard' ? 'hard' : 'easy')
+
+/** The last mode played on this phone, Classic until another is picked. */
+function readMode(): SpellMode {
+  const stored = readStored(MODE_KEY)
+  return isSpellMode(stored) ? stored : 'classic'
+}
+
+const levelName = (difficulty: Difficulty) => (difficulty === 'hard' ? 'Hard' : 'Easy')
+
+function dealTable(mode: SpellMode, seed: number, difficulty: Difficulty): Table {
+  return { mode, game: ENGINES[mode].deal(seed, difficulty) }
+}
+
+function DifficultyPicker({
+  mode,
+  value,
+  onChange,
+}: {
+  mode: SpellMode
+  value: Difficulty
+  onChange: (next: Difficulty) => void
+}) {
+  const levels = modeInfo(mode).levels
+  const option = (difficulty: Difficulty) => (
     <button
       type="button"
-      className={value === drawCount ? 'sol-difficulty-option on' : 'sol-difficulty-option'}
-      aria-pressed={value === drawCount}
-      onClick={() => onChange(drawCount)}
+      className={value === difficulty ? 'sol-difficulty-option on' : 'sol-difficulty-option'}
+      aria-pressed={value === difficulty}
+      onClick={() => onChange(difficulty)}
     >
-      <strong>{label}</strong>
-      <span>{detail}</span>
+      <strong>{levelName(difficulty)}</strong>
+      <span>{levels[difficulty]}</span>
     </button>
   )
   return (
     <div className="sol-difficulty" role="group" aria-label="Difficulty">
-      {option(1, 'Easy', 'Draw 1')}
-      {option(3, 'Hard', 'Draw 3')}
+      {option('easy')}
+      {option('hard')}
     </div>
   )
 }
@@ -132,51 +160,66 @@ function ControlButton({
   )
 }
 
-/** Spellitaire: Klondike, draw 1. Placeholder looks for any artwork not yet added. */
+/** Spellitaire: a choice of solitaire modes, each with Easy and Hard. Placeholder looks for any artwork not yet added. */
 export function Spellitaire({ bests, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus, seed }: Props) {
-  const [mode, setMode] = useState<Mode>('start')
-  const [drawCount, setDrawCount] = useState<DrawCount>(readDifficulty)
-  const [game, setGame] = useState<KlondikeState>(() => deal(seed ?? newSeed(), drawCount))
+  const [phase, setPhase] = useState<Phase>('start')
+  const [step, setStep] = useState<StartStep>('modes')
+  const [difficulty, setDifficulty] = useState<Difficulty>(readDifficulty)
+  const [table, setTable] = useState<Table>(() => dealTable(readMode(), seed ?? newSeed(), difficulty))
   const firstSeed = useRef<number | null>(seed ?? null)
   const [seconds, setSeconds] = useState(0)
-  const [hint, setHint] = useState<Hint | null>(null)
+  const [hint, setHint] = useState<TableHint | null>(null)
   const [confirmEnd, setConfirmEnd] = useState(false)
-  const [showRules, setShowRules] = useState(false)
   const [lowEnergy, setLowEnergy] = useState(false)
   const [summary, setSummary] = useState<Summary | null>(null)
   /** The game ended because nothing useful could be played. */
   const [stuck, setStuck] = useState(false)
-  const gameRef = useRef(game)
+  /** A short message on the table, such as why the stock can't be dealt. */
+  const [toast, setToast] = useState<{ text: string; key: number } | null>(null)
+  const toastKey = useRef(0)
+  const tableRef = useRef(table)
   const secondsRef = useRef(0)
-  const modeRef = useRef(mode)
+  const phaseRef = useRef(phase)
   const payOnce = useRef(createPayOnce())
-  const bestRef = useRef<Record<DrawCount, number>>({ 1: bests.easy, 3: bests.hard })
+  const bestRef = useRef<Record<SpellitaireKey, number>>({ ...bests })
   const callbacks = useRef({ onBest, onDaily, onReward, onCoins })
-  gameRef.current = game
-  modeRef.current = mode
-  bestRef.current = { 1: Math.max(bestRef.current[1], bests.easy), 3: Math.max(bestRef.current[3], bests.hard) }
+  tableRef.current = table
+  phaseRef.current = phase
+  for (const key of Object.keys(bests) as SpellitaireKey[]) {
+    if (bests[key] > (bestRef.current[key] ?? 0)) bestRef.current = { ...bestRef.current, [key]: bests[key] }
+  }
   callbacks.current = { onBest, onDaily, onReward, onCoins }
 
-  /** Pays this game's rewards once: best, daily score and leaderboard, XP, and Cub Cash for a win. */
-  const finish = useCallback((state: KlondikeState, played: number, show: boolean) => {
+  const { mode, game } = table
+  const engine = ENGINES[mode]
+  const info = modeInfo(mode)
+
+  const setGame = (next: SpellGame) => setTable((current) => ({ ...current, game: next }))
+
+  /** Pays this game's rewards once: best, daily score and leaderboard, XP, and Cub Cash. */
+  const finish = useCallback((played: Table, playedSeconds: number, show: boolean) => {
+    const { game: state } = played
     if (state.moves === 0 && !state.won) return
     payOnce.current.pay(() => {
-      const rewards = rewardsFor(state, played)
-      const neuBest = rewards.score > bestRef.current[state.drawCount]
+      const rules = ENGINES[played.mode]
+      const level = rules.difficulty(state)
+      const key = boardKey(played.mode, level)
+      const rewards = rules.rewardsFor(state, playedSeconds)
+      const neuBest = rewards.score > (bestRef.current[key] ?? 0)
       if (neuBest) {
-        bestRef.current = { ...bestRef.current, [state.drawCount]: rewards.score }
-        callbacks.current.onBest(rewards.score, state.drawCount === 3)
+        bestRef.current = { ...bestRef.current, [key]: rewards.score }
+        callbacks.current.onBest(rewards.score, key)
       }
-      callbacks.current.onDaily(rewards.score, { won: state.won, hard: state.drawCount === 3 })
+      callbacks.current.onDaily(rewards.score, { won: state.won, key })
       const result = callbacks.current.onReward(rewards.xp, { ...moodFromScore(rewards.score), ...PLAY_NEED_COST })
       if (rewards.coins > 0) callbacks.current.onCoins(rewards.coins)
       if (show) {
         setSummary({
           ...rewards,
-          best: bestRef.current[state.drawCount],
+          best: bestRef.current[key] ?? 0,
           neuBest,
-          hard: state.drawCount === 3,
-          seconds: played,
+          label: `${modeInfo(played.mode).name} ${levelName(level)}`,
+          seconds: playedSeconds,
           moves: state.moves,
           hints: state.hints,
           undos: state.undos,
@@ -190,7 +233,7 @@ export function Spellitaire({ bests, onBest, onDailyStart, onDaily, onReward, on
 
   // The clock runs from the first move until the game ends, and pauses while the page is hidden.
   useEffect(() => {
-    if (mode !== 'play' || !started) return
+    if (phase !== 'play' || !started) return
     let last = performance.now()
     const tick = () => {
       const now = performance.now()
@@ -202,29 +245,29 @@ export function Spellitaire({ bests, onBest, onDailyStart, onDaily, onReward, on
     }
     const timer = window.setInterval(tick, 250)
     return () => window.clearInterval(timer)
-  }, [mode, started])
+  }, [phase, started])
 
   // A won game: celebrate, pay, then show the results.
   useEffect(() => {
-    if (!game.won || modeRef.current !== 'play') return
-    setMode('won')
-    finish(game, secondsRef.current, true)
-    const timer = window.setTimeout(() => setMode('over'), CELEBRATE_MS)
+    if (!table.game.won || phaseRef.current !== 'play') return
+    setPhase('won')
+    finish(table, secondsRef.current, true)
+    const timer = window.setTimeout(() => setPhase('over'), CELEBRATE_MS)
     return () => window.clearTimeout(timer)
-  }, [game, finish])
+  }, [table, finish])
 
   // No useful move left: after a moment to see the last move, the game ends and shows the results.
   useEffect(() => {
-    if (mode !== 'play' || game.won || hasUsefulMove(game)) return
+    if (phase !== 'play' || table.game.won || ENGINES[table.mode].hasUsefulMove(table.game)) return
     const timer = window.setTimeout(() => {
       setConfirmEnd(false)
       setHint(null)
       setStuck(true)
-      setMode('over')
-      finish(gameRef.current, secondsRef.current, true)
+      setPhase('over')
+      finish(tableRef.current, secondsRef.current, true)
     }, STUCK_MS)
     return () => window.clearTimeout(timer)
-  }, [game, mode, finish])
+  }, [table, phase, finish])
 
   // A lit hint fades after a moment.
   useEffect(() => {
@@ -243,22 +286,22 @@ export function Spellitaire({ bests, onBest, onDailyStart, onDaily, onReward, on
   useEffect(
     () => () => {
       stopSpellitaireBgm()
-      if (modeRef.current === 'play') finish(gameRef.current, secondsRef.current, false)
+      if (phaseRef.current === 'play') finish(tableRef.current, secondsRef.current, false)
     },
     [finish],
   )
 
-  const apply = (next: KlondikeState | null) => {
+  const apply = (next: SpellGame | null) => {
     if (!next) return false
     setHint(null)
     setGame(next)
     return true
   }
 
-  const begin = (seed: number) => {
+  const begin = (dealSeed: number) => {
     if (!onDailyStart()) {
       setLowEnergy(true)
-      setMode((current) => (current === 'play' ? 'over' : current))
+      setPhase((current) => (current === 'play' ? 'over' : current))
       return
     }
     setLowEnergy(false)
@@ -269,15 +312,29 @@ export function Spellitaire({ bests, onBest, onDailyStart, onDaily, onReward, on
     setConfirmEnd(false)
     setSummary(null)
     setStuck(false)
-    setShowRules(false)
-    setGame(deal(seed, drawCount))
-    setMode('play')
+    setTable(dealTable(mode, dealSeed, difficulty))
+    setPhase('play')
     startSpellitaireBgm()
   }
 
-  const chooseDifficulty = (next: DrawCount) => {
-    setDrawCount(next)
-    writeDifficulty(next)
+  const chooseDifficulty = (next: Difficulty) => {
+    setDifficulty(next)
+    writeStored(DIFFICULTY_KEY, next)
+  }
+
+  const chooseMode = (next: SpellMode) => {
+    writeStored(MODE_KEY, next)
+    if (next !== mode) setTable(dealTable(next, newSeed(), difficulty))
+    setStep('level')
+  }
+
+  /** Back to the mode tiles from the results. */
+  const chooseAnother = () => {
+    setSummary(null)
+    setStuck(false)
+    setLowEnergy(false)
+    setStep('modes')
+    setPhase('start')
   }
 
   /** Ends the game now and shows the results, like running out of moves. */
@@ -285,26 +342,28 @@ export function Spellitaire({ bests, onBest, onDailyStart, onDaily, onReward, on
     setConfirmEnd(false)
     setHint(null)
     setStuck(false)
-    setMode('over')
-    finish(gameRef.current, secondsRef.current, true)
+    setPhase('over')
+    finish(tableRef.current, secondsRef.current, true)
   }
 
   const leave = (go: () => void) => {
     stopSpellitaireBgm()
-    if (modeRef.current === 'play') finish(gameRef.current, secondsRef.current, false)
-    modeRef.current = 'start'
+    if (phaseRef.current === 'play') finish(tableRef.current, secondsRef.current, false)
+    phaseRef.current = 'start'
     go()
   }
 
   const showHint = () => {
-    const used = takeHint(gameRef.current)
+    const current = tableRef.current
+    const used = ENGINES[current.mode].takeHint(current.game)
     if (used.hint.kind === 'none') return
     setGame(used.state)
     setHint(used.hint)
   }
 
-  const playing = mode === 'play'
-  const score = liveScore(game)
+  const playing = phase === 'play'
+  const score = engine.liveScore(game)
+  const levelBest = bestRef.current[boardKey(mode, difficulty)] ?? 0
 
   const bg = SOLITAIRE_LAYOUT.background
   const art = hasSolAsset('background')
@@ -317,6 +376,15 @@ export function Spellitaire({ bests, onBest, onDailyStart, onDaily, onReward, on
     >
       {value}
     </span>
+  )
+
+  const backHead = (title: string, onBack: () => void) => (
+    <div className="sol-panel-head">
+      <button type="button" className="sol-btn sol-btn-light sol-panel-back" onClick={onBack}>
+        ‹ Back
+      </button>
+      <h2>{title}</h2>
+    </div>
   )
 
   return (
@@ -366,40 +434,81 @@ export function Spellitaire({ bests, onBest, onDailyStart, onDaily, onReward, on
         </div>
       </header>
 
-      <KlondikeBoard
+      <CardTable
+        key={mode}
         state={game}
+        rules={engine.table}
         hint={hint}
         locked={!playing}
-        onMove={(from: PileId, index: number, to: PileId) => apply(move(gameRef.current, from, index, to))}
+        onMove={(from: PileId, index: number, to: PileId) => {
+          const current = tableRef.current
+          return apply(ENGINES[current.mode].move(current.game, from, index, to))
+        }}
         onDraw={() => {
-          apply(draw(gameRef.current))
+          const current = tableRef.current
+          const rules = ENGINES[current.mode]
+          if (apply(rules.draw(current.game))) return
+          const why = rules.drawBlocked?.(current.game)
+          if (why) {
+            toastKey.current += 1
+            setToast({ text: why, key: toastKey.current })
+          }
         }}
       />
+
+      {toast ? (
+        <div key={toast.key} className="sol-toast" role="status" onAnimationEnd={() => setToast(null)}>
+          {toast.text}
+        </div>
+      ) : null}
 
       <nav className="sol-controls" aria-label="Spellitaire controls">
         <ControlButton icon="iconEnd" label="End Game" onClick={() => setConfirmEnd(true)} disabled={!playing} />
         <ControlButton
           icon="iconUndo"
           label="Undo"
-          onClick={() => apply(undo(gameRef.current))}
-          disabled={!playing || !canUndo(game)}
+          onClick={() => {
+            const current = tableRef.current
+            apply(ENGINES[current.mode].undo(current.game))
+          }}
+          disabled={!playing || !engine.canUndo(game)}
         />
         <ControlButton icon="iconHint" label="Hint" onClick={showHint} disabled={!playing} />
       </nav>
 
-      {mode === 'start' ? (
+      {phase === 'start' ? (
         <div className="sol-overlay">
-          {!showRules ? (
+          {step === 'modes' ? (
             <div className="sol-panel">
-              <div className="sol-panel-head">
-                <button type="button" className="sol-btn sol-btn-light sol-panel-back" onClick={() => leave(onGames)}>
-                  ‹ Back
-                </button>
-                <h2>Spellitaire</h2>
+              {backHead('Spellitaire', () => leave(onGames))}
+              <p className="sol-pick-label">Choose a game</p>
+              <div className="sol-modes">
+                {SPELL_MODES.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={option.id === mode ? 'sol-mode last' : 'sol-mode'}
+                    onClick={() => chooseMode(option.id)}
+                    title={option.blurb}
+                  >
+                    <ModeThumb mode={option.id} />
+                    <strong>{option.name}</strong>
+                  </button>
+                ))}
+                {Array.from({ length: COMING_SOON_MODES }, (_, i) => (
+                  <button key={`soon-${i}`} type="button" className="sol-mode soon" disabled>
+                    <span className="sol-mode-thumb" aria-hidden="true" />
+                    <strong>Coming soon</strong>
+                  </button>
+                ))}
               </div>
-              <DifficultyPicker value={drawCount} onChange={chooseDifficulty} />
+            </div>
+          ) : step === 'level' ? (
+            <div className="sol-panel">
+              {backHead(info.name, () => setStep('modes'))}
+              <DifficultyPicker mode={mode} value={difficulty} onChange={chooseDifficulty} />
               <p className="sol-best">
-                {drawCount === 3 ? 'Hard' : 'Easy'} Best Score {bestRef.current[drawCount].toLocaleString('en-US')}
+                {levelName(difficulty)} Best Score {levelBest.toLocaleString('en-US')}
               </p>
               {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
               <button
@@ -413,62 +522,14 @@ export function Spellitaire({ bests, onBest, onDailyStart, onDaily, onReward, on
               >
                 Play
               </button>
-              <button type="button" className="sol-btn sol-btn-light" onClick={() => setShowRules(true)}>
-                Rules
+              <button type="button" className="sol-btn sol-btn-light" onClick={() => setStep('rules')}>
+                How to Play
               </button>
             </div>
           ) : (
             <div className="sol-panel sol-rules">
-              <div className="sol-panel-head">
-                <button type="button" className="sol-btn sol-btn-light sol-panel-back" onClick={() => setShowRules(false)}>
-                  ‹ Back
-                </button>
-                <h2>Rules</h2>
-              </div>
-              <ul>
-                <li>
-                  <strong>Goal:</strong> move every card onto the four foundations, from Ace up to King, one suit on each.
-                </li>
-                <li>
-                  <strong>Columns:</strong> build down in alternating colours, like a red 9 on a black 10. Move a whole run of
-                  face-up cards together. Only a King, or a run led by a King, goes into an empty column.
-                </li>
-                <li>
-                  <strong>Stock:</strong> tap it to turn over one card at a time. When it runs out, tap again to turn the pile back
-                  over and go through it again, as often as you like.
-                </li>
-                <li>
-                  <strong>Hard:</strong> the stock turns over three cards at a time, and only the top one can be played. Play it
-                  to reach the card under it.
-                </li>
-                <li>
-                  <strong>Moving:</strong> drag cards, or tap a card then tap where it should go. Double-tap a card to send it to a
-                  foundation.
-                </li>
-                <li>
-                  <strong>Points:</strong> +{KLONDIKE_SCORING.toFoundation} for each card on a foundation, +
-                  {KLONDIKE_SCORING.revealCard} for each card turned over and +{KLONDIKE_SCORING.stackCard} for each card you stack
-                  in a column (once per card). Hints cost {Math.abs(KLONDIKE_SCORING.hint)} and undos {Math.abs(KLONDIKE_SCORING.undo)}.
-                </li>
-                <li>
-                  <strong>XP:</strong> {SOLITAIRE_REWARDS.xpPerStack} for each card you stack and {SOLITAIRE_REWARDS.xpPerHome} for
-                  each card you get onto a foundation, plus {SOLITAIRE_REWARDS.winXp} for a win.
-                </li>
-                <li>
-                  <strong>Winning:</strong> finish the game for a {KLONDIKE_SCORING.winBonus.toLocaleString('en-US')} point bonus,
-                  a speed bonus and {SOLITAIRE_REWARDS.winCoins} Cub Cash ({SOLITAIRE_REWARDS.hardWinCoins} on Hard). Your best
-                  Easy and best Hard scores add together on the Spellitaire leaderboard.
-                </li>
-                <li>
-                  <strong>Cub Cash:</strong> {SOLITAIRE_REWARDS.faceStackCoins} for each Queen you put on a King and each Jack you
-                  put on a Queen, and {SOLITAIRE_REWARDS.aceCoins} for each Ace you put home. Each card earns its coin once, and
-                  you keep these even if you don't win.
-                </li>
-                <li>
-                  <strong>Ending:</strong> the game ends by itself when no moves are left, or tap End Game to stop. Your points
-                  still count.
-                </li>
-              </ul>
+              {backHead(info.name, () => setStep('level'))}
+              <ModeRules mode={mode} />
             </div>
           )}
         </div>
@@ -493,7 +554,7 @@ export function Spellitaire({ bests, onBest, onDailyStart, onDaily, onReward, on
         </div>
       ) : null}
 
-      {mode === 'won' ? (
+      {phase === 'won' ? (
         <div className="sol-celebrate" aria-live="polite">
           <SolAsset
             name="winBanner"
@@ -512,7 +573,7 @@ export function Spellitaire({ bests, onBest, onDailyStart, onDaily, onReward, on
         </div>
       ) : null}
 
-      {mode === 'over' ? (
+      {phase === 'over' ? (
         <div className="sol-overlay">
           <div className="sol-panel">
             {summary?.won && hasSolAsset('winBanner') ? (
@@ -529,7 +590,7 @@ export function Spellitaire({ bests, onBest, onDailyStart, onDaily, onReward, on
                   <dd>{summary.score.toLocaleString('en-US')}</dd>
                 </div>
                 <div>
-                  <dt>{summary.hard ? 'Hard' : 'Easy'} best</dt>
+                  <dt>{summary.label} best</dt>
                   <dd>{summary.best.toLocaleString('en-US')}</dd>
                 </div>
                 <div>
@@ -559,9 +620,12 @@ export function Spellitaire({ bests, onBest, onDailyStart, onDaily, onReward, on
             <PowerBonusNote bonus={powerBonus} />
             {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
             <RunEnergy energy={energy} onShop={onShop} />
-            <DifficultyPicker value={drawCount} onChange={chooseDifficulty} />
+            <DifficultyPicker mode={mode} value={difficulty} onChange={chooseDifficulty} />
             <button type="button" className="sol-btn" onClick={() => begin(newSeed())} disabled={energy < PLAY_ENERGY_COST}>
               Play again
+            </button>
+            <button type="button" className="sol-btn sol-btn-light" onClick={chooseAnother}>
+              Choose another game
             </button>
             <button type="button" className="sol-btn sol-btn-light" onClick={() => leave(onGames)}>
               Return to games
