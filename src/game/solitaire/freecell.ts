@@ -165,6 +165,15 @@ export function fcCanPickUp(state: Piles, pile: PileId, index: number): boolean 
   return isRun(run) && run.length <= fcMaxRun(state, false)
 }
 
+/** Why a run in order can't be picked up: it is longer than the free cells and empty columns allow. */
+export function fcBlockedPickUp(state: Piles, pile: PileId, index: number): string | null {
+  if (!isTableau(pile)) return null
+  const run = fcPileCards(state, pile).slice(index)
+  const max = fcMaxRun(state, false)
+  if (run.length < 2 || !isRun(run) || run.length <= max) return null
+  return `You can move ${max} card${max === 1 ? '' : 's'} together right now. Empty a free cell or a column to move more.`
+}
+
 export function fcCanMove(state: FreecellState, from: PileId, index: number, to: PileId): boolean {
   if (state.won || from === to || !fcCanPickUp(state, from, index)) return false
   const moving = fcPileCards(state, from).slice(index)

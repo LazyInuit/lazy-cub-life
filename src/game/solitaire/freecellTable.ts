@@ -3,6 +3,7 @@ import {
   FC_CELLS,
   FC_FOUNDATIONS,
   FC_TABLEAU,
+  fcBlockedPickUp,
   fcCanMove,
   fcCanPickUp,
   fcFoundationFor,
@@ -71,5 +72,6 @@ export const FREECELL_TABLE: TableRules<FreecellState> = {
   columns: FC_TABLEAU,
   dropTargets: [...FC_FOUNDATIONS, ...FC_CELLS, ...FC_TABLEAU],
   tapMove: fcTapMove,
+  blockedPickUp: fcBlockedPickUp,
   tapFeedback: true,
 }

@@ -12,9 +12,19 @@ type Props = {
   /** Earned badges not looked at yet, for the dot on Achievements. */
   unseenBadges?: number
   localBests?: GameBests
+  /** Starts the guided tour of the home screen again. */
+  onTour?: (area: TourArea) => void
 }
 
-export function AccountPanel({ cub, onClose, unseenBadges = 0, localBests }: Props) {
+export type TourArea = 'home' | 'wardrobe' | 'games'
+
+const TOUR_AREAS: { id: TourArea; label: string; icon: string }[] = [
+  { id: 'home', label: 'Home', icon: '🏠' },
+  { id: 'wardrobe', label: 'Wardrobe', icon: '👕' },
+  { id: 'games', label: 'Games & leaderboards', icon: '🏆' },
+]
+
+export function AccountPanel({ cub, onClose, unseenBadges = 0, localBests, onTour }: Props) {
   const [mode, setMode] = useState<'in' | 'up'>('in')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -34,6 +44,7 @@ export function AccountPanel({ cub, onClose, unseenBadges = 0, localBests }: Pro
   const [profileOpen, setProfileOpen] = useState(false)
   const [achievementsOpen, setAchievementsOpen] = useState(false)
   const [powerOpen, setPowerOpen] = useState(false)
+  const [tourPick, setTourPick] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
 
   const submit = async () => {
@@ -324,6 +335,28 @@ export function AccountPanel({ cub, onClose, unseenBadges = 0, localBests }: Pro
                     Cub Power · {cub.cubPower.total.toLocaleString('en-US')}
                     {cub.powerNewGame ? <span className="account-new">New game</span> : null}
                   </button>
+                ) : null}
+              </>
+            ) : null}
+            {onTour ? (
+              <>
+                <button
+                  type="button"
+                  className="account-submit"
+                  aria-expanded={tourPick}
+                  onClick={() => setTourPick((open) => !open)}
+                >
+                  Take the tour {tourPick ? '▴' : '▾'}
+                </button>
+                {tourPick ? (
+                  <div className="account-tour-picks" role="group" aria-label="Choose a tour">
+                    {TOUR_AREAS.map((area) => (
+                      <button key={area.id} type="button" className="account-tour-pick" onClick={() => onTour(area.id)}>
+                        <span aria-hidden="true">{area.icon}</span>
+                        {area.label}
+                      </button>
+                    ))}
+                  </div>
                 ) : null}
               </>
             ) : null}

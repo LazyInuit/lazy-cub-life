@@ -195,6 +195,24 @@ export function achievementLadder(bests: GameBests): AchievementGame[] {
   })
 }
 
+export type BadgeProgress =
+  | { top: false; next: BadgeId; at: number; from: number; current: BadgeId | null }
+  | { top: true; current: BadgeId }
+
+/**
+ * Where a best score sits on a game's badge ladder: the next badge, the score it needs and the score
+ * the badge before it needed (for a progress bar), or the top badge when every one is earned. Null
+ * for a game with no badges yet.
+ */
+export function badgeProgress(game: DailyGame, best: number): BadgeProgress | null {
+  const rule = BADGE_RULES.find((item) => item.game === game)
+  if (!rule || rule.tiers.length === 0) return null
+  const nextIndex = rule.tiers.findIndex((tier) => best < tier.at)
+  if (nextIndex < 0) return { top: true, current: rule.tiers[rule.tiers.length - 1].badge }
+  const previous = nextIndex > 0 ? rule.tiers[nextIndex - 1] : null
+  return { top: false, next: rule.tiers[nextIndex].badge, at: rule.tiers[nextIndex].at, from: previous?.at ?? 0, current: previous?.badge ?? null }
+}
+
 /** Higher of two sets of bests, game by game. */
 export function mergeBests(a: GameBests, b: GameBests): GameBests {
   const merged: GameBests = { ...a }

@@ -183,6 +183,10 @@ export function Spellitaire({ bests, weekBests, onBest, onDailyStart, onDaily, o
   /** A short message on the table, such as why the stock can't be dealt. */
   const [toast, setToast] = useState<{ text: string; key: number } | null>(null)
   const toastKey = useRef(0)
+  const showToast = (text: string) => {
+    toastKey.current += 1
+    setToast({ text, key: toastKey.current })
+  }
   const tableRef = useRef(table)
   const secondsRef = useRef(0)
   const phaseRef = useRef(phase)
@@ -456,11 +460,9 @@ export function Spellitaire({ bests, weekBests, onBest, onDailyStart, onDaily, o
           const rules = ENGINES[current.mode]
           if (apply(rules.draw(current.game))) return
           const why = rules.drawBlocked?.(current.game)
-          if (why) {
-            toastKey.current += 1
-            setToast({ text: why, key: toastKey.current })
-          }
+          if (why) showToast(why)
         }}
+        onNotice={showToast}
       />
 
       {toast ? (

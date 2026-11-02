@@ -14,6 +14,8 @@ type Props<S extends TableState> = {
   locked?: boolean
   onMove: (from: PileId, index: number, to: PileId) => boolean
   onDraw: () => void
+  /** Shows a short message on the table, such as why some cards can't be picked up. */
+  onNotice?: (text: string) => void
 }
 
 const DRAG_START_PX = 6
@@ -55,7 +57,7 @@ function hintAnimation(hint: TableHint) {
 }
 
 /** A solitaire table for any mode: lays out its piles and turns drags and taps into moves. */
-export function CardTable<S extends TableState>({ state, rules, hint, locked = false, onMove, onDraw }: Props<S>) {
+export function CardTable<S extends TableState>({ state, rules, hint, locked = false, onMove, onDraw, onNotice }: Props<S>) {
   const boxRef = useRef<HTMLDivElement>(null)
   const [box, setBox] = useState({ w: 360, h: 560 })
   const [drag, setDragState] = useState<Drag | null>(null)
@@ -228,6 +230,7 @@ export function CardTable<S extends TableState>({ state, rules, hint, locked = f
       if (target && tryMove(p.pile, p.index, target)) return
       if (rules.tapFeedback) {
         shake([cardId])
+        explainBlocked(p)
         setSelected(null)
         return
       }
@@ -244,7 +247,15 @@ export function CardTable<S extends TableState>({ state, rules, hint, locked = f
       return
     }
     if (rules.tapFeedback && p.index >= 0) shake([cardId])
+    explainBlocked(p)
     setSelected(null)
+  }
+
+  /** Tells the player why these cards can't be picked up, when the mode says. */
+  const explainBlocked = (p: Press) => {
+    if (p.index < 0 || rules.canPickUp(state, p.pile, p.index)) return
+    const why = rules.blockedPickUp?.(state, p.pile, p.index)
+    if (why) onNotice?.(why)
   }
 
   const endPress = (event: ReactPointerEvent, cancelled: boolean) => {

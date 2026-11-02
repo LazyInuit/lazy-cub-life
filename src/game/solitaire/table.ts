@@ -62,6 +62,8 @@ export interface TableRules<S extends TableState> {
   note?(state: S): string[]
   /** A faint value shown in the top-right corner of a face-up card, such as 12 on a Queen in Pyramid. */
   cardValue?(card: Card): string | null
+  /** A short message saying why these cards can't be picked up, when the player should be told. */
+  blockedPickUp?(state: S, pile: PileId, index: number): string | null
   /** Shake a card tapped when it can't be played, or when a pair it was tapped for doesn't work. */
   readonly tapFeedback?: boolean
 }

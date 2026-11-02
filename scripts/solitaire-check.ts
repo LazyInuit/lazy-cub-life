@@ -17,6 +17,7 @@ import {
 } from '../src/game/solitaire/flipflop'
 import {
   dealFreecell,
+  fcBlockedPickUp,
   fcCanMove,
   fcCanPickUp,
   fcFindHint,
@@ -794,6 +795,11 @@ check('FreeCell: a 6-card run can be picked up', fcCanPickUp(fcSuper, 't0', 2))
 check('FreeCell: a 6-card run onto a card is allowed', fcCanMove(fcSuper, 't0', 2, 't2'))
 check('FreeCell: a 4-card run into an empty column is refused', !fcCanMove(fcSuper, 't0', 4, 't1'))
 check('FreeCell: a 3-card run into an empty column is allowed', fcCanMove(fcSuper, 't0', 5, 't1'))
+check(
+  'FreeCell: a run too long for the free cells says how many cards can move',
+  fcBlockedPickUp(fcSuper, 't0', 1) === 'You can move 6 cards together right now. Empty a free cell or a column to move more.',
+)
+check('FreeCell: no message for a run that fits, or for cards not in order', fcBlockedPickUp(fcSuper, 't0', 2) === null && fcBlockedPickUp(fcSuper, 't0', 0) === null)
 check('FreeCell: a broken run cannot move together', !fcCanPickUp(fcPosition({ tableau: [[card(9, 'spades'), card(8, 'spades')], ...filler(7)] }), 't0', 0))
 
 // Foundations

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import dashThumb from '../assets/galactic-dash-cover.jpg'
 import archerThumb from '../assets/cupid-archer/cover.jpg'
 import hoopsThumb from '../assets/lazy-hoops/cover-select.jpg'
@@ -7,6 +7,7 @@ import riverThumb from '../assets/lazy-river/game-thumb-cub.jpg'
 import { SolAsset } from './solitaire/SolAsset'
 import { LeaderboardOpenButton } from './LeaderboardOpenButton'
 import { LevelInfoPop } from './LevelInfoPop'
+import { GameTour, markTourSeen, tourSeen } from './GameTour'
 import dojoBg from '../assets/lazy-dojo/backgrounds/dojo-1.png'
 import dojoCover from '../assets/lazy-dojo/ui/ninja-cub-cover.png'
 import controllerUrl from '../assets/controller-icon.png'
@@ -129,6 +130,78 @@ export function CareScreen({
   const [powerOpen, setPowerOpen] = useState(false)
   /** The level details pop-up, opened from the level badge. */
   const [levelOpen, setLevelOpen] = useState(false)
+  /** The guided tour of the home screen. */
+  const [tourOn, setTourOn] = useState(false)
+  const tourDemo = isDemo()
+  const tourWho = tourDemo ? 'demo' : cub.accountName
+  const tourXp = useRef(cub.presentedXp)
+  tourXp.current = cub.presentedXp
+  // New accounts and demo players get the tour once. Wait a moment so a saved cub has loaded first;
+  // a player who already has XP has played before and isn't shown it.
+  useEffect(() => {
+    if (!tourWho || tourSeen(tourWho)) return
+    const timer = window.setTimeout(() => {
+      if (!tourDemo && tourXp.current >= 1) {
+        markTourSeen(tourWho)
+        markTourSeen(tourWho, 'wardrobe')
+        markTourSeen(tourWho, 'games')
+        markTourSeen(tourWho, 'board')
+        return
+      }
+      setTourOn(true)
+    }, 2000)
+    return () => window.clearTimeout(timer)
+  }, [tourDemo, tourWho])
+  const endTour = () => {
+    if (tourWho) markTourSeen(tourWho)
+    setTourOn(false)
+  }
+  /** The wardrobe tour, the first time a new player opens the wardrobe. */
+  const [wardrobeTourOn, setWardrobeTourOn] = useState(false)
+  useEffect(() => {
+    if (!wardrobeOpen || !tourWho || tourSeen(tourWho, 'wardrobe')) return
+    const timer = window.setTimeout(() => setWardrobeTourOn(true), 700)
+    return () => window.clearTimeout(timer)
+  }, [wardrobeOpen, tourWho])
+  const endWardrobeTour = () => {
+    if (tourWho) markTourSeen(tourWho, 'wardrobe')
+    setWardrobeTourOn(false)
+  }
+  /** The games page tour, offered at the end of the wardrobe tour; it carries on into the leaderboard. */
+  const [gamesTourOn, setGamesTourOn] = useState(false)
+  const [boardTourOn, setBoardTourOn] = useState(false)
+  useEffect(() => {
+    if (!boardOpen || !gamesTourOn) return
+    if (tourWho) markTourSeen(tourWho, 'board')
+    setGamesTourOn(false)
+    setBoardTourOn(true)
+  }, [boardOpen, gamesTourOn, tourWho])
+  useEffect(() => {
+    if (!tourWho) return
+    if (gamesTourOn) markTourSeen(tourWho, 'games')
+    if (boardTourOn) markTourSeen(tourWho, 'board')
+  }, [gamesTourOn, boardTourOn, tourWho])
+  // The first visit to the games page, and to the leaderboard if the games tour didn't lead there.
+  useEffect(() => {
+    if (!gamesOpen || boardOpen || gamesTourOn || !tourWho || tourSeen(tourWho, 'games')) return
+    const timer = window.setTimeout(() => {
+      markTourSeen(tourWho, 'games')
+      setGamesTourOn(true)
+    }, 700)
+    return () => window.clearTimeout(timer)
+  }, [gamesOpen, boardOpen, gamesTourOn, tourWho])
+  useEffect(() => {
+    if (!boardOpen || gamesTourOn || boardTourOn || !tourWho || tourSeen(tourWho, 'board')) return
+    const timer = window.setTimeout(() => {
+      markTourSeen(tourWho, 'board')
+      setBoardTourOn(true)
+    }, 700)
+    return () => window.clearTimeout(timer)
+  }, [boardOpen, gamesTourOn, boardTourOn, tourWho])
+  useEffect(() => {
+    if (!boardOpen) setBoardTourOn(false)
+    if (!gamesOpen) setGamesTourOn(false)
+  }, [boardOpen, gamesOpen])
   /** A player's home opened from the Cub Power leaderboard. */
   const [visiting, setVisiting] = useState<PlayerProfile | null>(null)
   const [bonusRoll, setBonusRoll] = useState<{ prize: BonusTrait | null; coins: number; extra: boolean } | null>(null)
@@ -225,11 +298,14 @@ export function CareScreen({
 
   if (boardOpen) {
     return (
-      <LeaderboardScreen
-        onHome={() => { setBoardOpen(false); setGamesOpen(false) }}
-        onGames={() => setBoardOpen(false)}
-        onSettlePrize={cub.collectWeeklyPrize}
-      />
+      <>
+        <LeaderboardScreen
+          onHome={() => { setBoardOpen(false); setGamesOpen(false) }}
+          onGames={() => setBoardOpen(false)}
+          onSettlePrize={cub.collectWeeklyPrize}
+        />
+        {boardTourOn ? <GameTour kind="board" demo={demo} onDone={() => setBoardTourOn(false)} /> : null}
+      </>
     )
   }
 
@@ -361,6 +437,7 @@ export function CareScreen({
             <span>Pride Pairs</span>
           </button>
         </div>
+        {gamesTourOn && energyWarn == null ? <GameTour kind="games" demo={demo} onDone={() => setGamesTourOn(false)} /> : null}
       </section>
     )
   }
@@ -582,15 +659,36 @@ export function CareScreen({
 
   if (wardrobeOpen) {
     return (
-      <WardrobeScreen
-        cub={cub}
-        age={age}
-        onAge={(next) => {
-          setAge(next)
-          setHomeCharacter(next)
-        }}
-        onBack={() => setWardrobeOpen(false)}
-      />
+      <>
+        <WardrobeScreen
+          cub={cub}
+          age={age}
+          onAge={(next) => {
+            setAge(next)
+            setHomeCharacter(next)
+          }}
+          onBack={() => {
+            if (wardrobeTourOn) endWardrobeTour()
+            setWardrobeOpen(false)
+          }}
+        />
+        {wardrobeTourOn ? (
+          <GameTour
+            kind="wardrobe"
+            demo={demo}
+            onDone={endWardrobeTour}
+            onMore={{
+              label: 'See the games',
+              onPress: () => {
+                endWardrobeTour()
+                setWardrobeOpen(false)
+                setGamesOpen(true)
+                setGamesTourOn(true)
+              },
+            }}
+          />
+        ) : null}
+      </>
     )
   }
 
@@ -615,7 +713,7 @@ export function CareScreen({
         tryOn={tryOnFromPicks(sanitizeOwnedOutfit(save, age, save.outfits[age]))}
       />
       <div className="room-ui">
-        <div className="age-switch" role="group" aria-label="Character age">
+        <div className="age-switch" role="group" aria-label="Character age" data-tour="age">
           <button
             type="button"
             className={age === 'young' ? 'on' : ''}
@@ -665,7 +763,7 @@ export function CareScreen({
               {own.unseen > 0 ? <span className="account-open-dot" aria-hidden="true" /> : null}
             </button>
           )}
-          <div className="cub-cash" aria-label={`${formatCubCash(save.cubCash)} Cub Cash`}>
+          <div className="cub-cash" data-tour="cash" aria-label={`${formatCubCash(save.cubCash)} Cub Cash`}>
             <span className="cub-cash-inner">
               <img src={coinUrl} alt="" />
               <strong>{formatCubCash(save.cubCash)}</strong>
@@ -674,6 +772,7 @@ export function CareScreen({
         </div>
         <button
           type="button"
+          data-tour="level"
           className={cub.levelUp ? 'level-badge level-open level-up' : 'level-badge level-open'}
           key={cub.levelUp ?? 'level'}
           aria-label={`Level ${progress.level}, ${progress.into} of ${progress.next} experience. Show level details`}
@@ -748,6 +847,18 @@ export function CareScreen({
               setAccountOpen(false)
               setProfileRefresh((value) => value + 1)
             }}
+            onTour={(area) => {
+              setAccountOpen(false)
+              if (area === 'wardrobe') {
+                setWardrobeOpen(true)
+                setWardrobeTourOn(true)
+              } else if (area === 'games') {
+                setGamesOpen(true)
+                setGamesTourOn(true)
+              } else {
+                setTourOn(true)
+              }
+            }}
           />
         ) : null}
         {achievementsOpen && cub.accountName ? (
@@ -760,6 +871,7 @@ export function CareScreen({
         <button
           type="button"
           className="daily-open"
+          data-tour="daily"
           aria-label={dailyWaiting ? 'Daily Bonus, challenges or prizes waiting' : 'Daily Bonus'}
           onPointerDown={flashPress}
           onPointerUp={clearPressGlow}
@@ -774,6 +886,7 @@ export function CareScreen({
         <button
           type="button"
           className="wardrobe-open"
+          data-tour="wardrobe"
           aria-label="Wardrobe"
           onPointerDown={flashPress}
           onPointerUp={clearPressGlow}
@@ -788,6 +901,7 @@ export function CareScreen({
           <button
             type="button"
             className="room-action shop-action"
+            data-tour="shop"
             aria-label="Shop"
             disabled={cub.busy || asleep}
             onPointerDown={flashPress}
@@ -807,6 +921,7 @@ export function CareScreen({
             onPointerDown={flashPress}
             onPointerUp={clearPressGlow}
             onPointerCancel={clearPressGlow}
+            data-tour="play"
             onClick={() => setGamesOpen(true)}
           >
             <span className="wood-btn-wrap">
@@ -826,6 +941,7 @@ export function CareScreen({
             onPointerDown={flashPress}
             onPointerUp={clearPressGlow}
             onPointerCancel={clearPressGlow}
+            data-tour="sleep"
             onClick={cub.toggleSleep}
           >
             <span className="wood-btn-wrap">
@@ -845,6 +961,7 @@ export function CareScreen({
             onPointerDown={flashPress}
             onPointerUp={clearPressGlow}
             onPointerCancel={clearPressGlow}
+            data-tour="wash"
             onClick={() => cub.care('clean')}
           >
             <span className="wood-btn-wrap">
@@ -860,6 +977,18 @@ export function CareScreen({
         </div>
       </div>
       {levelOpen ? <LevelInfoPop xp={cub.presentedXp} onClose={() => setLevelOpen(false)} /> : null}
+      {tourOn && !levelOpen && !accountOpen && !powerOpen && !achievementsOpen ? <GameTour
+          demo={demo}
+          onDone={endTour}
+          onMore={{
+            label: 'See the wardrobe',
+            onPress: () => {
+              endTour()
+              setWardrobeOpen(true)
+              setWardrobeTourOn(true)
+            },
+          }}
+        /> : null}
     </section>
   )
 }

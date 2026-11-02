@@ -6,7 +6,7 @@ import landingPlayUrl from './assets/home/landing-play.png'
 import { setActivityArea } from './game/activity'
 import { AccountGate } from './components/AccountGate'
 import { AdminScreen } from './components/AdminScreen'
-import { BadgeEarnedPop } from './components/BadgeShowcase'
+import { BadgeEarnedPop, BestProgressPop } from './components/BadgeShowcase'
 import { CareScreen } from './components/CareScreen'
 import { BubbleBlast } from './components/BubbleBlast'
 import { LazyRiver } from './components/LazyRiver'
@@ -481,6 +481,20 @@ function Game() {
           onClose={cub.dismissEarnedBadge}
           onView={() => {
             cub.dismissEarnedBadge()
+            setOpenGames(false)
+            setOpenShop(false)
+            setOpenAchievements(true)
+            setScreen('home')
+          }}
+        />
+      ) : null}
+      {cub.bestProgress && !cub.earnedBadge ? (
+        <BestProgressPop
+          game={cub.bestProgress.game}
+          best={cub.bestProgress.best}
+          onClose={cub.dismissBestProgress}
+          onView={() => {
+            cub.dismissBestProgress()
             setOpenGames(false)
             setOpenShop(false)
             setOpenAchievements(true)

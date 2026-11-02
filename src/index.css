@@ -1979,6 +1979,52 @@ h1 {
   border-radius: 19px;
 }
 
+/* New best without a new badge: the next badge, locked, and how far there is to go. */
+.best-progress {
+  gap: 3px;
+}
+
+.best-progress img {
+  width: min(56%, 160px);
+  margin-bottom: 6px;
+}
+
+.best-progress img.locked {
+  filter: grayscale(0.85) brightness(0.6) drop-shadow(0 8px 12px rgba(0, 0, 0, 0.55));
+}
+
+.best-progress-score {
+  color: #fff4cc;
+  font-size: 1.7rem;
+  font-weight: 900;
+  line-height: 1.1;
+  text-shadow: 0 2px 0 #1a0c06;
+}
+
+.best-progress-left {
+  margin-top: 6px;
+  color: #fff4cc;
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.best-progress-meter {
+  display: block;
+  width: 78%;
+  height: 10px;
+  margin-top: 6px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 246, 216, 0.18);
+}
+
+.best-progress-meter span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #f0c14a, #ffe48a);
+}
+
 .badge-zoom-hint {
   margin-top: 12px;
   color: rgba(255, 246, 216, 0.6);
@@ -3695,6 +3741,195 @@ h1 {
   color: #ffe14a;
   text-decoration: underline;
   text-shadow: none;
+}
+
+/* Game tour: dims everything but one thing, with a note beside it. */
+.tour {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.tour-shade,
+.tour-block {
+  position: fixed;
+  pointer-events: auto;
+}
+
+.tour-shade {
+  background: rgba(8, 6, 4, 0.68);
+}
+
+/* Lighter where the cub should stay easy to see, like the wardrobe. */
+.tour.light .tour-shade {
+  background: rgba(8, 6, 4, 0.42);
+}
+
+.tour-ring {
+  position: fixed;
+  border: 3px solid #ffe08a;
+  border-radius: 16px;
+  box-shadow: 0 0 0 3px rgba(58, 32, 16, 0.6), 0 0 18px 4px rgba(255, 210, 90, 0.75);
+  pointer-events: none;
+  animation: tour-glow 1.2s ease-in-out infinite alternate;
+}
+
+.tour-ring.tap {
+  animation: tour-glow 0.7s ease-in-out infinite alternate;
+}
+
+@keyframes tour-glow {
+  from {
+    box-shadow: 0 0 0 3px rgba(58, 32, 16, 0.6), 0 0 8px 2px rgba(255, 210, 90, 0.45);
+  }
+  to {
+    box-shadow: 0 0 0 3px rgba(58, 32, 16, 0.6), 0 0 22px 7px rgba(255, 220, 110, 0.95);
+  }
+}
+
+.tour-bubble {
+  position: fixed;
+  padding: 3px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fff6d4 0%, #f0c56a 18%, #c48a2e 46%, #7a4a14 78%, #e8c56a 100%);
+  box-shadow: 0 10px 24px rgba(12, 6, 2, 0.55);
+  color: #fff4cc;
+  pointer-events: auto;
+  font-family: inherit;
+}
+
+.tour-bubble > * {
+  position: relative;
+}
+
+.tour-bubble::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 15px;
+  background: linear-gradient(180deg, #1c4b8a 0%, #12325f 48%, #0a1c3c 100%);
+}
+
+.tour-bubble h3,
+.tour-bubble p {
+  margin: 0;
+}
+
+/* The guide cub on the left, talking; its words beside it. */
+.tour-talk {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px 0 8px;
+}
+
+.tour-guide {
+  flex: 0 0 auto;
+  width: 82px;
+  height: 82px;
+  margin-top: 4px;
+  border-radius: 50%;
+  border: 3px solid #f0c56a;
+  background: radial-gradient(circle at 50% 40%, #fff4d0 0%, #f6d98a 55%, #d9a24a 100%);
+  box-shadow: 0 3px 0 #5c3416, 0 0 12px rgba(255, 210, 90, 0.45);
+  transform-origin: 50% 90%;
+}
+
+.tour-guide.talking {
+  animation: tour-guide-talk 0.36s ease-in-out infinite alternate;
+}
+
+@keyframes tour-guide-talk {
+  from {
+    transform: rotate(-3deg) translateY(0);
+  }
+  to {
+    transform: rotate(3deg) translateY(-2px);
+  }
+}
+
+.tour-words {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.tour-unsaid {
+  visibility: hidden;
+}
+
+.tour-bubble .tour-count {
+  padding-top: 2px;
+  color: #d5e4ff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.tour-bubble h3 {
+  margin: 2px 0 4px;
+  font-size: 1.1rem;
+  letter-spacing: 0.03em;
+  text-shadow: 0 2px 0 #3a2010;
+}
+
+.tour-bubble p:not(.tour-count) {
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #fff8e8;
+}
+
+.tour-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px 12px;
+}
+
+.tour-skip {
+  padding: 6px 4px;
+  border: 0;
+  background: none;
+  color: #ffe14a;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-decoration: underline;
+}
+
+.tour-next {
+  min-width: 96px;
+  padding: 8px 16px;
+  border: 2px solid #7a4a14;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fff0b8, #f0c14a 45%, #b67a1e);
+  color: #3a2010;
+  font: inherit;
+  font-weight: 900;
+  box-shadow: 0 3px 0 #5c3416;
+}
+
+.tour-next.tour-more {
+  min-width: 0;
+  border-color: #0a1c3c;
+  background: linear-gradient(180deg, #8fd0ff, #3c8ee0 45%, #1d4f9a);
+  color: #fff;
+  text-shadow: 0 1px 0 #0a1c3c;
+  box-shadow: 0 3px 0 #0a1c3c;
+}
+
+.tour-tap {
+  color: #ffe08a;
+  font-weight: 900;
+  animation: tour-tap 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes tour-tap {
+  to {
+    transform: translateY(-3px);
+  }
 }
 
 /* The level badge opens the level pop-up, so it takes taps (the badge itself ignores them). */
@@ -7806,6 +8041,37 @@ h1 {
 
 .account-submit:disabled {
   opacity: 0.6;
+}
+
+/* The choice of tours under Take the tour. */
+.account-tour-picks {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 2px solid #4a2a12;
+  border-radius: 12px;
+  background: rgba(58, 32, 16, 0.55);
+}
+
+.account-tour-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 12px;
+  border: 2px solid #7a4a14;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #fff0b8, #f0c14a 45%, #b67a1e);
+  color: #3a2010;
+  font: inherit;
+  font-weight: 900;
+  text-align: left;
+  box-shadow: 0 3px 0 #5c3416;
+}
+
+.account-tour-pick span {
+  font-size: 1.15rem;
 }
 
 .account-switch {

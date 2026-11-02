@@ -30,7 +30,7 @@ import { readSave, writeSave } from './storage'
 import { reconcileCloudSave, scheduleCloudSave, flushCloudSave, flushCloudSaveNow, cloudBaseVisit, signInAccount, signOutAccount, signUpAccount, takeAdoptedSave, lockedCubCash, noteLockedCash, noteEarnedCash, ethFromUser, usernameFromUser, loadDisplayedUsername, loadUsernameChangedAt, updateAccountSettings, normalizeEthAddress } from './account'
 import { pumpkinLit, setPumpkinLit } from './halloween'
 import { stopHalloweenBgm } from './halloweenBgm'
-import { earnedBadges, hasProfileCard, type BadgeId } from './profileArt'
+import { badgeProgress, earnedBadges, hasProfileCard, type BadgeId } from './profileArt'
 import { isDemo } from './demo'
 import { countDemo } from './demoStats'
 import { supabase } from './supabase'
@@ -80,6 +80,8 @@ export function useCub() {
   const [accountEth, setAccountEth] = useState<string | null>(null)
   const [usernameChangedAt, setUsernameChangedAt] = useState<string | null>(null)
   const [earnedBadge, setEarnedBadge] = useState<BadgeId | null>(null)
+  /** A new best that earned no badge, shown with the next badge it is working towards. */
+  const [bestProgress, setBestProgress] = useState<{ game: DailyGame; best: number } | null>(null)
   const [demoScore, setDemoScore] = useState<{ game: DailyGame; score: number } | null>(null)
   const [cubPower, setCubPower] = useState<CubPower | null>(null)
   const [powerNewGame, setPowerNewGame] = useState(false)
@@ -94,6 +96,8 @@ export function useCub() {
   const accountNameRef = useRef<string | null>(null)
   accountNameRef.current = accountName
   const pendingBadges = useRef<Partial<Record<DailyGame, BadgeId>>>({})
+  /** New bests that earned no badge, waiting to show how close the next badge is. */
+  const pendingBests = useRef<Partial<Record<DailyGame, number>>>({})
   const busyRef = useRef(false)
   const asleepRef = useRef(false)
   const poseTimer = useRef<number | null>(null)
@@ -466,14 +470,21 @@ export function useCub() {
    * Hold the badge a new best just reached, if it is a tier the old best had not.
    * Some games save a best mid-run, so it pops up when that run ends (see noteDaily).
    */
+  /** A new best: a badge it earns, or else how far it is from the next one, shown when the run ends. */
   const announceBadge = useCallback((game: DailyGame, before: number, after: number) => {
     if (!hasProfileCard(accountNameRef.current)) return
     const had = earnedBadges({ [game]: before })
     const fresh = earnedBadges({ [game]: after }).find((id) => !had.includes(id))
-    if (fresh) pendingBadges.current[game] = fresh
+    if (fresh) {
+      pendingBadges.current[game] = fresh
+      delete pendingBests.current[game]
+      return
+    }
+    if (after > before && badgeProgress(game, after)) pendingBests.current[game] = after
   }, [])
 
   const dismissEarnedBadge = useCallback(() => setEarnedBadge(null), [])
+  const dismissBestProgress = useCallback(() => setBestProgress(null), [])
   const dismissDemoScore = useCallback(() => setDemoScore(null), [])
 
   const recordFlightBest = useCallback((score: number) => {
@@ -600,9 +611,13 @@ export function useCub() {
   const noteDaily = useCallback((game: DailyGame, score: number, options: { board?: LeaderboardGame; dailyPoints?: number } = {}) => {
     // Every game reports here once its run is over, so this is when a badge earned in it pops up.
     const badge = pendingBadges.current[game]
+    const best = pendingBests.current[game]
     if (badge) {
       delete pendingBadges.current[game]
       setEarnedBadge(badge)
+    } else if (best !== undefined) {
+      delete pendingBests.current[game]
+      setBestProgress({ game, best })
     }
     const current = saveRef.current
     if (!current) return
@@ -1003,6 +1018,8 @@ export function useCub() {
     rememberHalloween,
     earnedBadge,
     dismissEarnedBadge,
+    bestProgress,
+    dismissBestProgress,
     cubPower,
     refreshCubPower,
     runBonus,
