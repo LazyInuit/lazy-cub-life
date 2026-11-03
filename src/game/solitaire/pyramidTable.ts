@@ -12,7 +12,7 @@ import {
   pyTapMove,
   type PyramidState,
 } from './pyramid'
-import { tableCardWidth, type TableLayout, type TableRules, type TableSpot } from './table'
+import { tableCardWidth, wideCardWidth, wideTable, type TableLayout, type TableRules, type TableSpot } from './table'
 import { SOLITAIRE_LAYOUT as L } from './theme'
 
 const PAD = 4
@@ -25,7 +25,66 @@ const STOCK_COL = 0
 const WASTE_COL = 1
 const DISCARD_COL = ROWS - 1
 
-function layout(state: PyramidState, boxW: number, boxH: number): TableLayout {
+/**
+ * Landscape: the pyramid's top card on the screen's centre line, under the scoreboard, with the stock
+ * and waste stacked on its left so nothing sits over it. Removed cards simply leave the table. Rows
+ * overlap closely so the cards can be big, and the pyramid is sized to the rows that still hold cards:
+ * as the bottom rows are cleared, the rest grow and move down.
+ */
+function layoutWide(state: PyramidState, boxW: number, boxH: number, centreX = boxW / 2): TableLayout {
+  let rows = 1
+  state.pyramid.forEach((card, i) => {
+    if (card) rows = Math.max(rows, pyramidSpot(i).row + 1)
+  })
+  const sideGap = 0.4
+  const pairGap = 0.2
+  const tightStep = 0.3
+  const apexX = Math.min(Math.max(centreX, boxW * 0.3), boxW * 0.7)
+  // In card widths: half the pyramid each side of the top card, plus the stock and waste on the left.
+  const halfAcross = (rows + (rows - 1) * L.columnGap) / 2
+  const fitW = Math.min((apexX - PAD) / (halfAcross + 1 + sideGap), (boxW - PAD - apexX) / halfAcross)
+  const pairDown = 2 + pairGap / L.cardAspect
+  const cardW = Math.min(
+    wideCardWidth(fitW, boxH, 1, Math.max(1 + (rows - 1) * tightStep, pairDown), L.cardAspect),
+    // A cleared pyramid's last few cards shouldn't become enormous.
+    (boxH / L.cardAspect) * 0.7,
+  )
+  const cardH = cardW * L.cardAspect
+  const pitch = cardW * (1 + L.columnGap)
+  const pyramidW = rows * cardW + (rows - 1) * cardW * L.columnGap
+  const left = apexX - pyramidW / 2
+  const step = rows > 1 ? Math.max(cardH * tightStep, Math.min(cardH * ROW_STEP, (boxH - cardH) / (rows - 1))) : 0
+  const pyramidH = (rows - 1) * step + cardH
+  const top = Math.max(0, (boxH - Math.max(pyramidH, cardH * 2 + cardW * pairGap)) / 2)
+  const spots = new Map<string, TableSpot>()
+  const piles = {} as TableLayout['piles']
+
+  PYRAMID_PILES.forEach((pile, i) => {
+    const { row, col } = pyramidSpot(i)
+    // Cleared rows below the last one in play have no spot at all.
+    if (row >= rows) return
+    const x = left + ((rows - 1 - row) * pitch) / 2 + col * pitch
+    const y = top + row * step
+    piles[pile] = { x, y, w: cardW, h: cardH, dropY: y }
+    const card = state.pyramid[i]
+    if (card) spots.set(card.id, { x, y, z: 10 + row * 10 + col, pile, index: 0 })
+  })
+
+  const place = (pile: string, x: number, y: number, zBase: number) => {
+    piles[pile] = { x, y, w: cardW, h: cardH, dropY: y }
+    pyPileCards(state, pile).forEach((card, index) => spots.set(card.id, { x, y, z: zBase + index, pile, index }))
+  }
+  const middle = top + pyramidH / 2
+  const sideX = left - cardW * (1 + sideGap)
+  const pairTop = Math.max(0, middle - (cardH * 2 + cardW * pairGap) / 2)
+  place('stock', sideX, pairTop, 100)
+  place('waste', sideX, pairTop + cardH + cardW * pairGap, 150)
+
+  return { width: boxW, cardW, cardH, spots, piles }
+}
+
+function layout(state: PyramidState, boxW: number, boxH: number, centreX?: number): TableLayout {
+  if (wideTable(boxW, boxH)) return layoutWide(state, boxW, boxH, centreX)
   const width = Math.min(boxW, L.maxBoardWidth)
   const cardW = tableCardWidth(width, ROWS, PAD, L.columnGap)
   const cardH = cardW * L.cardAspect

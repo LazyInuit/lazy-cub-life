@@ -31,6 +31,18 @@ export function EnergyBar({ energy }: { energy: number }) {
   )
 }
 
+export function LowEnergyNote({ onShop }: { onShop: () => void }) {
+  return (
+    <p className="run-energy-note">
+      Sleep or{' '}
+      <button type="button" onClick={onShop}>
+        visit the shop
+      </button>{' '}
+      to recover energy.
+    </p>
+  )
+}
+
 export function RunEnergy({ energy, onShop, cost = PLAY_ENERGY_COST }: { energy: number; onShop: () => void; cost?: number }) {
   const low = energy < cost
   return (

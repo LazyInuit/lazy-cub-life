@@ -18,9 +18,10 @@ import {
 import { startSpellitaireBgm, stopSpellitaireBgm } from '../game/solitaire/music'
 import type { PileId, TableHint } from '../game/solitaire/table'
 import { SOLITAIRE_ASSETS, SOLITAIRE_LAYOUT, solitaireAsset, type SolitaireAssetName } from '../game/solitaire/theme'
+import { useSolitaireLandscape } from '../game/solitaire/orientation'
 import type { NeedKey } from '../game/types'
 import type { RunBonus } from '../game/useCub'
-import { RunEnergy } from './EnergyBar'
+import { LowEnergyNote, RunEnergy } from './EnergyBar'
 import { GamesButton, HomeButton } from './HomeButton'
 import { LeaderboardOpenButton } from './LeaderboardOpenButton'
 import { PowerBonusNote } from './PowerBonusNote'
@@ -172,6 +173,7 @@ function ControlButton({
 /** Spellitaire: a choice of solitaire modes, each with Easy and Hard. Placeholder looks for any artwork not yet added. */
 export function Spellitaire({ bests, weekBests, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus, seed, startMode, startDifficulty }: Props) {
   const [phase, setPhase] = useState<Phase>('start')
+  const landscape = useSolitaireLandscape()
   const [step, setStep] = useState<StartStep>(startMode ? 'level' : 'modes')
   const [difficulty, setDifficulty] = useState<Difficulty>(() => startDifficulty ?? readDifficulty())
   const [table, setTable] = useState<Table>(() => dealTable(startMode ?? readMode(), seed ?? newSeed(), difficulty))
@@ -292,8 +294,11 @@ export function Spellitaire({ bests, weekBests, onBest, onDailyStart, onDaily, o
 
   // Load the win banner early so it is ready the moment a game is won.
   useEffect(() => {
-    const url = solitaireAsset(SOLITAIRE_ASSETS.winBanner.file)
-    if (url) new Image().src = url
+    // Both backgrounds too, so turning the phone shows the other one straight away.
+    for (const name of ['winBanner', 'background', 'backgroundLandscape'] as const) {
+      const url = solitaireAsset(SOLITAIRE_ASSETS[name].file)
+      if (url) new Image().src = url
+    }
   }, [])
 
   // Leaving mid-game still counts the game, like the other games.
@@ -379,8 +384,11 @@ export function Spellitaire({ bests, weekBests, onBest, onDailyStart, onDaily, o
   const score = engine.liveScore(game)
   const levelBest = bestRef.current[boardKey(mode, difficulty)] ?? 0
 
-  const bg = SOLITAIRE_LAYOUT.background
-  const art = hasSolAsset('background')
+  // Turning the phone only swaps the picture and the layout around the same game; nothing here remounts.
+  const wide = landscape && hasSolAsset('backgroundLandscape')
+  const bgName = wide ? 'backgroundLandscape' : 'background'
+  const bg = wide ? SOLITAIRE_LAYOUT.backgroundLandscape : SOLITAIRE_LAYOUT.background
+  const art = hasSolAsset(bgName)
   const barStats = art && bg.hasScoreBar
   const artValue = (at: { x: number; y: number }, value: string, label: string) => (
     <span
@@ -403,7 +411,7 @@ export function Spellitaire({ bests, weekBests, onBest, onDailyStart, onDaily, o
 
   return (
     <section
-      className={art ? 'game-screen sol-screen art' : 'game-screen sol-screen'}
+      className={`game-screen sol-screen${art ? ' art' : ''}${landscape ? ' landscape' : ''}`}
       style={{
         ['--sol-bg-aspect' as string]: String(bg.aspect),
         ['--sol-table-top' as string]: String(bg.tableTop),
@@ -412,7 +420,7 @@ export function Spellitaire({ bests, weekBests, onBest, onDailyStart, onDaily, o
     >
       {art ? (
         <div className="sol-art">
-          <SolAsset name="background" className="sol-art-img" fallback={null} />
+          <SolAsset name={bgName} className="sol-art-img" fallback={null} />
           {barStats ? (
             <>
               {artValue(bg.scoreAt, score.toLocaleString('en-US'), 'Score')}
@@ -533,7 +541,7 @@ export function Spellitaire({ bests, weekBests, onBest, onDailyStart, onDaily, o
                 {levelName(difficulty)} Best Score {levelBest.toLocaleString('en-US')}
               </p>
               <p className="sol-best week-best">Weekly Best {(weekBests[boardKey(mode, difficulty)] ?? 0).toLocaleString('en-US')}</p>
-              {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
+              {lowEnergy ? <LowEnergyNote onShop={onShop} /> : null}
               <button
                 type="button"
                 className="sol-btn"
@@ -645,7 +653,6 @@ export function Spellitaire({ bests, weekBests, onBest, onDailyStart, onDaily, o
               </p>
             ) : null}
             <PowerBonusNote bonus={powerBonus} />
-            {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
             <RunEnergy energy={energy} onShop={onShop} />
             <DifficultyPicker mode={mode} value={difficulty} onChange={chooseDifficulty} />
             <button type="button" className="sol-btn" onClick={() => begin(newSeed())} disabled={energy < PLAY_ENERGY_COST}>

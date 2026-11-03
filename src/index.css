@@ -9387,6 +9387,59 @@ button.power-plate:active {
   display: none;
 }
 
+/*
+ * Spellitaire on a phone turned sideways: the whole screen width instead of the phone frame, the
+ * landscape background, Home and Games in the top-left corner, the controls in a column on the right,
+ * and the card table filling the rest, clear of the notch on either side.
+ */
+.phone.sol-wide {
+  width: 100%;
+  max-height: none;
+}
+
+.sol-screen.landscape {
+  --sol-side-l: env(safe-area-inset-left, 0px);
+  --sol-side-r: env(safe-area-inset-right, 0px);
+  --sol-rail: 76px;
+}
+
+.sol-screen.landscape .sol-top {
+  padding: calc(6px + var(--safe-top)) calc(10px + var(--sol-side-r)) 0 calc(10px + var(--sol-side-l));
+}
+
+.sol-screen.art.landscape .sol-nav {
+  flex-direction: row;
+  gap: 6px;
+  --sol-nav-btn: 40px;
+}
+
+/* Only the right needs a rail, for the controls; Home and Games sit up in the score bar's band. */
+.sol-screen.landscape .sol-board {
+  margin: 4px calc(var(--sol-rail) + var(--sol-side-r)) calc(6px + var(--safe-bottom)) calc(8px + var(--sol-side-l));
+}
+
+.sol-screen.landscape .sol-controls {
+  position: absolute;
+  top: calc(var(--sol-art-h, 100px) * var(--sol-table-top, 0.2) + 4px);
+  right: calc(8px + var(--sol-side-r));
+  bottom: calc(8px + var(--safe-bottom));
+  width: calc(var(--sol-rail) - 14px);
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 0;
+}
+
+/* Shrink to fit a short screen rather than ride up over the logo. */
+.sol-screen.landscape .sol-control {
+  flex: 0 1 48px;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  min-height: 34px;
+  overflow: hidden;
+}
+
 .sol-top {
   position: relative;
   z-index: 2;
@@ -9498,11 +9551,16 @@ button.power-plate:active {
   object-fit: fill;
 }
 
+/* A dark backing so the outline reads over the bright shelves and candles as well as the dark parts. */
 .sol-slot-ph {
   position: relative;
-  border: 2px dashed rgba(244, 197, 66, 0.45);
+  border: 2px dashed rgba(255, 214, 102, 0.9);
   border-radius: calc(var(--sol-card-w) * 0.1);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(22, 8, 44, 0.72);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(0, 0, 0, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.45);
 }
 
 .sol-slot-ph.home::after,
@@ -9511,10 +9569,11 @@ button.power-plate:active {
   inset: 0;
   display: grid;
   place-items: center;
-  color: rgba(244, 197, 66, 0.55);
+  color: rgba(255, 220, 120, 0.92);
   font-family: Fredoka, 'Trebuchet MS', sans-serif;
   font-size: calc(var(--sol-card-w) * 0.42);
   font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 .sol-slot-ph.home::after {
@@ -9527,11 +9586,12 @@ button.power-plate:active {
   inset: 0;
   display: grid;
   place-items: center;
-  color: rgba(244, 197, 66, 0.5);
+  color: rgba(255, 220, 120, 0.92);
   font-family: Fredoka, 'Trebuchet MS', sans-serif;
   font-size: calc(var(--sol-card-w) * 0.2);
   font-weight: 700;
   letter-spacing: 0.04em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
   content: 'FREE';
 }
 
@@ -9713,11 +9773,11 @@ button.power-plate:active {
 }
 
 .sol-table-note span:first-child {
-  font-size: calc(var(--sol-card-w) * 0.5);
+  font-size: calc(var(--sol-card-w) * 0.5 * var(--sol-note-scale, 1));
 }
 
 .sol-table-note span + span {
-  font-size: calc(var(--sol-card-w) * 0.36);
+  font-size: calc(var(--sol-card-w) * 0.36 * var(--sol-note-scale, 1));
   opacity: 0.85;
 }
 

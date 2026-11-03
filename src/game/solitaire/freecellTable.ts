@@ -11,13 +11,59 @@ import {
   fcTapMove,
   type FreecellState,
 } from './freecell'
-import { fanColumn, tableCardWidth, type TableLayout, type TableRules, type TableSpot } from './table'
+import {
+  deepestColumn,
+  fanColumn,
+  fanColumnWide,
+  sideBlocks,
+  tableCardWidth,
+  wideTable,
+  type TableLayout,
+  type TableRules,
+  type TableSpot,
+} from './table'
 import { SOLITAIRE_LAYOUT as L } from './theme'
 
 const PAD = 4
 const TOP_ROW = [...FC_CELLS, ...FC_FOUNDATIONS] as const
 
+/**
+ * Landscape: the eight columns get the full height, with the free cells in a square on their left and
+ * the foundations in a square on their right, so the cards are as big as the screen allows.
+ */
+function layoutWide(state: FreecellState, boxW: number, boxH: number): TableLayout {
+  const square = (piles: readonly string[]) => piles.map((pile, i) => ({ pile, col: i % 2, row: Math.floor(i / 2) }))
+  const deepest = deepestColumn(state.tableau, L.wideMinFaceUpOverlap, L.wideMinFaceUpOverlap)
+  const blocks = sideBlocks(boxW, boxH, FC_TABLEAU.length, square(FC_CELLS), square(FC_FOUNDATIONS), Math.max(2.7, deepest), L.cardAspect, PAD)
+  const { cardW, cardH, colX } = blocks
+  const tableauTop = 0
+  const spots = new Map<string, TableSpot>()
+  const piles = {} as TableLayout['piles']
+
+  TOP_ROW.forEach((pile) => {
+    const at = blocks.place.get(pile) ?? { x: 0, y: 0 }
+    piles[pile] = { x: at.x, y: at.y, w: cardW, h: cardH, dropY: at.y }
+    fcPileCards(state, pile).forEach((card, index) => spots.set(card.id, { x: at.x, y: at.y, z: index + 1, pile, index }))
+  })
+
+  const room = Math.max(cardH * 0.5, boxH - cardH - 2)
+  const overlap = {
+    faceDown: L.faceUpOverlap,
+    faceUp: L.faceUpOverlap,
+    minFaceDown: L.wideMinFaceUpOverlap,
+    minFaceUp: L.wideMinFaceUpOverlap,
+  }
+  FC_TABLEAU.forEach((pile, col) => {
+    const x = colX(col)
+    const bottom = fanColumnWide(fcPileCards(state, pile), x, tableauTop, room, cardH, overlap, pile, spots)
+    piles[pile] = { x, y: tableauTop, w: cardW, h: bottom - tableauTop + cardH, dropY: bottom }
+  })
+
+  return { width: blocks.width, cardW, cardH, spots, piles }
+}
+
 function layout(state: FreecellState, boxW: number, boxH: number): TableLayout {
+  if (wideTable(boxW, boxH)) return layoutWide(state, boxW, boxH)
   const width = Math.min(boxW, L.maxBoardWidth)
   const cardW = tableCardWidth(width, FC_TABLEAU.length, PAD, L.columnGap)
   const cardH = cardW * L.cardAspect

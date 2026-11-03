@@ -28,6 +28,7 @@ import { useCub } from './game/useCub'
 import { supabase } from './game/supabase'
 import { challengeGame } from './game/challenges'
 import type { Difficulty, SpellMode } from './game/solitaire/keys'
+import { useSolitaireLandscape } from './game/solitaire/orientation'
 
 type Screen = 'home' | 'flight' | 'match' | 'dojo' | 'archer' | 'hoops' | 'bubble' | 'river' | 'solitaire'
 
@@ -274,6 +275,7 @@ function Game() {
   const [openAchievements, setOpenAchievements] = useState(false)
   /** Spellitaire opened from a challenge starts on that mode and difficulty. */
   const [spellStart, setSpellStart] = useState<{ mode: SpellMode; difficulty: Difficulty } | null>(null)
+  const solLandscape = useSolitaireLandscape()
 
   useEffect(() => {
     setActivityArea(screen)
@@ -308,9 +310,11 @@ function Game() {
 
   // Runs in the demo never cost energy, so play buttons always stay on.
   const playEnergy = isDemo() ? 100 : cub.save.energy
+  // Spellitaire on a phone turned sideways uses the whole screen width instead of the phone frame.
+  const solWide = screen === 'solitaire' && solLandscape
 
   return (
-    <main className={isDemo() ? 'phone demo-mode' : 'phone'}>
+    <main className={`phone${isDemo() ? ' demo-mode' : ''}${solWide ? ' sol-wide' : ''}`}>
       {screen === 'home' ? (
         <CareScreen
           cub={cub}

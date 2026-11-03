@@ -48,6 +48,12 @@ export const SOLITAIRE_ASSETS = {
     height: 2300,
     note: 'Full-screen background with the title, score bar and Wizard Cub painted in (portrait). JPG is fine.',
   },
+  backgroundLandscape: {
+    file: 'spellitaire-bg-landscape',
+    width: 2048,
+    height: 1150,
+    note: 'Landscape background, used while the phone is on its side: score bar top centre, small title on the right. JPG is fine.',
+  },
   cardBack: { file: 'card-back', width: 360, height: 522, note: 'Back of every face-down card. Corners are rounded by the game.' },
   cardFace: {
     file: 'card-face',
@@ -112,6 +118,9 @@ export const SOLITAIRE_LAYOUT = {
   /** Least overlap when a long column has to squeeze to fit the screen. */
   minFaceUpOverlap: 0.2,
   minFaceDownOverlap: 0.07,
+  /** Landscape is short, so very long columns may squeeze a little further, still showing each rank. */
+  wideMinFaceUpOverlap: 0.16,
+  wideMinFaceDownOverlap: 0.05,
   /** Hard mode: how far each of the top three waste cards fans out, as a share of a card's width. */
   wasteFan: 0.24,
   /** Widest the board gets on a tablet, in CSS pixels. */
@@ -134,6 +143,21 @@ export const SOLITAIRE_LAYOUT = {
     valueSize: 0.04,
     /** Where the card table starts, below the title and score bar. */
     tableTop: 0.232,
+  },
+  /**
+   * The landscape background, used while the phone is on its side: the score bar across the top centre,
+   * a small title on the right. Same meaning as `background`.
+   */
+  backgroundLandscape: {
+    aspect: 1024 / 575,
+    hasScoreBar: true,
+    /** Just under the SCORE, TIME and MOVES labels, inside the bar. */
+    scoreAt: { x: 0.327, y: 0.141 },
+    timeAt: { x: 0.5, y: 0.141 },
+    movesAt: { x: 0.674, y: 0.141 },
+    valueSize: 0.022,
+    /** Below the bar's centre point. */
+    tableTop: 0.225,
   },
   winBanner: { scale: 1, offsetY: 0 },
   /** Milliseconds for a card to slide to a new spot. */

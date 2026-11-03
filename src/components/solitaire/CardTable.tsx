@@ -59,7 +59,7 @@ function hintAnimation(hint: TableHint) {
 /** A solitaire table for any mode: lays out its piles and turns drags and taps into moves. */
 export function CardTable<S extends TableState>({ state, rules, hint, locked = false, onMove, onDraw, onNotice }: Props<S>) {
   const boxRef = useRef<HTMLDivElement>(null)
-  const [box, setBox] = useState({ w: 360, h: 560 })
+  const [box, setBox] = useState<{ w: number; h: number; centreX?: number }>({ w: 360, h: 560 })
   const [drag, setDragState] = useState<Drag | null>(null)
   /** The drag as of the latest pointer event, ahead of the next render. */
   const dragRef = useRef<Drag | null>(null)
@@ -106,14 +106,40 @@ export function CardTable<S extends TableState>({ state, rules, hint, locked = f
   useLayoutEffect(() => {
     const el = boxRef.current
     if (!el) return
-    const measure = () => setBox({ w: el.clientWidth, h: el.clientHeight })
+    let last: { w: number; h: number } | null = null
+    const measure = () => {
+      const w = el.clientWidth
+      const h = el.clientHeight
+      if (last && last.w === w && last.h === h) return
+      if (last) {
+        // The table changed shape (the phone turned) mid-press: drop the press and any drag, so the
+        // cards stay where they are rather than landing somewhere the new layout doesn't expect.
+        const p = press.current
+        if (p) {
+          press.current = null
+          try {
+            if (el.hasPointerCapture(p.pointerId)) el.releasePointerCapture(p.pointerId)
+          } catch {
+            // Already released.
+          }
+        }
+        if (dragRef.current) {
+          dragRef.current = null
+          setDragState(null)
+        }
+      }
+      last = { w, h }
+      const screen = (el.closest('.sol-screen') ?? document.documentElement).getBoundingClientRect()
+      const centreX = screen.left + screen.width / 2 - (el.getBoundingClientRect().left + el.clientLeft)
+      setBox({ w, h, centreX })
+    }
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
 
-  const layout = useMemo(() => rules.layout(state, box.w, box.h), [rules, state, box])
+  const layout = useMemo(() => rules.layout(state, box.w, box.h, box.centreX), [rules, state, box])
   const isColumn = (pile: PileId) => rules.columns.includes(pile)
 
   // Clear a selection that no longer points at movable cards.
@@ -374,7 +400,13 @@ export function CardTable<S extends TableState>({ state, rules, hint, locked = f
       {layout.note && rules.note ? (
         <div
           className="sol-table-note"
-          style={{ left: layout.note.x, top: layout.note.y, width: layout.note.w, height: layout.note.h }}
+          style={{
+            left: layout.note.x,
+            top: layout.note.y,
+            width: layout.note.w,
+            height: layout.note.h,
+            ['--sol-note-scale' as string]: String(layout.noteScale ?? 1),
+          }}
           aria-live="polite"
         >
           {rules.note(state).map((line) => (

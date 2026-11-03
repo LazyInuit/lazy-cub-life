@@ -9,7 +9,17 @@ import {
   type KlondikeState,
   type PileId as KlondikePile,
 } from './klondike'
-import { fanColumn, tableCardWidth, type TableLayout, type TableRules, type TableSpot } from './table'
+import {
+  deepestColumn,
+  fanColumn,
+  fanColumnWide,
+  sideBlocks,
+  tableCardWidth,
+  wideTable,
+  type TableLayout,
+  type TableRules,
+  type TableSpot,
+} from './table'
 import { SOLITAIRE_LAYOUT as L } from './theme'
 
 const PAD = 4
@@ -24,7 +34,67 @@ const TOP_COLUMN: Record<'stock' | 'waste' | 'f0' | 'f1' | 'f2' | 'f3', number> 
   f3: 6,
 }
 
+/**
+ * Landscape: the seven columns get the full height, with the stock and waste on their left and the
+ * four foundations in a square on their right, so the cards are as big as the screen allows. Room is
+ * kept for a deep column before the cards shrink to fit it.
+ */
+function layoutWide(state: KlondikeState, boxW: number, boxH: number): TableLayout {
+  const deepest = deepestColumn(state.tableau, L.wideMinFaceDownOverlap, L.wideMinFaceUpOverlap)
+  // The waste fans downwards here when drawing three, so it needs a little more than two cards of height.
+  const wasteFan = 0.2
+  const blocks = sideBlocks(
+    boxW,
+    boxH,
+    TABLEAU.length,
+    [
+      { pile: 'stock', col: 0, row: 0 },
+      { pile: 'waste', col: 0, row: 1 },
+    ],
+    [
+      { pile: 'f0', col: 0, row: 0 },
+      { pile: 'f1', col: 1, row: 0 },
+      { pile: 'f2', col: 0, row: 1 },
+      { pile: 'f3', col: 1, row: 1 },
+    ],
+    Math.max(2.6, deepest, 2 + wasteFan * 2 + 0.1),
+    L.cardAspect,
+    PAD,
+  )
+  const { cardW, cardH, colX } = blocks
+  const tableauTop = 0
+  const spots = new Map<string, TableSpot>()
+  const piles = {} as TableLayout['piles']
+
+  for (const pile of ['stock', 'waste', ...FOUNDATIONS] as const) {
+    const at = blocks.place.get(pile) ?? { x: 0, y: 0 }
+    piles[pile] = { x: at.x, y: at.y, w: cardW, h: cardH, dropY: at.y }
+    const cards = pileCards(state, pile)
+    const fanFrom = pile === 'waste' && state.drawCount === 3 ? cards.length - 3 : cards.length
+    cards.forEach((card, index) => {
+      const shift = Math.max(0, index - fanFrom) * cardH * wasteFan
+      spots.set(card.id, { x: at.x, y: at.y + shift, z: index + 1, pile, index })
+    })
+  }
+
+  const room = Math.max(cardH * 0.5, boxH - cardH - 2)
+  const overlap = {
+    faceDown: L.faceDownOverlap,
+    faceUp: L.faceUpOverlap,
+    minFaceDown: L.wideMinFaceDownOverlap,
+    minFaceUp: L.wideMinFaceUpOverlap,
+  }
+  TABLEAU.forEach((pile, col) => {
+    const x = colX(col)
+    const bottom = fanColumnWide(pileCards(state, pile), x, tableauTop, room, cardH, overlap, pile, spots)
+    piles[pile] = { x, y: tableauTop, w: cardW, h: bottom - tableauTop + cardH, dropY: bottom }
+  })
+
+  return { width: blocks.width, cardW, cardH, spots, piles }
+}
+
 function layout(state: KlondikeState, boxW: number, boxH: number): TableLayout {
+  if (wideTable(boxW, boxH)) return layoutWide(state, boxW, boxH)
   const width = Math.min(boxW, L.maxBoardWidth)
   const cardW = tableCardWidth(width, 7, PAD, L.columnGap)
   const cardH = cardW * L.cardAspect
