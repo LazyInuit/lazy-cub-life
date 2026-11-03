@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react'
 import { ACTIVITY_AREAS } from '../game/activity'
-import { adminOverview, type AdminOverview as Overview } from '../game/admin'
+import { adminGamesRange, adminOverview, type AdminOverview as Overview } from '../game/admin'
+
+/** Same choices as the coin totals and a player's activity. Today counts from UK midnight. */
+const PLAY_RANGES = [
+  { id: 'all', label: 'All time', days: null },
+  { id: 'week', label: 'Last 7 days', days: 7 },
+  { id: 'day', label: 'Today', days: 1 },
+] as const
+
+type PlayRange = (typeof PLAY_RANGES)[number]['id']
 
 /** Coins earned in 24 hours at or above this get a "check" flag on the watch list. */
 const WATCH_COINS = 300
@@ -35,6 +44,44 @@ type Props = {
 export function AdminOverview({ refreshKey, onPickPlayer }: Props) {
   const [overview, setOverview] = useState<Overview | null | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
+  const [playRange, setPlayRange] = useState<PlayRange>('all')
+  /** Most played for Today or the last 7 days. Undefined while loading. */
+  const [rangeAreas, setRangeAreas] = useState<Overview['areas'] | undefined>(undefined)
+  const [rangeNote, setRangeNote] = useState<string | null>(null)
+
+  useEffect(() => {
+    const days = PLAY_RANGES.find((item) => item.id === playRange)?.days ?? null
+    if (days === null) {
+      setRangeNote(null)
+      return
+    }
+    let cancel = false
+    setRangeAreas(undefined)
+    setRangeNote(null)
+    void adminGamesRange(days)
+      .then((result) => {
+        if (cancel) return
+        if (!result) {
+          setRangeAreas({})
+          setRangeNote('Today and the last 7 days need supabase/admin-games-range.sql. All time works now.')
+          return
+        }
+        setRangeAreas(result.areas)
+        const start = new Date(Date.now() - (days - 1) * 86400000).toISOString().slice(0, 10)
+        if (result.since && result.since > start) {
+          const since = new Date(`${result.since}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+          setRangeNote(`Daily tracking started on ${since}, so this only counts from then.`)
+        }
+      })
+      .catch((reason: unknown) => {
+        if (cancel) return
+        setRangeAreas({})
+        setRangeNote(reason instanceof Error ? reason.message : 'Could not load play time.')
+      })
+    return () => {
+      cancel = true
+    }
+  }, [playRange, refreshKey])
 
   useEffect(() => {
     let cancel = false
@@ -77,7 +124,8 @@ export function AdminOverview({ refreshKey, onPickPlayer }: Props) {
     )
   }
 
-  const games = ACTIVITY_AREAS.map((area) => ({ ...area, ...(overview.areas[area.id] ?? { seconds: 0, players: 0 }) })).sort(
+  const shownAreas = playRange === 'all' ? overview.areas : (rangeAreas ?? {})
+  const games = ACTIVITY_AREAS.map((area) => ({ ...area, ...(shownAreas[area.id] ?? { seconds: 0, players: 0 }) })).sort(
     (a, b) => b.seconds - a.seconds,
   )
   const topSeconds = Math.max(1, ...games.map((game) => game.seconds))
@@ -130,7 +178,26 @@ export function AdminOverview({ refreshKey, onPickPlayer }: Props) {
 
         <section className="admin-card">
           <h2>Most played</h2>
-          <p className="admin-muted">Total time spent by all players, and how many have played each.</p>
+          <p className="admin-muted">
+            Total time spent by all players, and how many have played each
+            {playRange === 'day' ? ' today' : playRange === 'week' ? ' in the last 7 days' : ''}.
+          </p>
+          <div className="admin-coins-filter" role="tablist" aria-label="Time range">
+            {PLAY_RANGES.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                aria-selected={playRange === item.id}
+                className={playRange === item.id ? 'on' : ''}
+                onClick={() => setPlayRange(item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          {rangeNote && playRange !== 'all' ? <p className="admin-muted">{rangeNote}</p> : null}
+          {playRange !== 'all' && rangeAreas === undefined ? <p className="admin-muted">Loading…</p> : null}
           <ul className="admin-bars">
             {games.map((game) => (
               <li key={game.id}>

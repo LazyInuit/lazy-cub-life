@@ -205,6 +205,29 @@ export async function playerActivityRange(
   return { times, since: typeof row.since === 'string' ? row.since : null }
 }
 
+/**
+ * Every player's time and player count per area over the last `days` UK days, today included, and
+ * the day daily tracking began. Null until admin-games-range.sql is run.
+ */
+export async function adminGamesRange(
+  days: number,
+): Promise<{ areas: AdminOverview['areas']; since: string | null } | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('admin_games_range', { p_days: days })
+  if (error && missingFunction(error)) return null
+  if (error) throw new Error(error.message)
+  const row = (data && typeof data === 'object' && !Array.isArray(data) ? data : {}) as Record<string, unknown>
+  const num = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? value : Number(value) || 0)
+  const areas: AdminOverview['areas'] = {}
+  if (row.areas && typeof row.areas === 'object' && !Array.isArray(row.areas)) {
+    for (const [area, value] of Object.entries(row.areas as Record<string, unknown>)) {
+      const item = (value ?? {}) as Record<string, unknown>
+      areas[area] = { seconds: num(item.seconds), players: num(item.players) }
+    }
+  }
+  return { areas, since: typeof row.since === 'string' ? row.since : null }
+}
+
 export async function playerHistory(playerId: string): Promise<LedgerEntry[]> {
   if (!supabase) return []
   const { data, error } = await supabase.rpc('admin_history', { p_player: playerId })
