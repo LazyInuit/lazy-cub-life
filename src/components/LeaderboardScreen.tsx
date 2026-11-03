@@ -27,9 +27,11 @@ type Props = {
   onHome: () => void
   onGames: () => void
   onSettlePrize?: (patch?: WalletPatch | null) => void
+  /** Leave out to hide the Challenge buttons (demo players). */
+  onChallenge?: (username: string) => void
 }
 
-export function LeaderboardScreen({ onHome, onGames, onSettlePrize }: Props) {
+export function LeaderboardScreen({ onHome, onGames, onSettlePrize, onChallenge }: Props) {
   const [game, setGame] = useState<LeaderboardBoard>('overall')
   const [period, setPeriod] = useState<LeaderboardPeriod>('week')
   const [offset, setOffset] = useState(0)
@@ -141,7 +143,13 @@ export function LeaderboardScreen({ onHome, onGames, onSettlePrize }: Props) {
   }, [visiting])
 
   if (visiting) {
-    return <VisitHome profile={visiting} onReturn={() => setVisiting(null)} />
+    return (
+      <VisitHome
+        profile={visiting}
+        onReturn={() => setVisiting(null)}
+        onChallenge={onChallenge ? () => onChallenge(visiting.username) : undefined}
+      />
+    )
   }
 
   return (
@@ -324,6 +332,14 @@ export function LeaderboardScreen({ onHome, onGames, onSettlePrize }: Props) {
             setProfileOpen(null)
             setVisiting(profile)
           }}
+          onChallenge={
+            onChallenge
+              ? (name) => {
+                  setProfileOpen(null)
+                  onChallenge(name)
+                }
+              : undefined
+          }
         />
       ) : null}
     </section>

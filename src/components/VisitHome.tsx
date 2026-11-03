@@ -17,6 +17,8 @@ import { PowerPlate } from './PowerPlate'
 type Props = {
   profile: PlayerProfile
   onReturn: () => void
+  /** Leave out to hide the Challenge button (demo players). */
+  onChallenge?: () => void
 }
 
 const PET_MS = 700
@@ -25,7 +27,7 @@ const CABINET_SLOTS = 10
 const PLATE_CHARS = 28
 
 /** Another player's home: their cubs, level and name only. Nothing here changes either save. */
-export function VisitHome({ profile, onReturn }: Props) {
+export function VisitHome({ profile, onReturn, onChallenge }: Props) {
   const room = profile.room
   const [age, setAge] = useState<CharacterAge>('old')
   const [pose, setPose] = useState<CubPose>('idle')
@@ -157,6 +159,11 @@ export function VisitHome({ profile, onReturn }: Props) {
         ) : null}
         {powerOpen && power ? (
           <CubPowerPanel power={power} ownerName={profile.username} onClose={() => setPowerOpen(false)} />
+        ) : null}
+        {onChallenge ? (
+          <button type="button" className="visit-challenge" onClick={onChallenge} aria-label={`Challenge ${profile.username}`}>
+            <span aria-hidden="true">⚔</span> Challenge
+          </button>
         ) : null}
       </div>
       {shownBadge ? (

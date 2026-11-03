@@ -26,6 +26,8 @@ import { DemoScorePop } from './components/DemoScorePop'
 import { spellitaireBests, spellitaireWeekBests, weekBest } from './game/progress'
 import { useCub } from './game/useCub'
 import { supabase } from './game/supabase'
+import { challengeGame } from './game/challenges'
+import type { Difficulty, SpellMode } from './game/solitaire/keys'
 
 type Screen = 'home' | 'flight' | 'match' | 'dojo' | 'archer' | 'hoops' | 'bubble' | 'river' | 'solitaire'
 
@@ -270,6 +272,8 @@ function Game() {
   const [openGames, setOpenGames] = useState(false)
   const [openShop, setOpenShop] = useState(false)
   const [openAchievements, setOpenAchievements] = useState(false)
+  /** Spellitaire opened from a challenge starts on that mode and difficulty. */
+  const [spellStart, setSpellStart] = useState<{ mode: SpellMode; difficulty: Difficulty } | null>(null)
 
   useEffect(() => {
     setActivityArea(screen)
@@ -343,7 +347,15 @@ function Game() {
           }}
           onSolitaire={() => {
             setOpenGames(false)
+            setSpellStart(null)
             setScreen('solitaire')
+          }}
+          onChallengePlay={(board) => {
+            const game = challengeGame(board)
+            if (!game) return
+            setOpenGames(false)
+            setSpellStart(game.mode && game.difficulty ? { mode: game.mode, difficulty: game.difficulty } : null)
+            setScreen(game.game)
           }}
         />
       ) : null}
@@ -473,6 +485,8 @@ function Game() {
           onGames={goGames}
           energy={playEnergy}
           onShop={goShop}
+          startMode={spellStart?.mode}
+          startDifficulty={spellStart?.difficulty}
         />
       ) : null}
       {cub.earnedBadge ? (

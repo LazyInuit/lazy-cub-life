@@ -53,6 +53,9 @@ type Props = {
   powerBonus?: RunBonus
   /** Deal this exact game first (for a shared daily deal or testing). Later games are random. */
   seed?: number
+  /** Open on this mode's Play screen at this difficulty, as a challenge does, instead of the mode tiles. */
+  startMode?: SpellMode
+  startDifficulty?: Difficulty
 }
 
 /** A game together with the mode whose rules it follows. */
@@ -167,11 +170,11 @@ function ControlButton({
 }
 
 /** Spellitaire: a choice of solitaire modes, each with Easy and Hard. Placeholder looks for any artwork not yet added. */
-export function Spellitaire({ bests, weekBests, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus, seed }: Props) {
+export function Spellitaire({ bests, weekBests, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus, seed, startMode, startDifficulty }: Props) {
   const [phase, setPhase] = useState<Phase>('start')
-  const [step, setStep] = useState<StartStep>('modes')
-  const [difficulty, setDifficulty] = useState<Difficulty>(readDifficulty)
-  const [table, setTable] = useState<Table>(() => dealTable(readMode(), seed ?? newSeed(), difficulty))
+  const [step, setStep] = useState<StartStep>(startMode ? 'level' : 'modes')
+  const [difficulty, setDifficulty] = useState<Difficulty>(() => startDifficulty ?? readDifficulty())
+  const [table, setTable] = useState<Table>(() => dealTable(startMode ?? readMode(), seed ?? newSeed(), difficulty))
   const firstSeed = useRef<number | null>(seed ?? null)
   const [seconds, setSeconds] = useState(0)
   const [hint, setHint] = useState<TableHint | null>(null)

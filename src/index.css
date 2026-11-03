@@ -10683,3 +10683,1040 @@ img.sol-control-icon {
   color: #c8102e;
   transform: translateX(22%) rotate(10deg);
 }
+
+/* Player vs player challenges */
+
+/* Home: a wood button under the Daily chest, with a "!" for new challenges and results. */
+.challenges-open {
+  pointer-events: auto;
+  position: absolute;
+  top: calc(226px + 3% + var(--safe-top));
+  right: 13px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff6e8;
+  font-weight: 800;
+  font-size: 0.62rem;
+  text-shadow: 0 1px 0 #5a3010;
+}
+
+.challenges-open .wood-btn-wrap {
+  position: relative;
+  display: block;
+}
+
+.challenges-badge {
+  display: block;
+  width: 72px;
+  height: 72px;
+  filter: drop-shadow(0 3px 0 rgba(61, 36, 18, 0.35));
+}
+
+.challenges-open:active .challenges-badge,
+.challenges-open.press-glow .challenges-badge {
+  filter: brightness(1.12) drop-shadow(0 3px 0 rgba(61, 36, 18, 0.35));
+}
+
+/* Visiting another player's home. */
+.visit-challenge {
+  pointer-events: auto;
+  position: absolute;
+  left: 50%;
+  top: calc(70px + var(--safe-top));
+  z-index: 3;
+  max-width: calc(100% - 220px);
+  padding: 8px 14px;
+  border: 2px solid #7a4a14;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fff0b8, #f0c14a 45%, #b67a1e);
+  color: #3a2010;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: translateX(-50%);
+  box-shadow: 0 4px 0 #5c3416, 0 8px 18px rgba(12, 6, 2, 0.45);
+}
+
+.visit-challenge:active {
+  transform: translate(-50%, 2px);
+  box-shadow: 0 2px 0 #5c3416;
+}
+
+.profile-visit.profile-challenge {
+  margin-top: 8px;
+  border-color: #0a1c3c;
+  background: linear-gradient(180deg, #8fd0ff, #3c8ee0 45%, #1d4f9a);
+  color: #fff;
+  text-shadow: 0 1px 0 #0a1c3c;
+  box-shadow: 0 4px 0 #0a1c3c;
+}
+
+/* The new challenge sheet: gold frame, blue face, like the other pop-ups. */
+.challenge-pop {
+  pointer-events: auto;
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  display: grid;
+  place-items: center;
+  padding: calc(14px + var(--safe-top)) 12px 14px;
+  background: rgba(8, 6, 4, 0.66);
+}
+
+.challenge-card {
+  position: relative;
+  width: min(100%, 360px);
+  max-height: 100%;
+  padding: 3px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #fff6d4 0%, #f0c56a 18%, #c48a2e 46%, #7a4a14 78%, #e8c56a 100%);
+  box-shadow: 0 12px 28px rgba(12, 6, 2, 0.55);
+  display: flex;
+}
+
+.challenge-card-face {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 14px 16px;
+  border-radius: 19px;
+  background: linear-gradient(180deg, #1c4b8a 0%, #12325f 48%, #0a1c3c 100%);
+  color: #fff8e8;
+  text-align: center;
+}
+
+.challenge-card-face h2 {
+  margin: 0 30px 6px;
+  font-size: 1.25rem;
+  text-shadow: 0 2px 0 #3a2010;
+  overflow-wrap: anywhere;
+}
+
+.challenge-kicker {
+  margin: 0;
+  color: #ffe08a;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.challenge-step {
+  margin: 12px 0 6px;
+  color: #d5e4ff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-align: left;
+}
+
+.challenge-games {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.challenge-game,
+.challenge-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  padding: 4px 3px 5px;
+  border: 2px solid rgba(255, 250, 242, 0.35);
+  border-radius: 12px;
+  background: rgba(10, 24, 52, 0.7);
+  color: #fffaf2;
+  font: inherit;
+  font-size: 0.6rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+/* Game pictures are drawn at 140px, then scaled into a small square, as on the Daily cards. */
+.challenge-game-pic,
+.chal-thumb {
+  display: block;
+  flex: none;
+  overflow: hidden;
+  border: 2px solid rgba(255, 250, 242, 0.9);
+  border-radius: 10px;
+}
+
+.challenge-game-pic {
+  width: 58px;
+  height: 58px;
+}
+
+.challenge-game-pic .game-thumb,
+.chal-thumb .game-thumb {
+  display: block;
+  width: 140px;
+  height: 140px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  transform-origin: top left;
+}
+
+.challenge-game-pic .game-thumb {
+  transform: scale(calc(54 / 140));
+}
+
+.challenge-game-pic .game-thumb.thumb-match,
+.chal-thumb .game-thumb.thumb-match {
+  display: grid;
+}
+
+.challenge-game.on,
+.challenge-mode.on {
+  border-color: #ffe08a;
+  background: rgba(240, 193, 74, 0.22);
+  box-shadow: 0 0 10px rgba(255, 210, 90, 0.55);
+}
+
+.challenge-modes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.challenge-mode .sol-mode-thumb {
+  border-radius: 8px;
+}
+
+.challenge-level {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.challenge-level button {
+  display: grid;
+  gap: 1px;
+  padding: 7px 6px;
+  border: 2px solid rgba(255, 250, 242, 0.35);
+  border-radius: 12px;
+  background: rgba(10, 24, 52, 0.7);
+  color: #fffaf2;
+  font: inherit;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.challenge-level button small {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: none;
+  opacity: 0.85;
+}
+
+.challenge-level button.on {
+  border-color: #ffe08a;
+  background: rgba(240, 193, 74, 0.25);
+}
+
+/* Wager slider: gold up to the wager, plain up to what the player can afford, dark beyond. */
+.challenge-slider {
+  padding: 6px 4px 0;
+}
+
+.challenge-slider-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0 0 6px;
+}
+
+.challenge-slider-value img {
+  width: 26px;
+  height: 26px;
+}
+
+.challenge-slider-value strong {
+  color: #ffe08a;
+  font-size: 1.7rem;
+  line-height: 1;
+  text-shadow: 0 2px 0 #3a2010;
+}
+
+.challenge-slider-value span {
+  font-size: 0.8rem;
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+.challenge-slider input[type='range'] {
+  width: 100%;
+  height: 34px;
+  margin: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: pan-y;
+}
+
+.challenge-slider input[type='range']::-webkit-slider-runnable-track {
+  height: 12px;
+  border: 2px solid #7a4a14;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    #f0c14a 0,
+    #ffe08a var(--fill),
+    rgba(255, 250, 242, 0.85) var(--fill),
+    rgba(255, 250, 242, 0.85) var(--cap),
+    rgba(10, 24, 52, 0.9) var(--cap)
+  );
+}
+
+.challenge-slider input[type='range']::-moz-range-track {
+  height: 12px;
+  border: 2px solid #7a4a14;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    #f0c14a 0,
+    #ffe08a var(--fill),
+    rgba(255, 250, 242, 0.85) var(--fill),
+    rgba(255, 250, 242, 0.85) var(--cap),
+    rgba(10, 24, 52, 0.9) var(--cap)
+  );
+}
+
+.challenge-slider input[type='range']::-webkit-slider-thumb {
+  width: 30px;
+  height: 30px;
+  margin-top: -11px;
+  border: 3px solid #5c3416;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, #fff6c8, #f0c14a 48%, #b67a1e 80%);
+  box-shadow: 0 3px 0 #3d2412, 0 0 10px rgba(255, 210, 90, 0.6);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.challenge-slider input[type='range']::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #5c3416;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, #fff6c8, #f0c14a 48%, #b67a1e 80%);
+  box-shadow: 0 3px 0 #3d2412, 0 0 10px rgba(255, 210, 90, 0.6);
+}
+
+.challenge-slider input[type='range']:disabled {
+  opacity: 0.4;
+}
+
+.challenge-slider-ends {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 4px;
+  color: #d5e4ff;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.challenge-balance,
+.challenge-prize {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.challenge-balance img,
+.challenge-prize img {
+  width: 18px;
+  height: 18px;
+}
+
+.challenge-summary {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1.5px solid rgba(255, 224, 138, 0.55);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.challenge-summary p {
+  margin: 0;
+}
+
+.challenge-prize {
+  color: #ffe08a;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.challenge-prize img {
+  width: 22px;
+  height: 22px;
+}
+
+.challenge-small {
+  margin-top: 4px !important;
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+
+.challenge-error {
+  margin: 8px 0 0;
+  color: #ffb3a8;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.challenge-main {
+  width: 100%;
+  margin-top: 12px;
+  padding: 11px 12px;
+  border: 2px solid #7a4a14;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fff0b8, #f0c14a 45%, #b67a1e);
+  color: #3a2010;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 0 #5c3416;
+}
+
+.challenge-main:disabled {
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+.challenge-main:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #5c3416;
+}
+
+.challenge-confirm-game {
+  margin: 0 0 8px;
+  color: #ffe08a;
+  font-weight: 800;
+}
+
+.challenge-confirm-points {
+  margin: 0;
+  padding: 10px 12px 10px 28px;
+  border: 1.5px solid rgba(255, 224, 138, 0.55);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 0.86rem;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.challenge-confirm-points li + li {
+  margin-top: 6px;
+}
+
+.challenge-confirm-points strong {
+  color: #ffe08a;
+}
+
+.challenge-confirm-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.challenge-confirm-actions .chal-btn {
+  padding: 10px;
+}
+
+.challenge-sent p {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Challenge news over the home screen, using the Cub Power pop-up card. */
+.challenge-notice {
+  z-index: 8;
+}
+
+.challenge-notice-icon {
+  display: block;
+  margin: 0 auto 2px;
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.challenge-notice-icon img {
+  width: 40px;
+  height: 40px;
+}
+
+.challenge-notice-open {
+  margin-top: 10px;
+}
+
+/* The Challenges screen. */
+.challenges-screen .top {
+  padding-top: calc(8px + var(--safe-top));
+}
+
+/* Equal side columns keep the title in the middle whatever sits either side of it. */
+.challenges-screen .top.chal-top {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+
+.chal-top .chal-nav {
+  display: flex;
+  gap: 6px;
+  justify-self: start;
+}
+
+.chal-top .chal-find {
+  justify-self: end;
+}
+
+.chal-top .chal-back {
+  justify-self: start;
+}
+
+.chal-find,
+.chal-back {
+  padding: 7px 10px;
+  border: 2px solid #7a4a14;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fff0b8, #f0c14a 45%, #b67a1e);
+  color: #3a2010;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 0 3px 0 #5c3416;
+}
+
+.chal-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  margin: 10px 14px 0;
+  padding: 4px;
+  border: 2px solid rgba(255, 250, 242, 0.8);
+  border-radius: 14px;
+  background: rgba(10, 24, 52, 0.85);
+}
+
+.chal-tabs button {
+  position: relative;
+  padding: 7px 2px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #d5e4ff;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.chal-tabs button.on {
+  background: linear-gradient(180deg, #fff0b8, #f0c14a 45%, #b67a1e);
+  color: #3a2010;
+}
+
+.chal-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  margin-left: 3px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #3c8ee0;
+  color: #fff;
+  font-size: 0.62rem;
+  vertical-align: 1px;
+}
+
+.chal-count.alert {
+  background: radial-gradient(circle at 35% 30%, #f06a5a, #c4473a 70%);
+}
+
+.chal-list {
+  padding-top: 10px;
+}
+
+/* Results: my results or the community's. */
+.chal-results-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border: 2px solid rgba(255, 250, 242, 0.8);
+  border-radius: 14px;
+  background: rgba(10, 24, 52, 0.85);
+}
+
+.chal-results-switch button {
+  padding: 7px 4px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #d5e4ff;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.chal-results-switch button.on {
+  background: linear-gradient(180deg, #8fd0ff, #3c8ee0 45%, #1d4f9a);
+  color: #fff;
+  text-shadow: 0 1px 0 #0a1c3c;
+}
+
+.chal-community.mine {
+  border-color: #ffe08a;
+}
+
+.chal-community-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+}
+
+.chal-community-head small {
+  font-size: 0.7rem;
+  opacity: 0.75;
+}
+
+.chal-versus {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+}
+
+.chal-vs-mark {
+  color: #ffe08a;
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-shadow: 0 2px 0 #3a2010;
+}
+
+.chal-side {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 4px 6px;
+  border: 1.5px solid rgba(255, 250, 242, 0.25);
+  border-radius: 12px;
+  background: transparent;
+  color: #fffaf2;
+  font: inherit;
+}
+
+.chal-side strong {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.86rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chal-side-score {
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.chal-side.won {
+  border-color: #ffe08a;
+  background: rgba(240, 193, 74, 0.18);
+}
+
+.chal-side.won .chal-side-score {
+  color: #ffe08a;
+}
+
+.chal-side-crown {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff0b8, #f0c14a 45%, #b67a1e);
+  color: #3a2010;
+  font-size: 0.6rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+}
+
+.chal-community-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  color: #ffe08a;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.chal-community-foot img {
+  width: 16px;
+  height: 16px;
+}
+
+.chal-going {
+  margin: 8px 14px 0;
+  color: #fffaf2;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(6, 14, 32, 0.9);
+}
+
+.chal-going.full {
+  color: #ffe08a;
+}
+
+.chal-message,
+.chal-empty {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(10, 24, 52, 0.82);
+  color: #fffaf2;
+  font-weight: 700;
+  text-align: center;
+}
+
+.chal-empty p {
+  margin: 0 0 8px;
+}
+
+.chal-message {
+  border: 2px solid #ffe08a;
+}
+
+.chal-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chal-card.chal-active {
+  border-color: #ffe08a;
+}
+
+.chal-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.chal-avatar {
+  display: block;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border: 2px solid #ffe08a;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, #fff4d0 0%, #f6d98a 55%, #d9a24a 100%);
+}
+
+.chal-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.chal-who {
+  display: grid;
+  min-width: 0;
+  text-align: left;
+}
+
+.chal-who strong {
+  overflow: hidden;
+  font-size: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chal-vs {
+  color: #d5e4ff;
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.chal-game {
+  color: #ffe08a;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.chal-thumb {
+  width: 60px;
+  height: 60px;
+}
+
+.chal-thumb .game-thumb {
+  transform: scale(calc(56 / 140));
+}
+
+.chal-money {
+  display: flex;
+  gap: 8px;
+}
+
+.chal-money span {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.chal-money img {
+  width: 16px;
+  height: 16px;
+}
+
+.chal-money .chal-prize {
+  background: rgba(240, 193, 74, 0.2);
+  color: #ffe08a;
+}
+
+.chal-scores {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.chal-scores div {
+  display: grid;
+  padding: 5px 6px;
+  border: 1.5px solid rgba(255, 250, 242, 0.25);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.chal-scores span {
+  overflow: hidden;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+.chal-scores strong {
+  font-size: 1.1rem;
+}
+
+.chal-scores div.lead {
+  border-color: #ffe08a;
+  background: rgba(240, 193, 74, 0.18);
+}
+
+.chal-time,
+.chal-note {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  opacity: 0.9;
+}
+
+.chal-time {
+  color: #ffe08a;
+}
+
+.chal-result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px 10px;
+  margin: 0;
+  font-size: 0.86rem;
+}
+
+.chal-result.win strong,
+.chal-result.win span {
+  color: #8ef0a0;
+}
+
+.chal-result.loss strong,
+.chal-result.loss span {
+  color: #ffb3a8;
+}
+
+.chal-result small {
+  opacity: 0.75;
+}
+
+.chal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.chal-actions:empty {
+  display: none;
+}
+
+.chal-btn {
+  flex: 1;
+  padding: 9px 10px;
+  border: 2px solid #7a4a14;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fff0b8, #f0c14a 45%, #b67a1e);
+  color: #3a2010;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 900;
+  box-shadow: 0 3px 0 #5c3416;
+}
+
+.chal-btn:disabled {
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+.chal-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #5c3416;
+}
+
+.chal-btn.chal-play,
+.chal-btn.chal-accept {
+  border-color: #0e4a1e;
+  background: linear-gradient(180deg, #b8f5b0, #4cbf5a 45%, #23803a);
+  color: #08260f;
+  box-shadow: 0 3px 0 #0e4a1e;
+}
+
+.chal-btn.chal-light {
+  border-color: rgba(255, 250, 242, 0.7);
+  background: rgba(10, 24, 52, 0.7);
+  color: #fffaf2;
+  box-shadow: none;
+}
+
+.chal-btn.chal-small {
+  flex: none;
+  padding: 7px 10px;
+  font-size: 0.78rem;
+}
+
+.chal-search {
+  margin: 10px 14px 0;
+}
+
+/* Inside the results list, which already has its own side padding and gaps. */
+.chal-search.chal-results-search {
+  margin: 0;
+}
+
+.chal-search input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #ffe08a;
+  border-radius: 12px;
+  background: rgba(10, 24, 52, 0.9);
+  color: #fffaf2;
+  font: inherit;
+  font-size: 1rem;
+}
+
+.chal-players {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chal-players li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 2px solid rgba(255, 250, 242, 0.8);
+  border-radius: 14px;
+  background: rgba(10, 24, 52, 0.88);
+}
+
+.chal-player {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fffaf2;
+  font: inherit;
+  text-align: left;
+}
+
+.chal-player .chal-avatar {
+  width: 38px;
+  height: 38px;
+  flex: none;
+}
+
+.chal-rank {
+  flex: none;
+  min-width: 30px;
+  color: #ffe08a;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.chal-player-name {
+  display: grid;
+  min-width: 0;
+}
+
+.chal-player-name strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chal-player-name small {
+  font-size: 0.7rem;
+  opacity: 0.8;
+}

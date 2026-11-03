@@ -26,6 +26,7 @@ import type { SpellitaireKey } from './solitaire/keys'
 import { BONUS_COIN_AMOUNTS, DAILY_TASKS, bonusReady, dailyView, extraReady, type BonusTrait, type DailyGame } from './dailyTasks'
 import { DRINKS, type DrinkId } from './drinks'
 import { submitLeaderboardScore, type LeaderboardGame } from './leaderboard'
+import { loadChallenges, markNoticesSeen, submitChallengeScore, type ChallengeList } from './challenges'
 import { readSave, writeSave } from './storage'
 import { reconcileCloudSave, scheduleCloudSave, flushCloudSave, flushCloudSaveNow, cloudBaseVisit, signInAccount, signOutAccount, signUpAccount, takeAdoptedSave, lockedCubCash, noteLockedCash, noteEarnedCash, ethFromUser, usernameFromUser, loadDisplayedUsername, loadUsernameChangedAt, updateAccountSettings, normalizeEthAddress } from './account'
 import { pumpkinLit, setPumpkinLit } from './halloween'
@@ -63,6 +64,8 @@ const LEVEL_UP_MS = 1500
 const XP_FILL_MS = 450
 /** Wait after a run for its save and score to reach the server before reading Cub Power again. */
 const POWER_REFRESH_MS = 2500
+/** How often open challenges are reloaded while the game is on screen, for the other player's moves. */
+const CHALLENGE_REFRESH_MS = 60_000
 
 /** Whole bonus XP and Cub Cash Cub Power added since the current run started. */
 export type RunBonus = { xp: number; coins: number }
@@ -87,6 +90,10 @@ export function useCub() {
   const [powerNewGame, setPowerNewGame] = useState(false)
   const [powerNotices, setPowerNotices] = useState<PowerNotice[]>([])
   const [runBonus, setRunBonus] = useState<RunBonus>({ xp: 0, coins: 0 })
+  /** This player's challenges and unseen challenge news, from the server. Null until loaded or when signed out. */
+  const [challenges, setChallenges] = useState<ChallengeList | null>(null)
+  const challengesRef = useRef<ChallengeList | null>(null)
+  challengesRef.current = challenges
   const cubPowerRef = useRef<CubPower | null>(null)
   /** Expected leftover bonus hundredths, ahead of payouts still on their way to the server. */
   const coinRemainderRef = useRef(0)
@@ -186,6 +193,54 @@ export function useCub() {
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [accountName, refreshCubPower])
+
+  /** Puts a balance the server has just reported on screen, unless game coins are still on their way. */
+  const applyServerCash = useCallback((cash: number | null) => {
+    const latest = saveRef.current
+    if (cash === null || demoCub || !latest || pendingPayouts.current > 0) return
+    noteLockedCash(cash)
+    commit(applyWallet(latest, { cubCash: cash }))
+  }, [commit])
+
+  /** Loads challenges. The server settles any that are overdue first, so this is also what pays them out. */
+  const refreshChallenges = useCallback(async () => {
+    const name = accountNameRef.current
+    if (demoCub || !name) return null
+    try {
+      const list = await loadChallenges()
+      if (accountNameRef.current !== name) return null
+      setChallenges(list)
+      applyServerCash(list.cubCash)
+      return list
+    } catch {
+      return null
+    }
+  }, [applyServerCash])
+
+  const dismissChallengeNotices = useCallback((ids: number[]) => {
+    if (ids.length === 0) return
+    setChallenges((list) => (list ? { ...list, notices: list.notices.filter((notice) => !ids.includes(notice.id)) } : list))
+    void markNoticesSeen(ids).catch(() => undefined)
+  }, [])
+
+  useEffect(() => {
+    if (demoCub || !accountName) {
+      setChallenges(null)
+      return
+    }
+    void refreshChallenges()
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refreshChallenges()
+    }
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void refreshChallenges()
+    }, CHALLENGE_REFRESH_MS)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.clearInterval(id)
+    }
+  }, [accountName, refreshChallenges])
 
   const tuckIn = useCallback(() => {
     const current = saveRef.current
@@ -629,6 +684,16 @@ export function useCub() {
     }
     const board = options.board ?? game
     if (gained > 0) void submitLeaderboardScore(board, gained)
+    // A running challenge on this board counts this run too. A sent one may have been accepted since the
+    // list last loaded; the server only counts scores inside a challenge's 24 hours.
+    const running = challengesRef.current?.challenges.some(
+      (c) => c.board === board && (c.status === 'active' || (c.status === 'pending' && c.role === 'challenger')),
+    )
+    if (gained > 0 && running) {
+      void submitChallengeScore(board, gained)
+        .then(() => refreshChallenges())
+        .catch(() => undefined)
+    }
     // A run can raise the level or reach a badge.
     schedulePowerRefresh()
     const withWeek = gained > 0 ? withWeekScore(current, board, gained) : current
@@ -652,7 +717,7 @@ export function useCub() {
       const cash = noteEarnedCash(patch.cubCash)
       commit(applyWallet(latest, { ...patch, cubCash: cash }))
     })
-  }, [commit, schedulePowerRefresh])
+  }, [commit, schedulePowerRefresh, refreshChallenges])
 
   /** Keeps the expected bonus leftover in step with the server once no game payouts are pending. */
   const noteServerRemainder = useCallback((patch: WalletPatch | null | undefined) => {
@@ -1038,6 +1103,11 @@ export function useCub() {
     signOut,
     updateAccount,
     collectWeeklyPrize,
+    challenges,
+    refreshChallenges,
+    applyServerCash,
+    challengeNotice: challenges?.notices[0] ?? null,
+    dismissChallengeNotices,
   }
 }
 

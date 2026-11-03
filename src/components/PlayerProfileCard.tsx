@@ -14,9 +14,11 @@ type Props = {
   onVisit?: (profile: PlayerProfile) => void
   /** Let the player change or remove their own photo. */
   editable?: boolean
+  /** Leave out to hide the Challenge button. Your own card never shows it. */
+  onChallenge?: (username: string) => void
 }
 
-export function PlayerProfileCard({ username, mine, onClose, onVisit, editable = false }: Props) {
+export function PlayerProfileCard({ username, mine, onClose, onVisit, editable = false, onChallenge }: Props) {
   const [profile, setProfile] = useState<PlayerProfile | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [shownBadge, setShownBadge] = useState<BadgeId | null>(null)
@@ -196,6 +198,11 @@ export function PlayerProfileCard({ username, mine, onClose, onVisit, editable =
               }}
             >
               {waiting ? 'Loading...' : 'Visit'}
+            </button>
+          ) : null}
+          {!mine && onChallenge ? (
+            <button type="button" className="profile-visit profile-challenge" disabled={!profile} onClick={() => onChallenge(name)}>
+              Challenge
             </button>
           ) : null}
         </div>

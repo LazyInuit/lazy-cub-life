@@ -1,25 +1,17 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import dashThumb from '../assets/galactic-dash-cover.jpg'
-import archerThumb from '../assets/cupid-archer/cover.jpg'
-import hoopsThumb from '../assets/lazy-hoops/cover-select.jpg'
-import bubbleThumb from '../assets/bubble-blast/thumb.jpg'
-import riverThumb from '../assets/lazy-river/game-thumb-cub.jpg'
-import { SolAsset } from './solitaire/SolAsset'
 import { LeaderboardOpenButton } from './LeaderboardOpenButton'
 import { LevelInfoPop } from './LevelInfoPop'
 import { GameTour, markTourSeen, tourSeen } from './GameTour'
-import dojoBg from '../assets/lazy-dojo/backgrounds/dojo-1.png'
-import dojoCover from '../assets/lazy-dojo/ui/ninja-cub-cover.png'
 import controllerUrl from '../assets/controller-icon.png'
 import dropUrl from '../assets/drop-ui.png'
 import moonUrl from '../assets/moon-ui.png'
 import shirtUrl from '../assets/shirt-ui.png'
-import lionPawUrl from '../assets/lion-paw-clear.png'
 import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import diceIconUrl from '../assets/dice-ui.png'
 import chestUrl from '../assets/daily-chest.png'
+import challengesBadgeUrl from '../assets/challenges-badge.png'
 import shopFaceUrl from '../assets/home/shop-badge.png'
-import { traitSlug, tryOnFromPicks, type TraitCategory } from '../game/cubTraits'
+import { tryOnFromPicks, type TraitCategory } from '../game/cubTraits'
 import { isTraitUnlocked, sanitizeOwnedOutfit } from '../game/traitShop'
 import { activityArea, setActivityArea } from '../game/activity'
 import { getHomeCharacterAge, setHomeCharacter, type CharacterAge } from '../game/homeScene'
@@ -64,9 +56,14 @@ import { isDemo, requestSignUp } from '../game/demo'
 import { DemoLockBanner } from './DemoLockBanner'
 import { LeaderboardScreen } from './LeaderboardScreen'
 import { VisitHome } from './VisitHome'
-import type { PlayerProfile } from '../game/leaderboard'
+import type { LeaderboardGame, PlayerProfile } from '../game/leaderboard'
 import { WardrobeScreen } from './WardrobeScreen'
 import { ShopScreen } from './ShopScreen'
+import { GameThumb } from './GameThumb'
+import { ChallengeCreate } from './ChallengeCreate'
+import { ChallengesScreen } from './ChallengesScreen'
+import { ChallengeNoticePop } from './ChallengeNoticePop'
+import { challengeGame, challengesNeedingAttention } from '../game/challenges'
 
 type Props = {
   cub: CubController
@@ -78,6 +75,8 @@ type Props = {
   onBubble: () => void
   onRiver: () => void
   onSolitaire: () => void
+  /** Opens a challenge's game, at its mode and difficulty. */
+  onChallengePlay?: (board: LeaderboardGame) => void
   startInGames?: boolean
   startInShop?: boolean
   /** Open the Achievements list straight away, from the badge-earned pop-up. */
@@ -112,6 +111,7 @@ export function CareScreen({
   onBubble,
   onRiver,
   onSolitaire,
+  onChallengePlay,
   startInGames = false,
   startInShop = false,
   startInAchievements = false,
@@ -204,6 +204,9 @@ export function CareScreen({
   }, [boardOpen, gamesOpen])
   /** A player's home opened from the Cub Power leaderboard. */
   const [visiting, setVisiting] = useState<PlayerProfile | null>(null)
+  const [challengesOpen, setChallengesOpen] = useState(false)
+  /** The player a new challenge is being set up against. */
+  const [challengeWith, setChallengeWith] = useState<string | null>(null)
   const [bonusRoll, setBonusRoll] = useState<{ prize: BonusTrait | null; coins: number; extra: boolean } | null>(null)
   /** Which roll's dice is shaking. */
   const [diceShake, setDiceShake] = useState<'bonus' | 'extra' | null>(null)
@@ -216,7 +219,7 @@ export function CareScreen({
     setHomeCharacter(age)
   }, [age])
 
-  const onCubHome = !gamesOpen && !shopOpen && !wardrobeOpen && !boardOpen && !dailyOpen && !cub.asleep
+  const onCubHome = !gamesOpen && !shopOpen && !wardrobeOpen && !boardOpen && !dailyOpen && !challengesOpen && !cub.asleep
 
   useEffect(() => {
     if (!onCubHome) {
@@ -292,8 +295,77 @@ export function CareScreen({
     start()
   }
 
+  const energyPop =
+    energyWarn != null ? (
+      <div className="energy-pop" role="presentation" onClick={() => setEnergyWarn(null)}>
+        <div
+          className="energy-pop-card"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="energy-pop-title"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="energy-pop-face">
+            <h2 id="energy-pop-title">Recover energy</h2>
+            <p>You need {energyWarn} energy to play. Buy a drink in the shop to fill the bar, or put your cub to sleep.</p>
+            <button
+              type="button"
+              className="energy-pop-shop"
+              onClick={() => {
+                setEnergyWarn(null)
+                setGamesOpen(false)
+                setChallengesOpen(false)
+                setShopOpen(true)
+              }}
+            >
+              Visit the shop
+            </button>
+            <button type="button" className="energy-pop-close" onClick={() => setEnergyWarn(null)}>
+              Not now
+            </button>
+          </div>
+        </div>
+      </div>
+    ) : null
+
+  /** Challenges need a signed-in account; demo players are sent to Create account instead. */
+  const openChallenge = (username: string) => {
+    if (demo || !cub.accountName) {
+      requestSignUp()
+      return
+    }
+    setChallengeWith(username)
+  }
+
+  const playChallenge = (board: LeaderboardGame) => {
+    const game = challengeGame(board)
+    if (!game || !onChallengePlay) return
+    tryGame(game.game, () => onChallengePlay(board))
+  }
+
+  const challengeSheet = challengeWith ? (
+    <ChallengeCreate
+      cub={cub}
+      opponent={challengeWith}
+      onClose={() => setChallengeWith(null)}
+      onSent={() => {
+        setChallengeWith(null)
+        void cub.refreshChallenges()
+      }}
+    />
+  ) : null
+
   if (visiting) {
-    return <VisitHome profile={visiting} onReturn={() => setVisiting(null)} />
+    return (
+      <>
+        <VisitHome
+          profile={visiting}
+          onReturn={() => setVisiting(null)}
+          onChallenge={demo || !cub.accountName ? undefined : () => openChallenge(visiting.username)}
+        />
+        {challengeSheet}
+      </>
+    )
   }
 
   if (boardOpen) {
@@ -303,8 +375,30 @@ export function CareScreen({
           onHome={() => { setBoardOpen(false); setGamesOpen(false) }}
           onGames={() => setBoardOpen(false)}
           onSettlePrize={cub.collectWeeklyPrize}
+          onChallenge={demo || !cub.accountName ? undefined : openChallenge}
         />
         {boardTourOn ? <GameTour kind="board" demo={demo} onDone={() => setBoardTourOn(false)} /> : null}
+        {challengeSheet}
+      </>
+    )
+  }
+
+  if (challengesOpen) {
+    return (
+      <>
+        <ChallengesScreen
+          cub={cub}
+          onHome={() => setChallengesOpen(false)}
+          onGames={() => {
+            setChallengesOpen(false)
+            setGamesOpen(true)
+          }}
+          onPlay={playChallenge}
+          onChallenge={openChallenge}
+          onVisit={setVisiting}
+        />
+        {energyPop}
+        {challengeSheet}
       </>
     )
   }
@@ -317,36 +411,7 @@ export function CareScreen({
           <h1>Select a game</h1>
         </header>
         <LeaderboardOpenButton onOpen={() => setBoardOpen(true)} />
-        {energyWarn != null ? (
-          <div className="energy-pop" role="presentation" onClick={() => setEnergyWarn(null)}>
-            <div
-              className="energy-pop-card"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="energy-pop-title"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div className="energy-pop-face">
-                <h2 id="energy-pop-title">Recover energy</h2>
-                <p>You need {energyWarn} energy to play. Buy a drink in the shop to fill the bar, or put your cub to sleep.</p>
-                <button
-                  type="button"
-                  className="energy-pop-shop"
-                  onClick={() => {
-                    setEnergyWarn(null)
-                    setGamesOpen(false)
-                    setShopOpen(true)
-                  }}
-                >
-                  Visit the shop
-                </button>
-                <button type="button" className="energy-pop-close" onClick={() => setEnergyWarn(null)}>
-                  Not now
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
+        {energyPop}
         <div className="game-picks">
           <button
             type="button"
@@ -694,6 +759,7 @@ export function CareScreen({
 
   const daily = dailyView(save.daily)
   const dailyWaiting = dailyNeedsAttention(daily)
+  const challengeAlerts = demo ? 0 : challengesNeedingAttention(cub.challenges)
   const cleanFull = barIsFull(save.cleanliness)
   const energyFull = barIsFull(save.energy)
   const progress = levelProgress(cub.presentedXp)
@@ -838,6 +904,23 @@ export function CareScreen({
         !bonusRoll ? (
           <PowerNoticePop notice={cub.powerNotice} onClose={cub.dismissPowerNotice} />
         ) : null}
+        {cub.challengeNotice &&
+        !cub.powerNotice &&
+        !powerOpen &&
+        !accountOpen &&
+        !achievementsOpen &&
+        !levelOpen &&
+        !tourOn &&
+        !bonusRoll ? (
+          <ChallengeNoticePop
+            notice={cub.challengeNotice}
+            onClose={() => cub.dismissChallengeNotices([cub.challengeNotice!.id])}
+            onOpen={() => {
+              cub.dismissChallengeNotices((cub.challenges?.notices ?? []).map((notice) => notice.id))
+              setChallengesOpen(true)
+            }}
+          />
+        ) : null}
         {accountOpen ? (
           <AccountPanel
             cub={cub}
@@ -881,6 +964,27 @@ export function CareScreen({
           <span className="wood-btn-wrap">
             {dailyWaiting ? <span className="daily-alert" aria-hidden="true">!</span> : null}
             <img className="daily-chest" src={chestUrl} alt="" />
+          </span>
+        </button>
+        <button
+          type="button"
+          className={demo ? 'challenges-open challenges-locked' : 'challenges-open'}
+          data-tour="challenges"
+          aria-label={
+            demo
+              ? 'Challenges. Create an account to challenge other players.'
+              : challengeAlerts > 0
+                ? `Challenges, ${challengeAlerts} waiting`
+                : 'Challenges'
+          }
+          onPointerDown={flashPress}
+          onPointerUp={clearPressGlow}
+          onPointerCancel={clearPressGlow}
+          onClick={() => (demo ? requestSignUp() : setChallengesOpen(true))}
+        >
+          <span className="wood-btn-wrap">
+            {challengeAlerts > 0 ? <span className="daily-alert" aria-hidden="true">!</span> : null}
+            <img className="challenges-badge" src={challengesBadgeUrl} alt="" />
           </span>
         </button>
         <button
@@ -1030,95 +1134,4 @@ function MoonIcon() {
 
 function DropIcon() {
   return <img className="drop" src={dropUrl} alt="" />
-}
-
-/** A game's picture from the games menu. `sash` adds the "New" ribbon the menu shows on new games. */
-function GameThumb({ game, sash = false }: { game: DailyGame; sash?: boolean }) {
-  const ribbon = sash ? <span className="game-new-sash">New</span> : null
-  switch (game) {
-    case 'solitaire':
-      return (
-        <span className="game-thumb thumb-solitaire" aria-hidden="true">
-          <SolAsset
-            name="thumbnail"
-            fallback={
-              <span className="sol-thumb-ph">
-                <span className="sol-thumb-card">A♠</span>
-                <span className="sol-thumb-card red">K♥</span>
-              </span>
-            }
-          />
-          {ribbon}
-        </span>
-      )
-    case 'river':
-      return (
-        <span className="game-thumb thumb-river" aria-hidden="true">
-          <img src={riverThumb} alt="" />
-          {ribbon}
-        </span>
-      )
-    case 'bubble':
-      return (
-        <span className="game-thumb thumb-bubble" aria-hidden="true">
-          <img src={bubbleThumb} alt="" />
-          {ribbon}
-        </span>
-      )
-    case 'flight':
-      return (
-        <span className="game-thumb thumb-flight" aria-hidden="true">
-          <img src={dashThumb} alt="" />
-        </span>
-      )
-    case 'hoops':
-      return (
-        <span className="game-thumb thumb-hoops" aria-hidden="true">
-          <img src={hoopsThumb} alt="" />
-        </span>
-      )
-    case 'dojo':
-      return (
-        <span className="game-thumb thumb-dojo" aria-hidden="true">
-          <img className="thumb-dojo-bg" src={dojoBg} alt="" />
-          <img className="thumb-dojo-cover" src={dojoCover} alt="" />
-        </span>
-      )
-    case 'archer':
-      return <span className="game-thumb thumb-archer" aria-hidden="true" style={{ backgroundImage: `url("${archerThumb}")` }} />
-    case 'match':
-      return (
-        <span className="game-thumb thumb-match" aria-hidden="true">
-          <PrideThumbBack />
-          <PrideThumbCell body="Zebra" />
-          <PrideThumbCell body="Zebra" />
-          <PrideThumbBack />
-        </span>
-      )
-  }
-}
-
-function prideLayer(part: string, name: string) {
-  return `/traits/layers/old/${part}/${traitSlug(name)}.png`
-}
-
-function PrideThumbCell({ body }: { body: string }) {
-  return (
-    <span className="pride-thumb-cell">
-      <span className="pride-thumb-bust">
-        <img src={prideLayer('body', body)} alt="" />
-        <img src={prideLayer('mouth', 'Smirk')} alt="" />
-        <img src={prideLayer('eyes', 'Surprised')} alt="" />
-        <img src={prideLayer('mane', 'Black')} alt="" />
-      </span>
-    </span>
-  )
-}
-
-function PrideThumbBack() {
-  return (
-    <span className="pride-thumb-cell pride-thumb-back">
-      <img className="pride-thumb-paw" src={lionPawUrl} alt="" />
-    </span>
-  )
 }
