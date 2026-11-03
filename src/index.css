@@ -4599,6 +4599,16 @@ h1 {
   grid-column: 1 / -1;
 }
 
+.results .flight-results-actions,
+.results .run-energy-note button {
+  transition: opacity 0.25s ease;
+}
+
+.results-locked .flight-results-actions,
+.results-locked .run-energy-note button {
+  opacity: 0.4;
+}
+
 .results p { margin: 0 0 6px; }
 
 /* This week's best, under a game's all-time best: the same style, a touch smaller and softer. */

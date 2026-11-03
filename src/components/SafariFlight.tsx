@@ -26,6 +26,7 @@ type Summary = { score: number; xpGained: number; coins: number; stopped?: boole
 
 const COIN_VALUE = 5
 const COIN_PICK = 36
+const RESULTS_LOCK_MS = 2000
 const flightCoin = new Image()
 flightCoin.src = coinUrl
 
@@ -86,6 +87,8 @@ export function SafariFlight({ best, weekBest, onBest, onDailyStart, onDaily, on
 
   const [hudScore, setHudScore] = useState(0)
   const [summary, setSummary] = useState<Summary | null>(null)
+  /** Just after a crash the results ignore taps, so the flapping that was going on can't press a button. */
+  const [resultsLocked, setResultsLocked] = useState(false)
   const [started, setStarted] = useState(false)
   const [lowEnergy, setLowEnergy] = useState(false)
   /** The start panel, shown when the game opens until the first flight begins. */
@@ -129,8 +132,15 @@ export function SafariFlight({ best, weekBest, onBest, onDailyStart, onDaily, on
       coins: awarded.coins,
       stopped: ending === 'leave',
     })
+    setResultsLocked(ending !== 'leave')
     setHudScore(awarded.passed)
   }
+
+  useEffect(() => {
+    if (!resultsLocked) return
+    const timer = window.setTimeout(() => setResultsLocked(false), RESULTS_LOCK_MS)
+    return () => window.clearTimeout(timer)
+  }, [resultsLocked])
 
   useEffect(() => {
     return () => {
@@ -409,7 +419,7 @@ export function SafariFlight({ best, weekBest, onBest, onDailyStart, onDaily, on
         ) : null}
       </div>
       {summary ? (
-        <div className="results">
+        <div className={resultsLocked ? 'results results-locked' : 'results'} inert={resultsLocked}>
           <p>{summary.score} gap{summary.score === 1 ? '' : 's'} cleared.</p>
           <p className="results-week">
             Best {Math.max(best, summary.score)} · Weekly Best {Math.max(weekBest, summary.score)}
