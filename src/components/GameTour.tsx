@@ -63,6 +63,12 @@ const STEPS: TourStep[] = [
     text: 'New challenges every day, with Cub Cash and bonus rolls for wardrobe prizes.',
   },
   {
+    target: '[data-tour="challenges"]',
+    title: 'PvP Challenges',
+    text: 'Challenge another player to any game and wager Cub Cash. Best score in 24 hours wins it all!',
+    demoText: 'With an account, challenge other players to any game and wager Cub Cash. Best score in 24 hours wins it all!',
+  },
+  {
     target: '.power-plate',
     title: 'Cub Power',
     text: 'Your Cub Power grows with your level, badges and daily logins, and boosts the rewards you earn.',
