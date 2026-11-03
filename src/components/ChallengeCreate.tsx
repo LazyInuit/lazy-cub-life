@@ -197,9 +197,27 @@ export function ChallengeCreate({ cub, opponent, onClose, onSent }: Props) {
                   <p className="challenge-prize">
                     <img src={coinUrl} alt="" /> Winner takes <strong>{formatCubCash(wager * 2)}</strong>
                   </p>
-                  <p className="challenge-small">Best score in 24 hours after they accept wins. Your wager is taken now and held until then.</p>
                 </div>
               ) : null}
+
+              <div className="challenge-rules">
+                <p className="challenge-rules-title">How it works</p>
+                <ol>
+                  <li>
+                    Your wager is taken now and held safely. <strong>{opponent} has 24 hours to accept</strong>. If they don't,
+                    you get it all back.
+                  </li>
+                  <li>
+                    Once accepted, <strong>you both have 24 hours to play</strong>.
+                  </li>
+                  <li>
+                    <strong>Play as many times as you like</strong>. Only your highest score counts.
+                  </li>
+                  <li>
+                    <strong>Highest score wins both wagers</strong>. A draw gives both wagers back.
+                  </li>
+                </ol>
+              </div>
               {!canWager ? (
                 <p className="challenge-error">
                   You need at least {formatCubCash(STARTER_CASH + lowest)} Cub Cash to challenge. Earn more by playing games!

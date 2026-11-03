@@ -294,7 +294,8 @@ function AcceptConfirm({
             <li>
               <strong>{wager} Cub Cash</strong> is taken from your balance now ({formatCubCash(cash)} → {formatCubCash(cash - challenge.wager)}).
             </li>
-            <li>The best score in the next 24 hours wins {formatCubCash(challenge.wager * 2)}. If you lose, your wager is gone.</li>
+            <li>You both get 24 hours to play, as many times as you like. Your highest score counts.</li>
+            <li>The highest score wins {formatCubCash(challenge.wager * 2)}. If you lose, your wager is gone.</li>
             <li>Once you accept, the challenge can't be cancelled.</li>
           </ul>
           <div className="challenge-confirm-actions">
