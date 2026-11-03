@@ -40,23 +40,27 @@ html.safari-frame {
   background: #000;
 }
 
+/* The page itself never scrolls or rubber-bands; only panels inside the game do. */
 html.safari-frame,
 html.safari-frame body,
 html.safari-frame #root {
   height: 100dvh;
   min-height: 100dvh;
   background: #000;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
+/* Padding rather than a margin on the phone: a margin would pass through to body and push the page past the screen. */
 html.safari-frame #root {
   display: block;
+  padding-top: var(--safari-page-top);
 }
 
 html.safari-frame .phone {
   width: 100%;
   height: var(--safari-page-h);
   max-height: var(--safari-page-h);
-  margin-top: var(--safari-page-top);
 }
 
 /* Tablets: the phone frame keeps its layout and is scaled up evenly to the full screen height. */
