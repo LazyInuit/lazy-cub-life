@@ -9,6 +9,7 @@ import { levelProgress } from '../game/progress'
 import { playRoar } from '../game/roarAudio'
 import { sanitizeOwnedOutfit } from '../game/traitShop'
 import type { CubPose } from '../game/types'
+import challengeBarUrl from '../assets/pvp-challenge-bar.png'
 import { BadgeShowcase } from './BadgeShowcase'
 import { CubPowerPanel, multiplierText } from './CubPowerPanel'
 import { CubStage } from './CubStage'
@@ -162,7 +163,7 @@ export function VisitHome({ profile, onReturn, onChallenge }: Props) {
         ) : null}
         {onChallenge ? (
           <button type="button" className="visit-challenge" onClick={onChallenge} aria-label={`Challenge ${profile.username}`}>
-            <span aria-hidden="true">⚔</span> Challenge
+            <img src={challengeBarUrl} alt="" />
           </button>
         ) : null}
       </div>

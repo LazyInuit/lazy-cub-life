@@ -40,7 +40,7 @@ import { startHalloweenBgm, stopHalloweenBgm } from '../game/halloweenBgm'
 import { pumpkinLit } from '../game/halloween'
 import { playCoin } from '../game/flightAudio'
 import { barIsFull, energyFillColor, levelProgress, PLAY_ENERGY_COST, playEnergyCost } from '../game/progress'
-import { formatCubCash } from '../game/formatCubCash'
+import { cubCashPillSize, formatCubCash } from '../game/formatCubCash'
 import type { CubController } from '../game/useCub'
 import { CubStage } from './CubStage'
 import { HomeButton } from './HomeButton'
@@ -832,7 +832,7 @@ export function CareScreen({
           <div className="cub-cash" data-tour="cash" aria-label={`${formatCubCash(save.cubCash)} Cub Cash`}>
             <span className="cub-cash-inner">
               <img src={coinUrl} alt="" />
-              <strong>{formatCubCash(save.cubCash)}</strong>
+              <strong style={cubCashPillSize(formatCubCash(save.cubCash))}>{formatCubCash(save.cubCash)}</strong>
             </span>
           </div>
         </div>

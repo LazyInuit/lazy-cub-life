@@ -3459,8 +3459,9 @@ h1 {
   filter: drop-shadow(0 1px 1px rgba(60, 26, 6, 0.6));
 }
 
+/* Sized so 999,999 still fits beside the coin. */
 .cub-cash strong {
-  font-size: 0.68rem;
+  font-size: 0.9rem;
   line-height: 1;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -8734,6 +8735,10 @@ h1 {
   padding: 0;
   border: 0;
   background: none;
+  box-shadow: none;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
   font: inherit;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -8748,11 +8753,11 @@ button.power-plate:active {
   top: calc(164px + var(--safe-top));
 }
 
+/* No CSS shadow: Safari draws a faint box around filtered images. */
 .power-plate img {
   display: block;
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 3px 3px rgba(20, 10, 4, 0.45));
 }
 
 .power-plate-total,
@@ -8799,7 +8804,7 @@ button.power-plate:active {
 }
 
 .power-plate-locked img {
-  filter: grayscale(0.35) drop-shadow(0 3px 3px rgba(20, 10, 4, 0.45));
+  filter: grayscale(0.35);
 }
 
 .power-chip-streak {
@@ -10883,28 +10888,29 @@ img.sol-control-icon {
   pointer-events: auto;
   position: absolute;
   left: 50%;
-  top: calc(70px + var(--safe-top));
+  top: calc(60px + var(--safe-top));
   z-index: 3;
-  max-width: calc(100% - 220px);
-  padding: 8px 14px;
-  border: 2px solid #7a4a14;
-  border-radius: 16px;
-  background: linear-gradient(180deg, #fff0b8, #f0c14a 45%, #b67a1e);
-  color: #3a2010;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 900;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  width: min(176px, calc(100% - 210px));
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
   transform: translateX(-50%);
-  box-shadow: 0 4px 0 #5c3416, 0 8px 18px rgba(12, 6, 2, 0.45);
+}
+
+/* No CSS shadow: Safari draws a faint box around filtered images. */
+.visit-challenge img {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .visit-challenge:active {
   transform: translate(-50%, 2px);
-  box-shadow: 0 2px 0 #5c3416;
 }
 
 .profile-visit.profile-challenge {

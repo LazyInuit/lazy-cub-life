@@ -3,7 +3,7 @@ import milkUrl from '../assets/feed-bottle-ui.png'
 import juiceUrl from '../assets/feed-carton-centered.png'
 import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
 import { DRINKS, type DrinkId } from '../game/drinks'
-import { formatCubCash } from '../game/formatCubCash'
+import { cubCashPillSize, formatCubCash } from '../game/formatCubCash'
 import { barIsFull } from '../game/progress'
 import type { CubController } from '../game/useCub'
 import { isDemo } from '../game/demo'
@@ -56,7 +56,7 @@ export function ShopScreen({ cub, onBack, onGames }: Props) {
         <div className="cub-cash" aria-label={`${formatCubCash(save.cubCash)} Cub Cash`}>
           <span className="cub-cash-inner">
             <img src={coinUrl} alt="" />
-            <strong>{formatCubCash(save.cubCash)}</strong>
+            <strong style={cubCashPillSize(formatCubCash(save.cubCash))}>{formatCubCash(save.cubCash)}</strong>
           </span>
         </div>
       </header>

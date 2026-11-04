@@ -9,7 +9,7 @@ import { playDiceRattle } from '../game/diceAudio'
 import { layoutSize } from '../game/frameScale'
 import type { CharacterAge } from '../game/homeScene'
 import { levelProgress } from '../game/progress'
-import { formatCubCash } from '../game/formatCubCash'
+import { cubCashPillSize, formatCubCash } from '../game/formatCubCash'
 import { isTraitUnlocked, traitPrice, traitXpBonus } from '../game/traitShop'
 import { discountedPrice } from '../game/cubPower'
 import type { CubController } from '../game/useCub'
@@ -294,7 +294,7 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
           <div className="cub-cash" aria-label={`${formatCubCash(save.cubCash)} Cub Cash`}>
             <span className="cub-cash-inner">
               <img src={coinUrl} alt="" />
-              <strong>{formatCubCash(save.cubCash)}</strong>
+              <strong style={cubCashPillSize(formatCubCash(save.cubCash))}>{formatCubCash(save.cubCash)}</strong>
             </span>
           </div>
         </div>
