@@ -28,9 +28,9 @@ const DECAY_PER_MIN: Record<Exclude<NeedKey, 'energy'>, number> = {
   cleanliness: 0.6,
 }
 
-/** Energy restored for each minute the cub is asleep. */
-export const SLEEP_ENERGY_PER_MIN = 1
-const SLEEP_ENERGY_MS = 60_000
+/** Energy restored for each SLEEP_ENERGY_MS the cub is asleep. */
+export const SLEEP_ENERGY_PER_STEP = 1
+export const SLEEP_ENERGY_MS = 7 * 60_000
 /** Energy spent when a game run starts. */
 export const PLAY_ENERGY_COST = 10
 const GAME_ENERGY_COSTS: Partial<Record<DailyGame, number>> = {
@@ -137,12 +137,14 @@ export function decaySave(save: CubSave, elapsedMs: number, capDrops: boolean): 
   return withLevel(next)
 }
 
+/** Energy for time asleep, keeping the part of a step not yet earned for next time. */
 export function regenEnergy(save: CubSave, elapsedMs: number): CubSave {
   if (!save.asleep) return save
-  const steps = Math.floor(Math.max(0, elapsedMs) / SLEEP_ENERGY_MS)
-  if (steps <= 0) return save
-  const energy = clampNeed(save.energy + steps * SLEEP_ENERGY_PER_MIN)
-  return { ...save, energy, asleep: energy < 100 }
+  const total = (save.sleepCarryMs || 0) + Math.max(0, elapsedMs)
+  const steps = Math.floor(total / SLEEP_ENERGY_MS)
+  const energy = clampNeed(save.energy + steps * SLEEP_ENERGY_PER_STEP)
+  const full = energy >= 100
+  return { ...save, energy, asleep: !full, sleepCarryMs: full ? 0 : total % SLEEP_ENERGY_MS }
 }
 
 export function applyAbsence(save: CubSave, now = Date.now()): { save: CubSave; awayMs: number } {
@@ -361,6 +363,7 @@ export function defaultSave(now = Date.now()): CubSave {
     energy: 70,
     cleanliness: 74,
     asleep: false,
+    sleepCarryMs: 0,
     xp: 0,
     xpBonusHundredths: 0,
     level: 1,
@@ -409,6 +412,7 @@ export function sanitizeSave(value: unknown, now = Date.now()): CubSave {
     energy: clampNeed(num(raw.energy, base.energy)),
     cleanliness: clampNeed(num(raw.cleanliness, base.cleanliness)),
     asleep: raw.asleep === true,
+    sleepCarryMs: Math.min(SLEEP_ENERGY_MS - 1, Math.max(0, Math.floor(num(raw.sleepCarryMs, 0)))),
     xp,
     xpBonusHundredths: Math.min(99, Math.max(0, Math.floor(num(raw.xpBonusHundredths, 0)))),
     level: 1,

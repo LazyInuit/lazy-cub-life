@@ -17,6 +17,7 @@ import {
   isNeedy,
   levelProgress,
   playEnergyCost,
+  regenEnergy,
   spellitaireBest,
   spellitaireTotal,
   withSpellitaireBest,
@@ -112,7 +113,6 @@ export function useCub() {
   const levelUiVisibleRef = useRef(false)
   const revealBusyRef = useRef(false)
   const revealGenRef = useRef(0)
-  const sleepEnergyClock = useRef(0)
   const cloudSettled = useRef(false)
   const cashQueue = useRef(Promise.resolve())
   /** Whether this cub is the demo cub, fixed when it opens so its saves never switch slots. */
@@ -352,7 +352,6 @@ export function useCub() {
       setPose('sleep')
       startLullaby()
       startSnore()
-      sleepEnergyClock.current = 0
       return
     }
     if (!asleepRef.current) return
@@ -361,7 +360,6 @@ export function useCub() {
     setClosedEyes(false)
     stopLullaby()
     stopSnore()
-    sleepEnergyClock.current = 0
     const current = saveRef.current
     setPose(current && isNeedy(current) ? 'sad' : 'idle')
   }, [])
@@ -398,7 +396,6 @@ export function useCub() {
         if (!latest) return
         const next = remote ? { ...applyAbsence(remote).save, asleep: false } : { ...applyAbsence(latest).save, asleep: false }
         commit(next)
-        sleepEnergyClock.current = 0
         showAsleep(false)
         collectWeeklyPrize()
       })
@@ -422,14 +419,9 @@ export function useCub() {
       if (document.visibilityState === 'hidden' || !cloudSettled.current) return
       const current = saveRef.current
       if (!current || busyRef.current) return
-      const next = decaySave(current, 1000, false)
+      let next = decaySave(current, 1000, false)
       if (asleepRef.current) {
-        sleepEnergyClock.current += 1000
-        if (sleepEnergyClock.current >= 60_000) {
-          const steps = Math.floor(sleepEnergyClock.current / 60_000)
-          sleepEnergyClock.current %= 60_000
-          next.energy = clampNeed(next.energy + steps)
-        }
+        next = regenEnergy({ ...next, asleep: true }, 1000)
         if (barIsFull(next.energy)) next.asleep = false
       }
       next.lastVisit = Date.now()

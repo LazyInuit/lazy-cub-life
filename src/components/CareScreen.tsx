@@ -778,7 +778,7 @@ export function CareScreen({
         onPumpkinChange={cub.rememberHalloween}
         tryOn={tryOnFromPicks(sanitizeOwnedOutfit(save, age, save.outfits[age]))}
       />
-      <div className="room-ui">
+      <div className={asleep ? 'room-ui asleep' : 'room-ui'}>
         <div className="age-switch" role="group" aria-label="Character age" data-tour="age">
           <button
             type="button"
@@ -1040,7 +1040,7 @@ export function CareScreen({
           </button>
           <button
             type="button"
-            className="room-action"
+            className="room-action sleep-action"
             disabled={cub.busy || (!asleep && energyFull)}
             onPointerDown={flashPress}
             onPointerUp={clearPressGlow}

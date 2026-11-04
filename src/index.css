@@ -1,6 +1,41 @@
 :root {
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* Polished wood for the home top bar: a gloss over the top, fine grain, then the warm wood. */
+  --wood-premium:
+    linear-gradient(180deg, rgba(255, 248, 226, 0.3) 0%, rgba(255, 240, 200, 0.08) 44%, transparent 52%, rgba(60, 24, 4, 0.22) 100%),
+    repeating-linear-gradient(176deg, rgba(110, 52, 14, 0.13) 0 1px, transparent 1px 5px),
+    radial-gradient(circle at 32% 28%, #f0c98a, #c4843e 50%, #8d5224);
+  --wood-premium-round:
+    radial-gradient(ellipse 70% 45% at 50% 18%, rgba(255, 248, 226, 0.45), transparent 70%),
+    repeating-linear-gradient(172deg, rgba(110, 52, 14, 0.12) 0 1px, transparent 1px 5px),
+    radial-gradient(circle at 34% 30%, #f3d7a4, #d09245 48%, #8d5224 80%);
+  --wood-premium-label:
+    linear-gradient(180deg, rgba(255, 248, 226, 0.28) 0%, rgba(255, 240, 200, 0.06) 48%, transparent 55%, rgba(60, 24, 4, 0.2) 100%),
+    repeating-linear-gradient(176deg, rgba(90, 40, 10, 0.14) 0 1px, transparent 1px 4px),
+    linear-gradient(#c98448, #8d4f24);
+  --wood-premium-shadow:
+    0 4px 0 #3a2010,
+    0 6px 10px rgba(20, 8, 2, 0.35),
+    inset 0 2px 0 rgba(255, 240, 206, 0.6),
+    inset 0 -2px 0 rgba(70, 32, 8, 0.35),
+    inset 0 0 0 1px rgba(255, 214, 150, 0.22);
+  --wood-premium-shadow-sm:
+    0 3px 0 #3a2010,
+    0 4px 7px rgba(20, 8, 2, 0.3),
+    inset 0 1.5px 0 rgba(255, 240, 206, 0.55),
+    inset 0 -1.5px 0 rgba(70, 32, 8, 0.3);
+  /* A chosen tab: raised polished wood. */
+  --wood-premium-tab-shadow:
+    inset 0 1.5px 0 rgba(255, 244, 214, 0.75),
+    inset 0 -2px 0 rgba(70, 32, 8, 0.45),
+    0 0 0 1px rgba(58, 28, 8, 0.6),
+    0 1px 3px rgba(20, 8, 2, 0.5);
+  /* The groove a set of tabs sits in. */
+  --wood-premium-groove:
+    linear-gradient(180deg, rgba(255, 232, 190, 0.16), transparent 40%, rgba(20, 8, 2, 0.25)),
+    repeating-linear-gradient(176deg, rgba(40, 16, 4, 0.12) 0 1px, transparent 1px 5px),
+    #6b3a18;
   color: #3c2918;
   background: #241910;
   font-family: "Trebuchet MS", "Segoe UI", sans-serif;
@@ -652,12 +687,12 @@ h1 {
   transform: translate(-50%, -50%);
   margin: 0;
   white-space: nowrap;
-  background: radial-gradient(circle at 32% 28%, #f0c98a, #c4843e 46%, #8d5224);
+  background: var(--wood-premium);
   color: #fffaf2;
   text-shadow: 0 2px 0 #5a3010;
   border: 3px solid #4a2a12;
   border-radius: 14px;
-  box-shadow: 0 4px 0 #3a2010;
+  box-shadow: var(--wood-premium-shadow);
   padding: 7px 14px;
   font-size: 1.05rem;
 }
@@ -877,8 +912,8 @@ h1 {
   padding: 5px 8px;
   border: 3px solid #4a2a12;
   border-radius: 14px;
-  background: radial-gradient(circle at 32% 28%, #f0c98a, #c4843e 46%, #8d5224);
-  box-shadow: 0 4px 0 #3a2010;
+  background: var(--wood-premium);
+  box-shadow: var(--wood-premium-shadow);
   color: #fffaf2;
   font-size: 0.86rem;
   text-shadow: 0 2px 0 #5a3010;
@@ -999,7 +1034,8 @@ h1 {
 }
 
 .leaderboard-menu button[aria-selected='true'] {
-  background: radial-gradient(circle at 32% 28%, #f0c98a, #c4843e 46%, #8d5224);
+  background: var(--wood-premium);
+  box-shadow: var(--wood-premium-tab-shadow);
   color: #fffaf2;
 }
 
@@ -1023,7 +1059,8 @@ h1 {
 
 .leaderboard-switch button[aria-selected='true'] {
   border-color: #ffe7a8;
-  background: radial-gradient(circle at 32% 28%, #f0c98a, #c4843e 46%, #8d5224);
+  background: var(--wood-premium);
+  box-shadow: var(--wood-premium-tab-shadow);
   color: #fffaf2;
 }
 
@@ -2576,10 +2613,10 @@ h1 {
   padding: 6px 14px;
   border-radius: 12px;
   border: 2.5px solid #4a2a12;
-  background: radial-gradient(circle at 32% 28%, #f0c98a, #c4843e 46%, #8d5224);
+  background: var(--wood-premium);
   color: #fffaf2;
   text-shadow: 0 2px 0 #5a3010;
-  box-shadow: 0 3px 0 #3a2010;
+  box-shadow: var(--wood-premium-shadow-sm);
   font-size: 1rem;
   text-align: center;
   white-space: nowrap;
@@ -2856,11 +2893,8 @@ h1 {
 }
 
 .match-screen .pride-results-retry {
-  background:
-    radial-gradient(circle at 30% 25%, #f0c98a, #c4843e 55%, #8d5224 100%);
-  box-shadow:
-    0 3px 0 #3a2010,
-    inset 0 1px 0 rgba(255, 236, 200, 0.45);
+  background: var(--wood-premium);
+  box-shadow: var(--wood-premium-shadow-sm);
 }
 
 .match-screen .pride-results-btn:active {
@@ -2978,15 +3012,15 @@ h1 {
   border-radius: 16px;
   overflow: hidden;
   border: 3px solid #4a2a12;
-  background: #6b3a18;
-  box-shadow: 0 4px 0 #3a2010, inset 0 2px 0 rgba(255, 236, 200, 0.35);
+  background: var(--wood-premium-groove);
+  box-shadow: var(--wood-premium-shadow);
 }
 
 .age-switch button {
   flex: 1;
   border: 0;
   background: transparent;
-  color: #fff6e8;
+  color: rgba(255, 240, 220, 0.75);
   font-weight: 800;
   font-size: 0.68rem;
   letter-spacing: 0.04em;
@@ -2994,12 +3028,18 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  text-shadow: 0 1px 0 #5a3010;
+  text-shadow: 0 1px 0 #3a1c08;
 }
 
+/* The chosen side sits raised: the same polished wood as Cub Cash. */
 .age-switch button.on {
-  background: radial-gradient(circle at 32% 28%, #f0c98a, #c4843e 50%, #8d5224);
+  border-radius: 12px;
+  background: var(--wood-premium);
+  box-shadow: var(--wood-premium-tab-shadow);
   color: #fffaf2;
+  text-shadow:
+    0 1px 0 #4a2208,
+    0 0 3px rgba(60, 26, 6, 0.7);
 }
 
 .home-toast {
@@ -3047,6 +3087,24 @@ h1 {
   font-weight: 800;
   font-size: 0.68rem;
   text-shadow: 0 1px 0 #5a3010;
+}
+
+/* The wardrobe stands out from the other wood buttons: a gold rim and a warm glow. */
+.wardrobe-open .wood-btn {
+  border: 3px solid transparent;
+  background: var(--wood-premium-round), linear-gradient(160deg, #fff1a8, #e9b437 40%, #a8701a 75%, #f6d36a);
+  background-origin: padding-box, padding-box, padding-box, border-box;
+  background-clip: padding-box, padding-box, padding-box, border-box;
+  box-shadow:
+    0 0 0 1.5px #5c3416,
+    var(--wood-premium-shadow),
+    0 0 16px 4px rgba(255, 206, 90, 0.7);
+}
+
+.wardrobe-open .wood-btn img.shirt {
+  width: 44px;
+  height: 40px;
+  filter: drop-shadow(0 2px 1px rgba(60, 26, 6, 0.55)) drop-shadow(0 0 1px rgba(60, 26, 6, 0.5));
 }
 
 .wardrobe-home {
@@ -3221,14 +3279,14 @@ h1 {
   pointer-events: auto;
   border: 2.94px solid #4a2a12;
   border-radius: 18.62px;
-  background: radial-gradient(circle at 32% 28%, #f0c98a, #c4843e 46%, #7a4520 78%);
+  background: var(--wood-premium);
   color: #fffaf2;
   font-weight: 800;
   font-size: 0.92rem;
   letter-spacing: 0.04em;
   padding: 8px 22px;
   text-shadow: 0 1px 0 #5a3010;
-  box-shadow: 0 3.92px 0 #3a2010, inset 0 1.96px 0 rgba(255, 236, 200, 0.55);
+  box-shadow: var(--wood-premium-shadow);
 }
 
 .wardrobe-pager {
@@ -3260,12 +3318,12 @@ h1 {
   gap: 2px;
   min-width: 0;
   text-align: center;
-  background: radial-gradient(circle at 32% 28%, #f0c98a, #c4843e 46%, #7a4520 78%);
+  background: var(--wood-premium);
   border: 2.94px solid #4a2a12;
   border-radius: 18.62px;
   padding: 17px 34px 17px;
   box-sizing: border-box;
-  box-shadow: 0 3.92px 0 #3a2010, inset 0 1.96px 0 rgba(255, 236, 200, 0.55);
+  box-shadow: var(--wood-premium-shadow);
 }
 
 .wardrobe-group {
@@ -3370,14 +3428,16 @@ h1 {
   padding: 0 4px;
   border-radius: 16px;
   border: 3px solid #4a2a12;
-  background: radial-gradient(circle at 32% 28%, #f0c98a, #c4843e 50%, #8d5224);
-  box-shadow: 0 4px 0 #3a2010, inset 0 2px 0 rgba(255, 236, 200, 0.35);
+  background: var(--wood-premium);
+  box-shadow: var(--wood-premium-shadow);
   color: #fffaf2;
   font-weight: 800;
   font-size: 0.68rem;
   letter-spacing: 0.02em;
   line-height: 1;
-  text-shadow: 0 1px 0 #5a3010;
+  text-shadow:
+    0 1px 0 #4a2208,
+    0 0 3px rgba(60, 26, 6, 0.7);
 }
 
 .cub-cash-inner {
@@ -3393,6 +3453,10 @@ h1 {
   height: 23px;
   object-fit: contain;
   flex: 0 0 auto;
+}
+
+.cub-cash img {
+  filter: drop-shadow(0 1px 1px rgba(60, 26, 6, 0.6));
 }
 
 .cub-cash strong {
@@ -3416,14 +3480,14 @@ h1 {
   gap: 6px;
   border: 2.94px solid #4a2a12;
   border-radius: 18.62px;
-  background: radial-gradient(circle at 32% 28%, #f0c98a, #c4843e 46%, #7a4520 78%);
+  background: var(--wood-premium);
   color: #fffaf2;
   font-weight: 800;
   font-size: 0.92rem;
   letter-spacing: 0.03em;
   padding: 10px 22px;
   text-shadow: 0 1px 0 #5a3010;
-  box-shadow: 0 3.92px 0 #3a2010, inset 0 1.96px 0 rgba(255, 236, 200, 0.55);
+  box-shadow: var(--wood-premium-shadow);
 }
 
 .wardrobe-buy img {
@@ -3453,13 +3517,13 @@ h1 {
   height: 60.76px;
   border-radius: 50%;
   border: 2.94px solid #5c3416;
-  background: radial-gradient(circle at 34% 30%, #f3d7a4, #d09245 48%, #8d5224 80%);
+  background: var(--wood-premium-round);
   color: #fffaf2;
   font-size: 2.117rem;
   line-height: 1;
   font-weight: 800;
   text-shadow: 0 2px 0 #5a3010;
-  box-shadow: 0 3.92px 0 #3d2412, inset 0 1.96px 0 rgba(255, 236, 200, 0.6);
+  box-shadow: var(--wood-premium-shadow);
 }
 
 .wardrobe-home.press-glow .wood-btn,
@@ -3485,7 +3549,7 @@ h1 {
   }
   100% {
     border-color: #5c3416;
-    box-shadow: 0 3.92px 0 #3d2412, inset 0 1.96px 0 rgba(255, 236, 200, 0.6);
+    box-shadow: var(--wood-premium-shadow);
   }
 }
 
@@ -3494,8 +3558,8 @@ h1 {
   border-radius: 18.62px;
   overflow: hidden;
   border: 2.94px solid #4a2a12;
-  background: #6b3a18;
-  box-shadow: 0 3.92px 0 #3a2010, inset 0 1.96px 0 rgba(255, 236, 200, 0.35);
+  background: var(--wood-premium-groove);
+  box-shadow: var(--wood-premium-shadow);
 }
 
 .wardrobe-power button {
@@ -3511,7 +3575,9 @@ h1 {
 }
 
 .wardrobe-power button.on {
-  background: radial-gradient(circle at 32% 28%, #f0c98a, #c4843e 50%, #8d5224);
+  border-radius: 15px;
+  background: var(--wood-premium);
+  box-shadow: var(--wood-premium-tab-shadow);
   color: #fffaf2;
 }
 
@@ -3532,6 +3598,12 @@ h1 {
 }
 
 .room-action:disabled {
+  opacity: 0.48;
+}
+
+/* While the cub sleeps everything fades back like the disabled buttons, leaving only the sleep button bright. */
+.room-ui.asleep > :not(.room-dock),
+.room-ui.asleep .room-action:not(.sleep-action) {
   opacity: 0.48;
 }
 
@@ -3580,9 +3652,14 @@ h1 {
   display: grid;
   place-items: center;
   color: #3c2918;
-  background: radial-gradient(circle at 34% 30%, #f3d7a4, #d09245 48%, #8d5224 80%);
+  background: var(--wood-premium-round);
   border: 3px solid #5c3416;
-  box-shadow: 0 4px 0 #3d2412, inset 0 2px 0 rgba(255, 236, 200, 0.6);
+  box-shadow: var(--wood-premium-shadow);
+}
+
+.wood-btn > img,
+.wood-btn > svg {
+  filter: drop-shadow(0 1px 1px rgba(60, 26, 6, 0.45));
 }
 
 .wood-btn svg {
@@ -3647,8 +3724,8 @@ h1 {
   border-radius: 8px;
   overflow: hidden;
   border: 2px solid #5a3014;
-  background: linear-gradient(#c98448, #8d4f24);
-  box-shadow: 0 2px 0 #3a2010;
+  background: var(--wood-premium-label);
+  box-shadow: var(--wood-premium-shadow-sm);
 }
 
 .wood-label .need-fill {
@@ -4064,8 +4141,8 @@ h1 {
   padding: 0 14px;
   border: 3px solid #4a2a12;
   border-radius: 16px;
-  background: radial-gradient(circle at 32% 28%, #f0c98a, #c4843e 46%, #8d5224);
-  box-shadow: 0 4px 0 #3a2010;
+  background: var(--wood-premium);
+  box-shadow: var(--wood-premium-shadow);
   color: #fffaf2;
   font-size: 1.05rem;
   line-height: 1;
@@ -4323,7 +4400,11 @@ h1 {
 
 .room-action:active:not(:disabled) .wood-btn {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 #3d2412, inset 0 2px 0 rgba(255, 236, 200, 0.6);
+  box-shadow:
+    0 2px 0 #3d2412,
+    0 3px 6px rgba(20, 8, 2, 0.3),
+    inset 0 2px 0 rgba(255, 240, 206, 0.6),
+    inset 0 -2px 0 rgba(70, 32, 8, 0.35);
 }
 
 .cabinet-key {
@@ -4865,8 +4946,8 @@ h1 {
   font-size: 0.95rem;
   color: #fffaf2;
   text-shadow: 0 1px 0 #3a2010;
-  background: radial-gradient(circle at 30% 25%, #f0c98a, #c4843e 55%, #8d5224 100%);
-  box-shadow: 0 3px 0 #3a2010, inset 0 1px 0 rgba(255, 236, 200, 0.45);
+  background: var(--wood-premium);
+  box-shadow: var(--wood-premium-shadow-sm);
 }
 
 .dojo-btn-ghost {
@@ -6642,10 +6723,10 @@ h1 {
   padding: 4px 8px 5px;
   border-radius: 12px;
   border: 3px solid #4a2a12;
-  background: radial-gradient(circle at 32% 28%, #f0c98a, #c4843e 46%, #8d5224);
+  background: var(--wood-premium);
   color: #fffaf2;
   text-shadow: 0 1px 0 #5a3010;
-  box-shadow: 0 3px 0 #3a2010;
+  box-shadow: var(--wood-premium-shadow-sm);
   line-height: 1;
   position: relative;
   z-index: 1;
@@ -8047,10 +8128,10 @@ h1 {
 
 .account-submit {
   border: 3px solid #4a2a12;
-  background: radial-gradient(circle at 32% 28%, #f0c98a, #c4843e 46%, #8d5224);
+  background: var(--wood-premium);
   color: #fffaf2;
   text-shadow: 0 1px 0 #5a3010;
-  box-shadow: 0 3px 0 #3a2010;
+  box-shadow: var(--wood-premium-shadow-sm);
 }
 
 .account-submit:disabled {
