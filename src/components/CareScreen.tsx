@@ -75,6 +75,7 @@ type Props = {
   onBubble: () => void
   onRiver: () => void
   onSolitaire: () => void
+  onBaseball: () => void
   /** Opens a challenge's game, at its mode and difficulty. */
   onChallengePlay?: (board: LeaderboardGame) => void
   startInGames?: boolean
@@ -111,6 +112,7 @@ export function CareScreen({
   onBubble,
   onRiver,
   onSolitaire,
+  onBaseball,
   onChallengePlay,
   startInGames = false,
   startInShop = false,
@@ -419,6 +421,17 @@ export function CareScreen({
             onPointerDown={flashSilverPress}
             onPointerUp={clearSilverPressGlow}
             onPointerCancel={clearSilverPressGlow}
+            onClick={() => tryGame('baseball', onBaseball)}
+          >
+            <GameThumb game="baseball" sash />
+            <span>Baseball Blitz</span>
+          </button>
+          <button
+            type="button"
+            className="game-pick"
+            onPointerDown={flashSilverPress}
+            onPointerUp={clearSilverPressGlow}
+            onPointerCancel={clearSilverPressGlow}
             onClick={() => tryGame('solitaire', onSolitaire)}
           >
             <GameThumb game="solitaire" sash />
@@ -638,7 +651,9 @@ export function CareScreen({
                           ? onRiver
                           : task.game === 'solitaire'
                             ? onSolitaire
-                            : onMatch
+                            : task.game === 'baseball'
+                              ? onBaseball
+                              : onMatch
             return (
               <article key={task.id} className="daily-task has-thumb">
                 <span className="daily-thumb">

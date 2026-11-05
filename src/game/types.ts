@@ -72,6 +72,7 @@ export type CubSave = {
   hoopsBest: number
   bubbleBest: number
   riverBest: number
+  baseballBest: number
   /** Spellitaire best on Easy (draw 1). */
   solitaireBest: number
   /** Spellitaire best on Hard (draw 3). The leaderboard adds every Spellitaire best together. */

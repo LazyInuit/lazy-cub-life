@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   /* The game area's real height, for sizing panels: the screen in Safari, the framed page in the app. */
@@ -11933,4 +11933,565 @@ img.sol-control-icon {
 .chal-player-name small {
   font-size: 0.7rem;
   opacity: 0.8;
+}
+
+/* Baseball Blitz */
+.thumb-baseball {
+  overflow: hidden;
+  background: #1d5fc4;
+}
+
+.thumb-baseball img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bb-screen {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: none;
+  background: #12306a;
+  color: #fffaf2;
+}
+
+.bb-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bb-fill {
+  position: absolute;
+  inset: -40px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(16px) brightness(0.72) saturate(1.1);
+  transform: scale(1.08);
+}
+
+.bb-art {
+  position: absolute;
+  overflow: hidden;
+}
+
+.bb-bg,
+.bb-canvas,
+.bb-debug {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.bb-board {
+  position: absolute;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  column-gap: calc(var(--bb-u) * 2);
+  align-items: center;
+  padding: 0 calc(var(--bb-u) * 2.2);
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.bb-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--bb-u) * 0.4);
+  margin: 0;
+  line-height: 1;
+}
+
+.bb-cell > span:first-child {
+  font-size: calc(var(--bb-u) * 2.5);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9fd2ff;
+}
+
+.bb-cell strong {
+  font-size: calc(var(--bb-u) * 5.6);
+  font-weight: 900;
+  color: #ffd84a;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 calc(var(--bb-u) * 1.4) rgba(255, 196, 40, 0.75);
+}
+
+.bb-cell-cash {
+  position: relative;
+}
+
+/* Sized for five digits; `--bb-fit` shrinks six or more to the same width. */
+.bb-cell-score strong {
+  font-size: calc(var(--bb-u) * 6.6 * var(--bb-fit, 1));
+}
+
+.bb-cell strong.bb-bump {
+  animation: bb-bump 0.7s ease-out;
+}
+
+@keyframes bb-bump {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.55); color: #fff6c8; text-shadow: 0 0 calc(var(--bb-u) * 3) rgba(255, 220, 80, 1); }
+  100% { transform: scale(1); }
+}
+
+/* Coin flashing up over the Cub Cash count. */
+.bb-coin-pop {
+  position: absolute;
+  left: 50%;
+  bottom: 30%;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--bb-u) * 0.6);
+  transform: translateX(-50%);
+  pointer-events: none;
+  animation: bb-coin-pop 1.5s ease-out forwards;
+}
+
+.bb-coin-pop img {
+  width: calc(var(--bb-u) * 13);
+  height: calc(var(--bb-u) * 13);
+  filter: drop-shadow(0 0 calc(var(--bb-u) * 2.4) #ffd23f);
+  animation: bb-coin-spin 0.6s ease-out;
+}
+
+.bb-coin-pop b {
+  font-size: calc(var(--bb-u) * 5.2);
+  font-weight: 900;
+  color: #ffe36a;
+  -webkit-text-stroke: calc(var(--bb-u) * 0.35) #6b3a00;
+  paint-order: stroke fill;
+  text-shadow: 0 0 calc(var(--bb-u) * 1.6) rgba(255, 196, 40, 0.9);
+}
+
+@keyframes bb-coin-pop {
+  0% { opacity: 0; transform: translate(-50%, 40%) scale(0.3); }
+  15% { opacity: 1; transform: translate(-50%, 0) scale(1.2); }
+  28% { transform: translate(-50%, 0) scale(1); }
+  75% { opacity: 1; transform: translate(-50%, -25%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -70%) scale(0.85); }
+}
+
+@keyframes bb-coin-spin {
+  from { transform: rotateY(540deg); }
+  to { transform: rotateY(0deg); }
+}
+
+.bb-strikes {
+  display: flex;
+  gap: calc(var(--bb-u) * 1.1);
+  height: calc(var(--bb-u) * 5.6);
+  align-items: center;
+}
+
+.bb-strikes i {
+  width: calc(var(--bb-u) * 3.4);
+  height: calc(var(--bb-u) * 3.4);
+  border-radius: 50%;
+  border: calc(var(--bb-u) * 0.45) solid rgba(255, 120, 100, 0.6);
+  background: rgba(40, 10, 20, 0.45);
+  box-sizing: border-box;
+}
+
+.bb-strikes i.on {
+  border-color: #ffd0c4;
+  background: radial-gradient(circle at 38% 34%, #ffb0a0, #ff3b2e 60%, #a8120e);
+  box-shadow: 0 0 calc(var(--bb-u) * 1.6) rgba(255, 60, 40, 0.85);
+}
+
+.bb-callout {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--bb-u) * 0.8);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: bb-callout 1.6s ease-out forwards;
+}
+
+.bb-callout strong {
+  font-size: calc(var(--bb-u) * 10);
+  font-weight: 900;
+  line-height: 1;
+  color: #fff;
+  -webkit-text-stroke: calc(var(--bb-u) * 1.2) #142350;
+  paint-order: stroke fill;
+  text-shadow: 0 calc(var(--bb-u) * 0.9) 0 #0c1736;
+}
+
+.bb-callout span {
+  padding: calc(var(--bb-u) * 0.8) calc(var(--bb-u) * 2.6);
+  border-radius: 999px;
+  background: rgba(8, 18, 44, 0.72);
+  font-size: calc(var(--bb-u) * 4);
+  font-weight: 800;
+  color: #ffe9a8;
+}
+
+.bb-callout-perfect strong,
+.bb-callout-homeRun strong {
+  color: #ffd23a;
+  -webkit-text-stroke-color: #5a2a00;
+  text-shadow: 0 calc(var(--bb-u) * 0.9) 0 #3a1a00;
+}
+
+.bb-callout-good strong {
+  color: #8dff7a;
+}
+
+.bb-callout-weak strong {
+  color: #a8d8ff;
+}
+
+.bb-callout-strike strong {
+  color: #ff6a55;
+}
+
+@keyframes bb-callout {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  12% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+  22% { transform: translate(-50%, -50%) scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -62%) scale(1); }
+}
+
+.bb-hint {
+  position: absolute;
+  left: 50%;
+  bottom: calc(18px + var(--safe-bottom));
+  margin: 0;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(8, 18, 44, 0.72);
+  font-weight: 800;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateX(-50%);
+  animation: bb-hint 1.6s ease-in-out infinite;
+}
+
+@keyframes bb-hint {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}
+
+.bb-nav {
+  --bb-nav-btn: 44px;
+  position: absolute;
+  top: calc(8px + var(--safe-top));
+  left: 6px;
+  z-index: 5;
+  display: flex;
+  gap: 5px;
+}
+
+.bb-nav .game-home .wood-btn {
+  width: var(--bb-nav-btn);
+  height: var(--bb-nav-btn);
+}
+
+.bb-nav .wood-btn svg.house {
+  width: calc(var(--bb-nav-btn) * 0.82);
+  height: calc(var(--bb-nav-btn) * 0.82);
+}
+
+.bb-nav .wood-btn img.controller {
+  width: calc(var(--bb-nav-btn) * 0.84);
+  height: calc(var(--bb-nav-btn) * 0.56);
+}
+
+.bb-panel {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: calc(14px + var(--safe-bottom));
+  z-index: 6;
+  max-width: 340px;
+  margin: 0 auto;
+  padding: 18px 16px 16px;
+  border-radius: 24px;
+  border: 2px solid #ffd060;
+  background: radial-gradient(circle at 50% 0%, #1d3f7a, #081530 70%);
+  box-shadow:
+    0 0 0 1px rgba(255, 208, 96, 0.35),
+    0 0 22px rgba(255, 190, 60, 0.35),
+    0 14px 26px rgba(0, 0, 0, 0.45);
+  text-align: center;
+  color: #f4f0e6;
+}
+
+/* The home panel paints its face on a layer so the cubs can stand behind it. */
+.bb-panel-home {
+  border-color: transparent;
+  background: none;
+  box-shadow: none;
+}
+
+.bb-panel-home::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  border-radius: inherit;
+  border: 2px solid #ffd060;
+  background: radial-gradient(circle at 50% 0%, #1d3f7a, #081530 70%);
+  box-shadow:
+    0 0 0 1px rgba(255, 208, 96, 0.35),
+    0 0 22px rgba(255, 190, 60, 0.35),
+    0 14px 26px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+/* Standing on the panel's top edge, behind it. */
+.bb-home-cub {
+  position: absolute;
+  bottom: calc(100% - 1px);
+  width: clamp(80px, calc(var(--app-w, 100vw) * 0.23), 112px);
+  height: auto;
+  transform: translateY(-1%);
+  display: block;
+  z-index: -2;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
+  pointer-events: none;
+}
+
+@media (max-height: 600px) {
+  .bb-home-cub {
+    width: clamp(64px, calc(var(--app-w, 100vw) * 0.18), 82px);
+  }
+}
+
+.bb-home-cub-left {
+  left: 12px;
+}
+
+.bb-home-cub-right {
+  right: 12px;
+}
+
+.bb-panel h2 {
+  margin: 0 0 8px;
+  color: #ffd84a;
+  text-shadow: 0 0 12px rgba(255, 190, 40, 0.6);
+}
+
+.bb-panel p {
+  margin: 0 0 6px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.bb-panel .bb-small {
+  font-size: 0.88rem;
+  opacity: 0.85;
+}
+
+.bb-panel .bb-best {
+  margin: 0 0 4px;
+  font-size: 0.86rem;
+  white-space: nowrap;
+  font-weight: 800;
+  color: #ffe08a;
+}
+
+.bb-panel .bb-new-best {
+  margin: 0;
+  font-weight: 900;
+  color: #ffe08a;
+}
+
+.bb-panel .bb-gains {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin: 8px 0 2px;
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.bb-gains span:first-child {
+  color: #7fd4ef;
+}
+
+.bb-gains span:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #ffd84a;
+}
+
+.bb-gains img {
+  width: 24px;
+  height: 24px;
+}
+
+.bb-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.bb-panel .bb-final {
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: #ffd84a;
+}
+
+.bb-rules {
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.bb-rules li {
+  margin: 0 0 8px;
+}
+
+.bb-rules strong {
+  color: #ffd84a;
+}
+
+.bb-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 8px 0 4px;
+}
+
+.bb-stats div {
+  padding: 7px 4px;
+  border-radius: 12px;
+  background: rgba(8, 18, 44, 0.7);
+  border: 1px solid rgba(255, 208, 96, 0.3);
+}
+
+.bb-stats dt {
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #9fd2ff;
+}
+
+.bb-stats dd {
+  margin: 3px 0 0;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #ffd84a;
+}
+
+.bb-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffe07a, #ffb300);
+  color: #2a1800;
+  font: inherit;
+  font-weight: 800;
+  box-shadow: 0 0 16px rgba(255, 190, 40, 0.55);
+}
+
+.bb-btn-ghost {
+  background: #0b1a3a;
+  color: #ffd84a;
+  box-shadow: none;
+  border: 1.5px solid #ffd060;
+}
+
+.bb-hand {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #0b1a3a;
+  border: 1.5px solid rgba(255, 208, 96, 0.45);
+}
+
+.bb-hand button {
+  padding: 9px 6px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #cfd8ea;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bb-hand button.on {
+  background: linear-gradient(180deg, #ffe07a, #ffb300);
+  color: #2a1800;
+}
+
+/* Leaves room above for the Home and Games buttons. The stage blocks touch panning; these panels scroll. */
+.bb-scroll {
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  max-height: calc(100% - 72px - var(--safe-top) - var(--safe-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.bb-bats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 4px 0 2px;
+}
+
+.bb-bat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px 8px;
+  border: 2px solid rgba(255, 208, 96, 0.25);
+  border-radius: 14px;
+  background: radial-gradient(circle at 50% 35%, #2a5aa8, #10244a 75%);
+  color: #f4f0e6;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.15;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bb-bat img {
+  width: 100%;
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+
+.bb-bat.on {
+  border-color: #ffd84a;
+  box-shadow: 0 0 0 1px #ffd84a, 0 0 14px rgba(255, 200, 40, 0.55);
+  color: #ffd84a;
 }

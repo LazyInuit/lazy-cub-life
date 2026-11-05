@@ -30,6 +30,7 @@ export const LEADERBOARD_BOARDS: { id: LeaderboardBoard; label: string }[] = [
   { id: 'bubble', label: 'Bubble Blast' },
   { id: 'river', label: 'Lazy River' },
   { id: 'solitaire', label: 'Spellitaire' },
+  { id: 'baseball', label: 'Baseball Blitz' },
 ]
 
 export type LeaderboardBoard = DailyGame | 'overall'
@@ -240,7 +241,7 @@ export async function loadPlayerProfile(username: string): Promise<PlayerProfile
     ? (entry.bests as Record<string, unknown>)
     : {}
   const bests: Partial<Record<DailyGame, number>> = {}
-  for (const game of ['flight', 'match', 'dojo', 'archer', 'hoops', 'bubble', 'river', 'solitaire'] as const) {
+  for (const game of ['flight', 'match', 'dojo', 'archer', 'hoops', 'bubble', 'river', 'solitaire', 'baseball'] as const) {
     // Spellitaire badges go by the best score in every mode and difficulty added together.
     const best =
       game === 'solitaire'

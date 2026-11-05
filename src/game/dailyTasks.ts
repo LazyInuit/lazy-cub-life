@@ -2,7 +2,7 @@ import { TRAIT_CATEGORIES, type TraitCategory } from './cubTraits'
 import type { CharacterAge } from './homeScene'
 import { traitPrice } from './traitShop'
 
-export type DailyGame = 'flight' | 'hoops' | 'archer' | 'dojo' | 'match' | 'bubble' | 'river' | 'solitaire'
+export type DailyGame = 'flight' | 'hoops' | 'archer' | 'dojo' | 'match' | 'bubble' | 'river' | 'solitaire' | 'baseball'
 
 /** One wardrobe style won from the board dice. */
 export type BonusTrait = {
@@ -138,9 +138,17 @@ export const DAILY_TASKS: DailyTask[] = [
     goal: 1,
     reward: 10,
   },
+  {
+    id: 'baseball-500',
+    game: 'baseball',
+    gameLabel: 'Baseball Blitz',
+    detail: 'Earn 500 points',
+    goal: 500,
+    reward: 10,
+  },
 ]
 
-const GAMES: DailyGame[] = ['flight', 'hoops', 'archer', 'dojo', 'match', 'bubble', 'river', 'solitaire']
+const GAMES: DailyGame[] = ['flight', 'hoops', 'archer', 'dojo', 'match', 'bubble', 'river', 'solitaire', 'baseball']
 
 export const DAILY_WINDOW_MS = 24 * 60 * 60 * 1000
 

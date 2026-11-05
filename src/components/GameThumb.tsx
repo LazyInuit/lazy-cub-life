@@ -1,6 +1,7 @@
 import dashThumb from '../assets/galactic-dash-cover.jpg'
 import archerThumb from '../assets/cupid-archer/cover.jpg'
 import hoopsThumb from '../assets/lazy-hoops/cover-select.jpg'
+import baseballThumb from '../assets/baseball/cover-select.jpg'
 import bubbleThumb from '../assets/bubble-blast/thumb.jpg'
 import riverThumb from '../assets/lazy-river/game-thumb-cub.jpg'
 import dojoBg from '../assets/lazy-dojo/backgrounds/dojo-1.png'
@@ -14,6 +15,13 @@ import { SolAsset } from './solitaire/SolAsset'
 export function GameThumb({ game, sash = false }: { game: DailyGame; sash?: boolean }) {
   const ribbon = sash ? <span className="game-new-sash">New</span> : null
   switch (game) {
+    case 'baseball':
+      return (
+        <span className="game-thumb thumb-baseball" aria-hidden="true">
+          <img src={baseballThumb} alt="" />
+          {ribbon}
+        </span>
+      )
     case 'solitaire':
       return (
         <span className="game-thumb thumb-solitaire" aria-hidden="true">

@@ -597,6 +597,15 @@ export function useCub() {
     announceBadge('river', current.riverBest, nextBest)
   }, [announceBadge, commit])
 
+  const recordBaseballBest = useCallback((score: number) => {
+    const current = saveRef.current
+    if (!current) return
+    const nextBest = Math.max(0, Math.floor(score))
+    if (nextBest <= current.baseballBest) return
+    commit({ ...current, baseballBest: nextBest })
+    announceBadge('baseball', current.baseballBest, nextBest)
+  }, [announceBadge, commit])
+
   /** Each mode and difficulty keeps its own best; badges go by them all added together, like the leaderboard. */
   const recordSolitaireBest = useCallback((score: number, key: SpellitaireKey) => {
     const current = saveRef.current
@@ -1060,6 +1069,7 @@ export function useCub() {
     recordHoopsBest,
     recordBubbleBest,
     recordRiverBest,
+    recordBaseballBest,
     recordSolitaireBest,
     startDaily,
     noteDaily,

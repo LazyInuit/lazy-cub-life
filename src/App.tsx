@@ -11,6 +11,7 @@ import { CareScreen } from './components/CareScreen'
 import { BubbleBlast } from './components/BubbleBlast'
 import { LazyRiver } from './components/LazyRiver'
 import { Spellitaire } from './components/Spellitaire'
+import { BaseballBlitz } from './components/BaseballBlitz'
 import { CupidArcher } from './components/CupidArcher'
 import { LazyHoops } from './components/LazyHoops'
 import { LazyDojo } from './components/LazyDojo'
@@ -30,7 +31,7 @@ import { challengeGame } from './game/challenges'
 import type { Difficulty, SpellMode } from './game/solitaire/keys'
 import { useSolitaireLandscape } from './game/solitaire/orientation'
 
-type Screen = 'home' | 'flight' | 'match' | 'dojo' | 'archer' | 'hoops' | 'bubble' | 'river' | 'solitaire'
+type Screen = 'home' | 'flight' | 'match' | 'dojo' | 'archer' | 'hoops' | 'bubble' | 'river' | 'solitaire' | 'baseball'
 
 export default function App() {
   if (window.location.pathname === '/admin' || window.location.pathname === '/admin/') {
@@ -269,7 +270,9 @@ function PlayGate() {
 
 function Game() {
   const cub = useCub()
-  const [screen, setScreen] = useState<Screen>('home')
+  const [screen, setScreen] = useState<Screen>(() =>
+    import.meta.env.DEV && new URLSearchParams(window.location.search).has('baseball') ? 'baseball' : 'home',
+  )
   const [openGames, setOpenGames] = useState(false)
   const [openShop, setOpenShop] = useState(false)
   const [openAchievements, setOpenAchievements] = useState(false)
@@ -353,6 +356,10 @@ function Game() {
             setOpenGames(false)
             setSpellStart(null)
             setScreen('solitaire')
+          }}
+          onBaseball={() => {
+            setOpenGames(false)
+            setScreen('baseball')
           }}
           onChallengePlay={(board) => {
             const game = challengeGame(board)
@@ -491,6 +498,22 @@ function Game() {
           onShop={goShop}
           startMode={spellStart?.mode}
           startDifficulty={spellStart?.difficulty}
+        />
+      ) : null}
+      {screen === 'baseball' ? (
+        <BaseballBlitz
+          best={cub.save.baseballBest}
+          weekBest={weekBest(cub.save, 'baseball')}
+          onBest={cub.recordBaseballBest}
+          onDailyStart={() => cub.startDaily('baseball')}
+          onDaily={(score) => cub.noteDaily('baseball', score)}
+          onReward={cub.reward}
+          onCoins={(amount) => cub.addCubCash(amount, 'baseball')}
+          powerBonus={cub.runBonus}
+          onExit={goHome}
+          onGames={goGames}
+          energy={playEnergy}
+          onShop={goShop}
         />
       ) : null}
       {cub.earnedBadge ? (

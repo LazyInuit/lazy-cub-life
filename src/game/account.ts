@@ -49,6 +49,7 @@ type BoardBests = {
   hoops: number
   bubble: number
   river: number
+  baseball: number
   solitaire: number
   solitaireHard: number
   solitaireModes: CubSave['solitaireModeBests']
@@ -105,6 +106,7 @@ async function loadBoardBests(username: string | null): Promise<BoardBests | nul
       hoops: read(raw.hoops),
       bubble: read(raw.bubble),
       river: read(raw.river),
+      baseball: read(raw.baseball),
       solitaire: read(raw.solitaire),
       solitaireHard: read(raw['solitaire-hard']),
       solitaireModes: Object.fromEntries(
@@ -128,6 +130,7 @@ function withBoardBests(save: CubSave, board: BoardBests | null): CubSave {
     hoopsBest: board.hoops,
     bubbleBest: board.bubble,
     riverBest: board.river,
+    baseballBest: board.baseball,
     solitaireBest: board.solitaire,
     solitaireHardBest: board.solitaireHard,
     solitaireModeBests: board.solitaireModes,
@@ -152,6 +155,7 @@ function sameBests(a: CubSave, b: CubSave) {
     a.hoopsBest === b.hoopsBest &&
     a.bubbleBest === b.bubbleBest &&
     a.riverBest === b.riverBest &&
+    a.baseballBest === b.baseballBest &&
     a.solitaireBest === b.solitaireBest &&
     a.solitaireHardBest === b.solitaireHardBest &&
     LATER_MODE_KEYS.every((key) => (a.solitaireModeBests[key] ?? 0) === (b.solitaireModeBests[key] ?? 0)) &&
