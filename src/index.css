@@ -1,6 +1,8 @@
 :root {
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* The game area's real height, for sizing panels: the screen in Safari, the framed page in the app. */
+  --page-h: 100dvh;
   /* Polished wood for the home top bar: a gloss over the top, fine grain, then the warm wood. */
   --wood-premium:
     linear-gradient(180deg, rgba(255, 248, 226, 0.3) 0%, rgba(255, 240, 200, 0.08) 44%, transparent 52%, rgba(60, 24, 4, 0.22) 100%),
@@ -72,7 +74,12 @@ button:disabled {
 html.safari-frame {
   --safe-top: 0px;
   --safe-bottom: 0px;
+  --page-h: var(--safari-page-h);
   background: #000;
+}
+
+html.frame-scaled {
+  --page-h: var(--app-h);
 }
 
 /* The page itself never scrolls or rubber-bands; only panels inside the game do. */
@@ -1459,13 +1466,17 @@ h1 {
   inset: 0;
   z-index: 6;
   display: grid;
+  grid-template-rows: minmax(0, 1fr);
   place-items: center;
   padding: 20px 16px;
   background: rgba(8, 6, 4, 0.66);
 }
 
+/* Capped to the pop-up's own height (not the screen's), so the face scrolls inside it. */
 .profile-card {
   position: relative;
+  display: flex;
+  flex-direction: column;
   width: min(100%, 320px);
   max-height: 100%;
   padding: 3px;
@@ -1481,8 +1492,10 @@ h1 {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  max-height: calc(var(--app-h, 100dvh) - 60px);
+  flex: 0 1 auto;
+  min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 54px 16px 16px;
   border-radius: 19px;
   background:
@@ -1536,16 +1549,17 @@ h1 {
 
 .profile-card {
   margin-top: 46px;
+  max-height: calc(100% - 46px);
 }
 
 .profile-card.achievements-card {
   width: min(100%, 340px);
   margin-top: 0;
+  max-height: 100%;
 }
 
 .profile-card-face.achievements-face {
   gap: 10px;
-  max-height: calc(var(--app-h, 100dvh) - 48px);
   padding: 16px 12px 14px;
 }
 
@@ -4911,7 +4925,7 @@ h1 {
 .dojo-hero {
   width: min(78%, 280px);
   height: auto;
-  max-height: calc(var(--app-h, 100vh) * 0.42);
+  max-height: calc(var(--page-h) * 0.42);
   object-fit: contain;
   border-radius: 16px;
   filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.35));
@@ -4958,8 +4972,9 @@ h1 {
 }
 
 .dojo-howto {
-  max-height: min(calc(var(--app-h, 100vh) * 0.78), 560px);
+  max-height: min(calc(var(--page-h) * 0.78), 560px);
   overflow-y: auto;
+  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -5485,8 +5500,9 @@ h1 {
 .archer-how {
   margin: 0;
   padding: 0 0 0 16px;
-  max-height: min(52dvh, 360px);
+  max-height: min(calc(var(--page-h) * 0.52), 360px);
   overflow-y: auto;
+  overscroll-behavior: contain;
   text-align: left;
   font-size: 0.86rem;
   line-height: 1.35;
@@ -6172,6 +6188,10 @@ h1 {
 }
 
 @media (min-width: 520px) {
+  html:not(.frame-scaled) {
+    --page-h: min(920px, calc(100dvh - 32px));
+  }
+
   .phone {
     height: min(920px, calc(100dvh - 32px));
     border-radius: 28px;
@@ -10303,8 +10323,9 @@ img.sol-control-icon {
 
 .sol-panel {
   width: min(100%, 340px);
-  max-height: calc(var(--app-h, 100dvh) - 40px);
+  max-height: calc(var(--page-h) - 40px);
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 16px 18px;
   border: 3px solid #f4c542;
   border-radius: 22px;
