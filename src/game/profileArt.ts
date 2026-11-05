@@ -34,6 +34,11 @@ import spaceGoldUrl from '../assets/player-profile/badges/space-gold.png'
 import spaceDiamondUrl from '../assets/player-profile/badges/space-diamond.png'
 import spacePlatinumUrl from '../assets/player-profile/badges/space-platinum.png'
 import spaceSilverUrl from '../assets/player-profile/badges/space-silver.png'
+import spellitaireBronzeUrl from '../assets/player-profile/badges/spellitaire-bronze.png'
+import spellitaireGoldUrl from '../assets/player-profile/badges/spellitaire-gold.png'
+import spellitaireDiamondUrl from '../assets/player-profile/badges/spellitaire-diamond.png'
+import spellitairePlatinumUrl from '../assets/player-profile/badges/spellitaire-platinum.png'
+import spellitaireSilverUrl from '../assets/player-profile/badges/spellitaire-silver.png'
 import type { DailyGame } from './dailyTasks'
 
 /** Profile pictures a player can show. Add a picture here, then point a look at its id. */
@@ -84,6 +89,11 @@ export const BADGES = {
   'river-gold': badge(riverGoldUrl, 'River Badge', 'Gold', 'Lazy River'),
   'river-platinum': badge(riverPlatinumUrl, 'River Badge', 'Platinum', 'Lazy River'),
   'river-diamond': badge(riverDiamondUrl, 'River Badge', 'Diamond', 'Lazy River'),
+  'spellitaire-bronze': badge(spellitaireBronzeUrl, 'Spellitaire Badge', 'Bronze', 'Spellitaire'),
+  'spellitaire-silver': badge(spellitaireSilverUrl, 'Spellitaire Badge', 'Silver', 'Spellitaire'),
+  'spellitaire-gold': badge(spellitaireGoldUrl, 'Spellitaire Badge', 'Gold', 'Spellitaire'),
+  'spellitaire-platinum': badge(spellitairePlatinumUrl, 'Spellitaire Badge', 'Platinum', 'Spellitaire'),
+  'spellitaire-diamond': badge(spellitaireDiamondUrl, 'Spellitaire Badge', 'Diamond', 'Spellitaire'),
 } satisfies Record<string, Badge>
 
 export type ProfilePictureId = keyof typeof PROFILE_PICTURES
@@ -171,6 +181,17 @@ const BADGE_RULES: { game: DailyGame; tiers: BadgeTier[] }[] = [
       { badge: 'river-gold', at: 5000 },
       { badge: 'river-platinum', at: 10000 },
       { badge: 'river-diamond', at: 15000 },
+    ],
+  },
+  {
+    // Every mode and difficulty's best added together (12 boards).
+    game: 'solitaire',
+    tiers: [
+      { badge: 'spellitaire-bronze', at: 10000 },
+      { badge: 'spellitaire-silver', at: 20000 },
+      { badge: 'spellitaire-gold', at: 30000 },
+      { badge: 'spellitaire-platinum', at: 40000 },
+      { badge: 'spellitaire-diamond', at: 50000 },
     ],
   },
 ]
