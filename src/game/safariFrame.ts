@@ -1,4 +1,4 @@
-import { isStandalone, pageHeightForWidth } from './homeFrame'
+import { pageHeightForWidth, usesSafariFrame } from './homeFrame'
 
 /** Share of the spare height that goes above the page; the rest makes a thicker band below it. */
 const TOP_SHARE = 0.4
@@ -23,7 +23,7 @@ function updateSafariFrame() {
   const width = window.innerWidth
   const available = window.innerHeight
   const pageH = pageHeightForWidth(width)
-  if (!isStandalone() || width >= 520 || pageH < 1 || pageH >= available - 1) {
+  if (!usesSafariFrame() || width >= 520 || pageH < 1 || pageH >= available - 1) {
     root.classList.remove('safari-frame')
     root.style.removeProperty('--safari-page-top')
     root.style.removeProperty('--safari-page-h')

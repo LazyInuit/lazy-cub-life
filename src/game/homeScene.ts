@@ -1,4 +1,4 @@
-import { isStandalone, pageHeightForWidth } from './homeFrame'
+import { pageHeightForWidth, usesSafariFrame } from './homeFrame'
 import background1 from '../assets/home/background-1.png'
 import backgroundNight from '../assets/home/background-2-night.png'
 import bedroom2 from '../assets/home/bedroom-2.png'
@@ -188,7 +188,7 @@ function referenceSize(slot: HomeSlot): { w: number; h: number } {
 
 /**
  * The room picture and the furniture share the game container.
- * On a phone, the installed app is letterboxed to Safari's frame. The
+ * On an iPhone, the installed app is letterboxed to Safari's frame. The
  * picture is placed on that frame and then moves with the container, so a
  * taller box cannot slide the window away from the table.
  * Safari already is that frame, so it keeps the container's own height.
@@ -203,7 +203,7 @@ export function coverPlacement(
   focusY = 0.36,
   anchorX = 0.5,
 ): SceneBox {
-  const tieToFrame = stageW < 520 && stageW > 0 && srcW > 0 && srcH > 0 && isStandalone()
+  const tieToFrame = stageW < 520 && stageW > 0 && srcW > 0 && srcH > 0 && usesSafariFrame()
   const frameH = tieToFrame ? pageHeightForWidth(stageW) : stageH
   const cover = Math.max(stageW / srcW, frameH / srcH)
   const w = srcW * cover
