@@ -84,10 +84,11 @@ export const MOUND_PITCHES = 3
 
 /** After the opening pitches, a score below `maxScore` uses these spot-tier weights (relative; 0 means never). */
 export const SPOT_BANDS: { maxScore: number; weights: Record<number, number> }[] = [
-  { maxScore: 400, weights: { 1: 30, 2: 70, 3: 0, 4: 0 } },
-  { maxScore: 1200, weights: { 1: 20, 2: 50, 3: 30, 4: 0 } },
-  { maxScore: 2500, weights: { 1: 10, 2: 35, 3: 35, 4: 20 } },
-  { maxScore: Infinity, weights: { 1: 10, 2: 25, 3: 35, 4: 30 } },
+  { maxScore: 200, weights: { 1: 30, 2: 70, 3: 0, 4: 0 } },
+  { maxScore: 500, weights: { 1: 20, 2: 50, 3: 30, 4: 0 } },
+  { maxScore: 1000, weights: { 1: 10, 2: 35, 3: 35, 4: 20 } },
+  { maxScore: 6000, weights: { 1: 10, 2: 25, 3: 35, 4: 30 } },
+  { maxScore: Infinity, weights: { 1: 5, 2: 15, 3: 35, 4: 45 } },
 ]
 
 /** Flight time scales with distance this much (0 = same everywhere, 1 = same ball speed everywhere). */
@@ -131,17 +132,25 @@ export type Difficulty = {
   slowChance: number
   slowScale: number
   gap: number
+  /** Timing windows are multiplied by this; under 1 makes every grade harder to hit. */
+  windowScale?: number
 }
 
 /** First row applies from 0. Starts slow, straight and dead centre; every column gets harder with score. */
 export const DIFFICULTY: Difficulty[] = [
   { score: 0, flightTime: 1.55, speedJitter: 0.03, spread: 0, heightSpread: 0.04, curveChance: 0, curve: [0, 0], fastChance: 0, fastScale: 1, slowChance: 0, slowScale: 1, gap: 0.6 },
-  { score: 250, flightTime: 1.42, speedJitter: 0.05, spread: 0.05, heightSpread: 0.08, curveChance: 0.1, curve: [0.15, 0.3], fastChance: 0.1, fastScale: 0.86, slowChance: 0.06, slowScale: 1.3, gap: 0.56 },
-  { score: 700, flightTime: 1.3, speedJitter: 0.06, spread: 0.09, heightSpread: 0.12, curveChance: 0.2, curve: [0.2, 0.45], fastChance: 0.15, fastScale: 0.83, slowChance: 0.1, slowScale: 1.35, gap: 0.53 },
-  { score: 1400, flightTime: 1.18, speedJitter: 0.07, spread: 0.12, heightSpread: 0.15, curveChance: 0.3, curve: [0.25, 0.6], fastChance: 0.2, fastScale: 0.8, slowChance: 0.13, slowScale: 1.4, gap: 0.5 },
-  { score: 2500, flightTime: 1.06, speedJitter: 0.08, spread: 0.15, heightSpread: 0.18, curveChance: 0.4, curve: [0.3, 0.75], fastChance: 0.24, fastScale: 0.78, slowChance: 0.16, slowScale: 1.45, gap: 0.47 },
-  { score: 4000, flightTime: 0.96, speedJitter: 0.09, spread: 0.18, heightSpread: 0.2, curveChance: 0.5, curve: [0.35, 0.9], fastChance: 0.28, fastScale: 0.76, slowChance: 0.18, slowScale: 1.5, gap: 0.44 },
-  { score: 6500, flightTime: 0.88, speedJitter: 0.1, spread: 0.2, heightSpread: 0.22, curveChance: 0.6, curve: [0.4, 1], fastChance: 0.3, fastScale: 0.75, slowChance: 0.2, slowScale: 1.5, gap: 0.42 },
+  { score: 100, flightTime: 1.42, speedJitter: 0.05, spread: 0.05, heightSpread: 0.08, curveChance: 0.1, curve: [0.15, 0.3], fastChance: 0.1, fastScale: 0.86, slowChance: 0.06, slowScale: 1.3, gap: 0.56 },
+  { score: 300, flightTime: 1.3, speedJitter: 0.06, spread: 0.09, heightSpread: 0.12, curveChance: 0.2, curve: [0.2, 0.45], fastChance: 0.15, fastScale: 0.83, slowChance: 0.1, slowScale: 1.35, gap: 0.53 },
+  { score: 600, flightTime: 1.18, speedJitter: 0.07, spread: 0.12, heightSpread: 0.15, curveChance: 0.3, curve: [0.25, 0.6], fastChance: 0.2, fastScale: 0.8, slowChance: 0.13, slowScale: 1.4, gap: 0.5 },
+  { score: 1000, flightTime: 1.06, speedJitter: 0.08, spread: 0.15, heightSpread: 0.18, curveChance: 0.4, curve: [0.3, 0.75], fastChance: 0.24, fastScale: 0.78, slowChance: 0.16, slowScale: 1.45, gap: 0.47 },
+  { score: 1600, flightTime: 0.96, speedJitter: 0.09, spread: 0.18, heightSpread: 0.2, curveChance: 0.5, curve: [0.35, 0.9], fastChance: 0.28, fastScale: 0.76, slowChance: 0.18, slowScale: 1.5, gap: 0.44 },
+  { score: 2500, flightTime: 0.88, speedJitter: 0.1, spread: 0.2, heightSpread: 0.22, curveChance: 0.6, curve: [0.4, 1], fastChance: 0.3, fastScale: 0.75, slowChance: 0.2, slowScale: 1.5, gap: 0.42 },
+  { score: 4000, flightTime: 0.82, speedJitter: 0.11, spread: 0.21, heightSpread: 0.23, curveChance: 0.65, curve: [0.45, 1.1], fastChance: 0.32, fastScale: 0.73, slowChance: 0.21, slowScale: 1.55, gap: 0.4, windowScale: 0.95 },
+  { score: 6000, flightTime: 0.77, speedJitter: 0.12, spread: 0.22, heightSpread: 0.24, curveChance: 0.7, curve: [0.5, 1.2], fastChance: 0.34, fastScale: 0.71, slowChance: 0.22, slowScale: 1.6, gap: 0.38, windowScale: 0.9 },
+  { score: 9000, flightTime: 0.72, speedJitter: 0.13, spread: 0.23, heightSpread: 0.25, curveChance: 0.75, curve: [0.55, 1.3], fastChance: 0.36, fastScale: 0.7, slowChance: 0.23, slowScale: 1.65, gap: 0.36, windowScale: 0.85 },
+  { score: 13000, flightTime: 0.68, speedJitter: 0.14, spread: 0.24, heightSpread: 0.25, curveChance: 0.8, curve: [0.6, 1.4], fastChance: 0.38, fastScale: 0.69, slowChance: 0.24, slowScale: 1.7, gap: 0.34, windowScale: 0.8 },
+  { score: 18000, flightTime: 0.64, speedJitter: 0.15, spread: 0.24, heightSpread: 0.25, curveChance: 0.85, curve: [0.65, 1.5], fastChance: 0.4, fastScale: 0.68, slowChance: 0.25, slowScale: 1.75, gap: 0.32, windowScale: 0.75 },
+  { score: 25000, flightTime: 0.6, speedJitter: 0.16, spread: 0.24, heightSpread: 0.25, curveChance: 0.9, curve: [0.7, 1.6], fastChance: 0.42, fastScale: 0.67, slowChance: 0.25, slowScale: 1.8, gap: 0.3, windowScale: 0.7 },
 ]
 
 /** A change-up is this many times likelier right after a fastball or a close-in throw. */
@@ -149,7 +158,7 @@ export const CHANGE_UP_AFTER_FAST = 2.5
 /** Change-ups float: their arc is multiplied by this. */
 export const SLOW_ARC = 1.7
 /** No pitch, however fast or close, arrives quicker than this. */
-export const MIN_FLIGHT = 0.62
+export const MIN_FLIGHT = 0.5
 
 export const PITCH = {
   firstDelay: 1.3,

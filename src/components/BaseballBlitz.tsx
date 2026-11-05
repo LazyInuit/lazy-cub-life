@@ -20,7 +20,6 @@ import {
   SCORE,
   STRIKE_ZONE,
   STRIKES,
-  WINDOWS,
   type Quality,
   type Vec3,
 } from '../game/baseball/config'
@@ -57,6 +56,7 @@ import {
   pitchPosition,
   spotBase,
   spotForPitch,
+  timingWindows,
   type Pitch,
   type PitchType,
 } from '../game/baseball/pitch'
@@ -260,7 +260,7 @@ export function BaseballBlitz({ best, weekBest, onBest, onDailyStart, onDaily, o
 
     const hit = (pitch: Pitch, at: number, motion: Flick) => {
       const error = at - arrivalTime(pitch)
-      const quality = judgeTiming(error)
+      const quality = judgeTiming(error, timingWindows(state.score))
       if (quality === 'miss') return
       state.pitchResolved = true
       const pos = pitchPosition(pitch, at - pitch.firedAt)
@@ -283,7 +283,7 @@ export function BaseballBlitz({ best, weekBest, onBest, onDailyStart, onDaily, o
       const pitch = state.pitch
       if (state.phase !== 'pitch' || !pitch || state.pitchResolved) return
       state.lastSwipeAt = at
-      if (Math.abs(at - arrivalTime(pitch)) > WINDOWS.weak) return
+      if (Math.abs(at - arrivalTime(pitch)) > timingWindows(state.score).weak) return
       const art = boxRef.current
       const px = (p: Vec3) => {
         const a = projectArt(CAL, p)
@@ -737,7 +737,8 @@ export function BaseballBlitz({ best, weekBest, onBest, onDailyStart, onDaily, o
               </li>
               <li>
                 <strong>Getting Harder:</strong> After the first {MOUND_PITCHES} pitches the machine moves around the field. The higher
-                your score, the faster the pitches and the more they curve, with the odd slow one to catch you out.
+                your score, the faster the pitches and the more they curve, with the odd slow one to catch you out. At big scores your
+                timing has to be sharper too.
               </li>
               <li>
                 <strong>Left-Handed?</strong> Switch sides in Bat Selection.

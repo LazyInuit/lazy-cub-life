@@ -14,6 +14,7 @@ import {
   SPOT_BANDS,
   SPOT_TIME_SHARE,
   STRIKE_ZONE,
+  WINDOWS,
   type Difficulty,
   type MachineSpot,
   type Vec3,
@@ -76,6 +77,12 @@ export function difficultyFor(score: number): Difficulty {
   let row = DIFFICULTY[0]
   for (const entry of DIFFICULTY) if (score >= entry.score) row = entry
   return row
+}
+
+/** Perfect, Good and Weak timing windows at this score: they narrow at the top levels. */
+export function timingWindows(score: number) {
+  const scale = difficultyFor(score).windowScale ?? 1
+  return { perfect: WINDOWS.perfect * scale, good: WINDOWS.good * scale, weak: WINDOWS.weak * scale }
 }
 
 /** Weighted by the score band, never the same spot twice running when there is another choice. */

@@ -1,7 +1,7 @@
 import { ART, BAT, CONTACT_Z, DIFFICULTY, FIELD, FIT, FLICK, MACHINE_SPOTS, MIN_FLIGHT, MOUND_PITCHES, STRIKE_ZONE, WINDOWS, type Vec3 } from '../src/game/baseball/config'
 import { calibrate, fitArt, projectArt } from '../src/game/baseball/layout'
 import { BAT_DESIGNS, DEFAULT_BAT, batBarrelRadius } from '../src/game/baseball/bats'
-import { MOUND_SPOT, arrivalTime, machineFrame, makePitch, pitchBallRadius, pitchPosition, spotBase, spotForPitch } from '../src/game/baseball/pitch'
+import { MOUND_SPOT, arrivalTime, machineFrame, makePitch, pitchBallRadius, pitchPosition, spotBase, spotForPitch, timingWindows } from '../src/game/baseball/pitch'
 import { REST_DIR, aimBat, batRig, createMotionTracker, sweptThrough, swipePower } from '../src/game/baseball/swing'
 import { judgeTiming, launchFor } from '../src/game/baseball/contact'
 import { carryDistance, hitKind, simulateFlight } from '../src/game/baseball/flight'
@@ -127,6 +127,12 @@ check('first pitches are slow, straight and centred', DIFFICULTY[0].flightTime >
     )
   })
   check('every score band is faster with more curve than the one before', harder)
+}
+{
+  const top = timingWindows(DIFFICULTY[DIFFICULTY.length - 1].score)
+  const narrowing = DIFFICULTY.every((row, i) => i === 0 || (row.windowScale ?? 1) <= (DIFFICULTY[i - 1].windowScale ?? 1))
+  check('timing windows only ever narrow as the score climbs', narrowing && timingWindows(0).perfect === WINDOWS.perfect)
+  check('the top level needs much tighter timing', top.perfect < WINDOWS.perfect * 0.75 && top.perfect > 0.025, `perfect ±${Math.round(top.perfect * 1000)}ms`)
 }
 {
   let seed = 5
