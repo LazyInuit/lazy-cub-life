@@ -3,6 +3,8 @@ import logoUrl from '../assets/scorecard/logo-long.png'
 /** Everything one scorecard shows. Built from a finished run by scorecardFor() in scorecardGames. */
 export type ScorecardSpec = {
   title: string
+  /** A difficulty such as "Hard", shown in brackets after "Score" and after the game in the post. */
+  level?: string
   emoji: string
   /** A real gameplay frame (or the game's selection picture), drawn behind everything. */
   background: string
@@ -32,8 +34,9 @@ const TIER_COLOURS: Record<BadgeTier, [string, string]> = {
 }
 
 /** The post that goes with the picture. */
-export function scorecardPost(spec: Pick<ScorecardSpec, 'emoji' | 'title' | 'score'>) {
-  return `${spec.emoji} I just scored ${spec.score.toLocaleString('en-US')} on ${spec.title}! Think you can beat me? 🏆\n\nPlay free: ${SITE_URL}\n\n@lazycublife #LazyCubLife`
+export function scorecardPost(spec: Pick<ScorecardSpec, 'emoji' | 'title' | 'score' | 'level'>) {
+  const game = spec.level ? `${spec.title} (${spec.level})` : spec.title
+  return `${spec.emoji} I just scored ${spec.score.toLocaleString('en-US')} on ${game}! Think you can beat me? 🏆\n\nPlay free: ${SITE_URL}\n\n@lazycublife #LazyCubLife`
 }
 
 export function xPostUrl(text: string) {
@@ -238,7 +241,7 @@ export async function drawScorecard(canvas: HTMLCanvasElement, spec: ScorecardSp
   const badgeX = (split + card.x + card.w) / 2
   // "<game> Score" and the score, centred as a block between the name plate's bottom and the panel's.
   const scoreW = split - card.x - (character ? 70 : 60)
-  const label = fitText(ctx, `${spec.title} Score`, scoreW, 40, 24, 900)
+  const label = fitText(ctx, `${spec.title} Score${spec.level ? ` (${spec.level})` : ''}`, scoreW, 40, 24, 900)
   const labelAscent = ctx.measureText(label.text).actualBoundingBoxAscent
   const score = fitText(ctx, spec.score.toLocaleString('en-US'), scoreW, 150, 56)
   const scoreAscent = ctx.measureText(score.text).actualBoundingBoxAscent

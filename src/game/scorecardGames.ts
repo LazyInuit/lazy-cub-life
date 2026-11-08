@@ -84,6 +84,8 @@ type ScorecardOptions = {
   badgeScore?: number
   /** The version played, such as a Spellitaire mode: its name follows the title. */
   version?: { id: string; name: string }
+  /** The difficulty played, such as "Hard". */
+  level?: string
 }
 
 /** The scorecard for one finished run, with the badge for `badgeScore`. Null for a game without one. */
@@ -96,6 +98,7 @@ export function scorecardFor(game: DailyGame, username: string | null, score: nu
   const version = options.version
   return {
     title: version ? `${entry.title} ${version.name}` : entry.title,
+    level: options.level,
     emoji: entry.emoji,
     background: (version && entry.versionBackgrounds?.[version.id]) ?? entry.background,
     username: username?.trim() || 'Lazy Cub Player',

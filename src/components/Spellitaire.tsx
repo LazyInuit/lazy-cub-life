@@ -671,8 +671,9 @@ export function Spellitaire({ username, bests, weekBests, onBest, onDailyStart, 
                 className="sol-btn share-x-btn"
                 onClick={() => {
                   const total = Object.values(bestRef.current).reduce((sum, best) => sum + best, 0)
+                  const level = levelName(summary.key.endsWith('-hard') ? 'hard' : 'easy')
                   const version = { id: summary.mode, name: modeInfo(summary.mode).name }
-                  share.open(scorecardFor('solitaire', username, summary.score, { badgeScore: total, version }))
+                  share.open(scorecardFor('solitaire', username, summary.score, { badgeScore: total, version, level }))
                 }}
               >
                 Share to X
