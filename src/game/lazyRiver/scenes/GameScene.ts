@@ -356,6 +356,11 @@ export class GameScene extends Phaser.Scene {
   private shownCoins = -1;
   private lastGapX = 0;
   private lastLayout: RowLayout | null = null;
+  /**
+   * Where the newest row was built, scrolling with the river. Rows are spaced from this rather than from
+   * what survived of them, since a row can be left with only a whirlpool, pad or rapids.
+   */
+  private rowY = Number.POSITIVE_INFINITY;
   private deathSpeed = 0;
   private acc = 0;
   private bob = 0;
@@ -386,6 +391,7 @@ export class GameScene extends Phaser.Scene {
     this.hintDone = this.phase !== 'play';
     this.steer = new SteerInput();
     this.steer.attach(this);
+    this.rowY = Number.POSITIVE_INFINITY;
     this.obstacles = [];
     this.freeObstacles = [];
     this.gems = [];
@@ -492,6 +498,7 @@ export class GameScene extends Phaser.Scene {
     this.stepRapids(dt, speed);
     this.stepWhirls(dt, speed);
     this.stepObstacles(dt, speed);
+    this.rowY += speed * dt;
     this.stepGems(dt, speed);
     this.stepParticles(dt, speed);
     this.stepAmbient(dt);
@@ -1335,19 +1342,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   private ensureRows(): void {
-    let highest = Number.POSITIVE_INFINITY;
-    for (const obstacle of this.obstacles) {
-      if (obstacle.active) highest = Math.min(highest, obstacle.y);
-    }
-    for (const gem of this.gems) {
-      if (gem.active) highest = Math.min(highest, gem.y);
-    }
     let guard = 0;
-    while ((highest === Number.POSITIVE_INFINITY || highest > -50) && guard < 3) {
+    while (this.rowY > -50 && guard < 3) {
       const spacing = rowSpacing(curve(this.distance));
-      const y = (highest === Number.POSITIVE_INFINITY ? 40 : highest) - spacing;
-      this.spawnBuilt(buildRow(y, this.distance, this.lastGapX, false, this.lastLayout));
-      highest = y;
+      const y = (Number.isFinite(this.rowY) ? this.rowY : 40) - spacing;
+      this.spawnBuilt(buildRow(y, this.distance, this.lastGapX, false, this.lastLayout), y);
       guard += 1;
     }
   }
@@ -1357,12 +1356,13 @@ export class GameScene extends Phaser.Scene {
     this.lastLayout = null;
     let y = this.player.y - 300;
     for (let i = 0; i < 5; i += 1) {
-      this.spawnBuilt(buildRow(y, 0, this.lastGapX, true, this.lastLayout));
+      this.spawnBuilt(buildRow(y, 0, this.lastGapX, true, this.lastLayout), y);
       y -= rowSpacing(0) * 0.92;
     }
   }
 
-  private spawnBuilt(row: ReturnType<typeof buildRow>): void {
+  private spawnBuilt(row: ReturnType<typeof buildRow>, y: number): void {
+    this.rowY = Math.min(y, ...row.obstacles.map((o) => o.y), ...row.gems.map((g) => g.y));
     this.lastGapX = row.lastGapX;
     this.lastLayout = row.layout;
     // A whirlpool first: if anything has to give way to it, it is an obstacle, which only opens the river up.
