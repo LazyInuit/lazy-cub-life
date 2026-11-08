@@ -60,10 +60,11 @@ export type LeaderboardPage = {
 /** Where a score is stored. Each Spellitaire mode and difficulty has its own key, all added together on the Spellitaire board. */
 export type LeaderboardGame = DailyGame | SpellitaireKey
 
-export async function submitLeaderboardScore(game: LeaderboardGame, score: number) {
-  if (!supabase || score <= 0) return
+/** Saves a run's score. True once the server has it. */
+export async function submitLeaderboardScore(game: LeaderboardGame, score: number): Promise<boolean> {
+  if (!supabase || score <= 0) return false
   const { error } = await supabase.rpc('submit_score', { p_game: game, p_score: score })
-  if (error) return
+  return !error
 }
 
 export async function loadLeaderboard(

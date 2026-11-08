@@ -4,6 +4,7 @@
  * and never throw, so the game still runs with no audio assets.
  */
 import bgmUrl from '../../assets/cupid-archer/audio/bgm-glassy-piano.wav'
+import { gameAudio, gameOut } from '../audioBus'
 
 export const ARCHER_SFX = {
   draw: null as string | null,
@@ -33,7 +34,7 @@ function bgmSlot(): ArcherBgmSlot {
 
 function ctx(): AudioContext | null {
   try {
-    if (!audio) audio = new AudioContext()
+    if (!audio) audio = gameAudio()
     return audio
   } catch {
     return null
@@ -96,7 +97,7 @@ export function startArcherBgm() {
       source.buffer = buffer
       source.loop = true
       source.connect(gain)
-      gain.connect(current.destination)
+      gain.connect(gameOut())
       source.start(0)
       slot.source = source
       slot.gain = gain
@@ -121,7 +122,7 @@ function tone(spec: Tone) {
   gain.gain.exponentialRampToValueAtTime(peak, current.currentTime + 0.02)
   gain.gain.exponentialRampToValueAtTime(0.0001, current.currentTime + spec.dur)
   osc.connect(gain)
-  gain.connect(current.destination)
+  gain.connect(gameOut())
   osc.start()
   osc.stop(current.currentTime + spec.dur + 0.02)
 }

@@ -27,6 +27,8 @@ import type { SpellitaireKey } from './solitaire/keys'
 import { BONUS_COIN_AMOUNTS, DAILY_TASKS, bonusReady, dailyView, extraReady, type BonusTrait, type DailyGame } from './dailyTasks'
 import { DRINKS, type DrinkId } from './drinks'
 import { submitLeaderboardScore, type LeaderboardGame } from './leaderboard'
+import { offerLeaderboardReplay } from './replay/leaderboardClips'
+import { replayRun } from './replay/recorder'
 import { loadChallenges, markNoticesSeen, submitChallengeScore, type ChallengeList } from './challenges'
 import { readSave, writeSave } from './storage'
 import { reconcileCloudSave, scheduleCloudSave, flushCloudSave, flushCloudSaveNow, cloudBaseVisit, signInAccount, signOutAccount, signUpAccount, takeAdoptedSave, lockedCubCash, noteLockedCash, noteEarnedCash, ethFromUser, usernameFromUser, loadDisplayedUsername, loadUsernameChangedAt, updateAccountSettings, normalizeEthAddress } from './account'
@@ -686,7 +688,13 @@ export function useCub() {
       return
     }
     const board = options.board ?? game
-    if (gained > 0) void submitLeaderboardScore(board, gained)
+    if (gained > 0) {
+      // Once saved, a run that reaches a board's all-time top 3 uploads its replay for the leaderboard.
+      const run = replayRun()
+      void submitLeaderboardScore(board, gained).then((saved) => {
+        if (saved) void offerLeaderboardReplay(board, gained, run)
+      })
+    }
     // A running challenge on this board counts this run too. A sent one may have been accepted since the
     // list last loaded; the server only counts scores inside a challenge's 24 hours.
     const running = challengesRef.current?.challenges.some(

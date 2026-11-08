@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { loadSpellitaireBoard, type LeaderboardPage, type LeaderboardPeriod } from '../../game/leaderboard'
 import { boardKey, SPELL_MODES, type Difficulty, type SpellitaireKey, type SpellMode } from '../../game/solitaire/modes'
+import type { LeaderboardClip } from '../../game/replay/leaderboardClips'
+import { LeaderboardReplayPop, ReplayScoreButton, useLeaderboardClips } from '../LeaderboardReplay'
 
 /** How many places the board shows. */
 const TOP = 10
@@ -35,6 +37,9 @@ export function SpellitaireBoard({ mode: startMode, difficulty: startDifficulty 
   const pages = useRef(new Map<string, LeaderboardPage>())
   const [page, setPage] = useState<LeaderboardPage | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [watching, setWatching] = useState<LeaderboardClip | null>(null)
+  // Only one mode at one difficulty is a single board with replays; Overall and Total add boards up.
+  const clipFor = useLeaderboardClips(game !== 'overall' && level !== 'total' ? boardKey(game, level) : null)
 
   useEffect(() => {
     let cancel = false
@@ -91,13 +96,20 @@ export function SpellitaireBoard({ mode: startMode, difficulty: startDifficulty 
         <p className="sol-lb-note">No scores yet. Be the first!</p>
       ) : (
         <ol className="sol-lb-list">
-          {page.rows.map((row) => (
-            <li key={`${row.rank}-${row.username}`} className={row.mine ? 'mine' : undefined}>
-              <span className="sol-lb-rank">{row.rank}</span>
-              <span className="sol-lb-name">{row.username}</span>
-              <span className="sol-lb-score">{row.score.toLocaleString('en-US')}</span>
-            </li>
-          ))}
+          {page.rows.map((row) => {
+            const clip = clipFor(row)
+            return (
+              <li key={`${row.rank}-${row.username}`} className={row.mine ? 'mine' : undefined}>
+                <span className="sol-lb-rank">{row.rank}</span>
+                <span className="sol-lb-name">{row.username}</span>
+                {clip ? (
+                  <ReplayScoreButton className="sol-lb-replay" score={row.score} username={row.username} onWatch={() => setWatching(clip)} />
+                ) : (
+                  <span className="sol-lb-score">{row.score.toLocaleString('en-US')}</span>
+                )}
+              </li>
+            )
+          })}
         </ol>
       )}
       {page?.mine && !mineShown ? (
@@ -105,6 +117,7 @@ export function SpellitaireBoard({ mode: startMode, difficulty: startDifficulty 
           You: #{page.mine.rank} · {page.mine.score.toLocaleString('en-US')}
         </p>
       ) : null}
+      {watching ? <LeaderboardReplayPop clip={watching} onClose={() => setWatching(null)} /> : null}
     </section>
   )
 }

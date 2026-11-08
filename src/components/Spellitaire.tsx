@@ -23,8 +23,11 @@ import type { NeedKey } from '../game/types'
 import type { RunBonus } from '../game/useCub'
 import { LowEnergyNote, RunEnergy } from './EnergyBar'
 import { GamesButton, HomeButton } from './HomeButton'
-import { useScorecardShare } from './ShareScorecard'
+import { ReplayButton, useScorecardShare } from './ShareScorecard'
 import { hasScorecard, scorecardFor } from '../game/scorecardGames'
+import { discardReplay, finishReplay, startReplay, useDiscardReplayOnLeave } from '../game/replay'
+import { DomCanvas, useDomReplay } from '../game/replay/domPaint'
+import { paintSpellitaire } from './solitaire/replayPaint'
 import { LeaderboardOpenButton } from './LeaderboardOpenButton'
 import { PowerBonusNote } from './PowerBonusNote'
 import { CardTable } from './solitaire/CardTable'
@@ -178,6 +181,10 @@ function ControlButton({
 /** Spellitaire: a choice of solitaire modes, each with Easy and Hard. Placeholder looks for any artwork not yet added. */
 export function Spellitaire({ username, bests, weekBests, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus, seed, startMode, startDifficulty }: Props) {
   const share = useScorecardShare()
+  useDiscardReplayOnLeave()
+  const screenRef = useRef<HTMLElement>(null)
+  const painterRef = useRef<DomCanvas | null>(null)
+  const liveScoreRef = useRef(0)
   const [phase, setPhase] = useState<Phase>('start')
   const landscape = useSolitaireLandscape()
   const [step, setStep] = useState<StartStep>(startMode ? 'level' : 'modes')
@@ -341,6 +348,7 @@ export function Spellitaire({ username, bests, weekBests, onBest, onDailyStart, 
     setTable(dealTable(mode, dealSeed, difficulty))
     setPhase('play')
     startSpellitaireBgm()
+    startReplay({ title: `Spellitaire ${modeInfo(mode).name}`, username: username?.trim() || 'Lazy Cub Player', getScore: () => liveScoreRef.current, maxFps: 20 })
   }
 
   const chooseDifficulty = (next: Difficulty) => {
@@ -356,6 +364,7 @@ export function Spellitaire({ username, bests, weekBests, onBest, onDailyStart, 
 
   /** Back to the mode tiles from the results. */
   const chooseAnother = () => {
+    discardReplay()
     setSummary(null)
     setStuck(false)
     setLowEnergy(false)
@@ -389,6 +398,35 @@ export function Spellitaire({ username, bests, weekBests, onBest, onDailyStart, 
 
   const playing = phase === 'play'
   const score = engine.liveScore(game)
+  liveScoreRef.current = score
+
+  /** The scorecard for a finished game: its mode and difficulty, with the badge from every board's best. */
+  const cardFor = (result: Summary) => {
+    const total = Object.values(bestRef.current).reduce((sum, best) => sum + best, 0)
+    const level = levelName(result.key.endsWith('-hard') ? 'hard' : 'easy')
+    const version = { id: result.mode, name: modeInfo(result.mode).name }
+    return scorecardFor('solitaire', username, result.score, { badgeScore: total, version, level })
+  }
+
+  // The replay keeps recording through a win's celebration and ends when the results show.
+  useDomReplay(phase === 'play' || phase === 'won', () => {
+    const screen = screenRef.current
+    if (!screen) return null
+    painterRef.current ??= new DomCanvas()
+    return paintSpellitaire(painterRef.current, screen)
+  })
+  const finishedFor = useRef<Summary | null>(null)
+  useEffect(() => {
+    if (phase !== 'over') return
+    // A game ended before any move has no result, so its recording is thrown away.
+    if (!summary) {
+      discardReplay()
+      return
+    }
+    if (finishedFor.current === summary) return
+    finishedFor.current = summary
+    finishReplay(cardFor(summary))
+  })
   const levelBest = bestRef.current[boardKey(mode, difficulty)] ?? 0
 
   // Turning the phone only swaps the picture and the layout around the same game; nothing here remounts.
@@ -418,6 +456,7 @@ export function Spellitaire({ username, bests, weekBests, onBest, onDailyStart, 
 
   return (
     <section
+      ref={screenRef}
       className={`game-screen sol-screen${art ? ' art' : ''}${landscape ? ' landscape' : ''}`}
       style={{
         ['--sol-bg-aspect' as string]: String(bg.aspect),
@@ -665,17 +704,9 @@ export function Spellitaire({ username, bests, weekBests, onBest, onDailyStart, 
             <button type="button" className="sol-btn" onClick={() => begin(newSeed())} disabled={energy < PLAY_ENERGY_COST}>
               Play again
             </button>
+            {summary ? <ReplayButton className="sol-btn" onOpen={() => share.open(cardFor(summary), { replay: true })} /> : null}
             {summary && hasScorecard('solitaire') ? (
-              <button
-                type="button"
-                className="sol-btn share-x-btn"
-                onClick={() => {
-                  const total = Object.values(bestRef.current).reduce((sum, best) => sum + best, 0)
-                  const level = levelName(summary.key.endsWith('-hard') ? 'hard' : 'easy')
-                  const version = { id: summary.mode, name: modeInfo(summary.mode).name }
-                  share.open(scorecardFor('solitaire', username, summary.score, { badgeScore: total, version, level }))
-                }}
-              >
+              <button type="button" className="sol-btn share-x-btn" onClick={() => share.open(cardFor(summary))}>
                 Share to X
               </button>
             ) : null}

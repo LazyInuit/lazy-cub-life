@@ -1,7 +1,9 @@
+import { gameAudio, gameOut } from './audioBus'
+
 let audio: AudioContext | null = null
 
 function context(): AudioContext {
-  if (!audio) audio = new AudioContext()
+  if (!audio) audio = gameAudio()
   return audio
 }
 
@@ -28,7 +30,7 @@ export function playClick() {
   tickGain.gain.exponentialRampToValueAtTime(0.001, when + 0.04)
   noise.connect(tick)
   tick.connect(tickGain)
-  tickGain.connect(current.destination)
+  tickGain.connect(gameOut())
   noise.start(when)
   noise.stop(when + 0.05)
 
@@ -41,7 +43,7 @@ export function playClick() {
   popGain.gain.exponentialRampToValueAtTime(0.08, when + 0.006)
   popGain.gain.exponentialRampToValueAtTime(0.001, when + 0.07)
   pop.connect(popGain)
-  popGain.connect(current.destination)
+  popGain.connect(gameOut())
   pop.start(when)
   pop.stop(when + 0.08)
 }

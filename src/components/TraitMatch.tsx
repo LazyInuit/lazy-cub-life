@@ -10,8 +10,10 @@ import { RunEnergy } from './EnergyBar'
 import { PowerBonusNote } from './PowerBonusNote'
 import type { RunBonus } from '../game/useCub'
 import { HomeButton, GamesButton } from './HomeButton'
-import { useScorecardShare } from './ShareScorecard'
+import { ReplayButton, useScorecardShare } from './ShareScorecard'
 import { hasScorecard, scorecardFor } from '../game/scorecardGames'
+import { discardReplay, finishReplay, startReplay, useDiscardReplayOnLeave } from '../game/replay'
+import { DomCanvas, useDomReplay } from '../game/replay/domPaint'
 
 type BodyTrait = { id: string; label: string }
 
@@ -140,8 +142,114 @@ function MatchBust({ body }: { body: string }) {
   )
 }
 
+/** Redraws the Pride Pairs screen for the replay: background, timer, scores and the cards as shown. */
+function paintMatch(dc: DomCanvas, screen: HTMLElement): HTMLCanvasElement | null {
+  if (!dc.begin(screen)) return null
+  const { ctx, canvas } = dc
+  const sky = ctx.createLinearGradient(0, 0, 0, canvas.height)
+  ;[
+    [0, '#5b8ab8'],
+    [0.38, '#f0a45a'],
+    [0.52, '#e07a3a'],
+    [0.58, '#8fa84a'],
+    [0.78, '#5f7a34'],
+    [1, '#3d5224'],
+  ].forEach(([at, colour]) => sky.addColorStop(at as number, colour as string))
+  ctx.fillStyle = sky
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+  const title = screen.querySelector('.match-top h1')
+  if (title) {
+    const b = dc.of(title)
+    dc.roundRect(b, 12)
+    ctx.fillStyle = '#8a5426'
+    ctx.fill()
+    ctx.lineWidth = 2.5 * dc.scale
+    ctx.strokeStyle = '#4a2a12'
+    ctx.stroke()
+    dc.text(title)
+  }
+  dc.allText(screen.querySelector('.match-stats'))
+
+  const track = screen.querySelector('.timer-track')
+  const fill = screen.querySelector('.timer-fill')
+  if (track && fill) {
+    const t = dc.of(track)
+    dc.roundRect(t, t.h / 2 / dc.scale)
+    ctx.fillStyle = 'rgba(30, 40, 14, 0.35)'
+    ctx.fill()
+    const f = dc.of(fill)
+    if (f.w > 0) {
+      const g = ctx.createLinearGradient(f.x, 0, f.x + f.w, 0)
+      g.addColorStop(0, '#ffe29a')
+      g.addColorStop(0.55, '#f0a03a')
+      g.addColorStop(1, '#d46a28')
+      dc.roundRect(f, f.h / 2 / dc.scale)
+      ctx.fillStyle = g
+      ctx.fill()
+    }
+  }
+
+  for (const card of screen.querySelectorAll<HTMLElement>('.memory-card')) {
+    const b = dc.of(card)
+    const up = card.classList.contains('up')
+    ctx.save()
+    ctx.globalAlpha = parseFloat(getComputedStyle(card).opacity) || 1
+    dc.roundRect(b, 16)
+    if (up) {
+      const g = ctx.createLinearGradient(b.x, b.y, b.x + b.w * 0.4, b.y + b.h)
+      g.addColorStop(0, '#f7ead0')
+      g.addColorStop(0.7, '#e8d0a4')
+      g.addColorStop(1, '#d4b47c')
+      ctx.fillStyle = g
+    } else {
+      const g = ctx.createRadialGradient(b.x + b.w * 0.3, b.y + b.h * 0.24, 0, b.x + b.w * 0.3, b.y + b.h * 0.24, Math.max(b.w, b.h))
+      g.addColorStop(0, '#a06a38')
+      g.addColorStop(0.55, '#6d4020')
+      g.addColorStop(1, '#4a2a12')
+      ctx.fillStyle = g
+    }
+    ctx.fill()
+    ctx.lineWidth = 2 * dc.scale
+    ctx.strokeStyle = up ? '#5c3416' : '#3a2010'
+    ctx.stroke()
+    const bust = card.querySelector('.match-bust')
+    if (bust) {
+      const bb = dc.of(bust)
+      ctx.save()
+      dc.roundRect(bb, 11)
+      ctx.clip()
+      ctx.fillStyle = up ? '#e6cc9c' : 'rgba(28, 16, 8, 0.35)'
+      ctx.fillRect(bb.x, bb.y, bb.w, bb.h)
+      if (up) for (const img of bust.querySelectorAll('img')) dc.image(img, bb)
+      else dc.image(bust.querySelector<HTMLImageElement>('.paw-mark'))
+      ctx.restore()
+    }
+    if (up) dc.text(card.querySelector('.trait-name'), { shadow: false })
+    ctx.restore()
+  }
+
+  for (const coin of screen.querySelectorAll<HTMLImageElement>('.pride-coin')) {
+    ctx.save()
+    ctx.globalAlpha = parseFloat(getComputedStyle(coin).opacity) || 0
+    dc.image(coin)
+    ctx.restore()
+  }
+  const tag = screen.querySelector('.pride-coin-tag')
+  if (tag) {
+    ctx.save()
+    ctx.globalAlpha = parseFloat(getComputedStyle(tag).opacity) || 0
+    dc.text(tag)
+    ctx.restore()
+  }
+  return canvas
+}
+
 export function TraitMatch({ username, best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const share = useScorecardShare()
+  useDiscardReplayOnLeave()
+  const screenRef = useRef<HTMLElement>(null)
+  const painterRef = useRef<DomCanvas | null>(null)
   const [pairs, setPairs] = useState(2)
   const [cards, setCards] = useState<Card[]>(() => deal(2))
   const [left, setLeft] = useState(() => secondsForPairs(2))
@@ -190,6 +298,7 @@ export function TraitMatch({ username, best, weekBest, onBest, onDailyStart, onD
   const finish = (done: number, reason: string) => {
     if (rewarded.current) return
     rewarded.current = true
+    finishReplay(scorecardFor('match', username, scoreRef.current))
     onDailyRef.current(scoreRef.current)
     if (lockTimer.current !== null) window.clearTimeout(lockTimer.current)
     setLocked(false)
@@ -219,6 +328,7 @@ export function TraitMatch({ username, best, weekBest, onBest, onDailyStart, onD
 
   const retry = () => {
     if (lockTimer.current !== null) window.clearTimeout(lockTimer.current)
+    discardReplay()
     rewarded.current = false
     musicStarted.current = false
     clearedRef.current = 0
@@ -327,6 +437,7 @@ export function TraitMatch({ username, best, weekBest, onBest, onDailyStart, onD
       setLowEnergy(false)
       startedRef.current = true
       setTimerStarted(true)
+      startReplay({ title: 'Pride Pairs', username: username?.trim() || 'Lazy Cub Player', getScore: () => scoreRef.current, maxFps: 20 })
     }
     setCards((current) => current.map((item) => (item.key === key ? { ...item, up: true } : item)))
   }
@@ -447,8 +558,15 @@ export function TraitMatch({ username, best, weekBest, onBest, onDailyStart, onD
     onGames()
   }
 
+  useDomReplay(timerStarted && !summary, () => {
+    const screen = screenRef.current
+    if (!screen) return null
+    painterRef.current ??= new DomCanvas()
+    return paintMatch(painterRef.current, screen)
+  })
+
   return (
-    <section className="game-screen match-screen">
+    <section className="game-screen match-screen" ref={screenRef}>
       <header className="match-top">
         <div className="match-nav">
           <HomeButton className="game-home" onClick={back} />
@@ -563,6 +681,7 @@ export function TraitMatch({ username, best, weekBest, onBest, onDailyStart, onD
                 Retry
               </button>
             ) : null}
+            <ReplayButton className="pride-results-btn" onOpen={() => share.open(scorecardFor('match', username, score), { replay: true })} />
             <button type="button" className="pride-results-btn" onClick={onExit}>
               Back to cub
             </button>

@@ -1,3 +1,5 @@
+import { gameAudio, gameOut } from './audioBus'
+
 let audio: AudioContext | null = null
 let bed: SpaceBed | null = null
 
@@ -7,7 +9,7 @@ type SpaceBed = {
 }
 
 function context(): AudioContext {
-  if (!audio) audio = new AudioContext()
+  if (!audio) audio = gameAudio()
   return audio
 }
 
@@ -53,9 +55,9 @@ export function playFlap(): void {
 
   noise.connect(filter)
   filter.connect(noiseGain)
-  noiseGain.connect(current.destination)
+  noiseGain.connect(gameOut())
   body.connect(bodyGain)
-  bodyGain.connect(current.destination)
+  bodyGain.connect(gameOut())
   noise.start(now)
   body.start(now)
   noise.stop(now + seconds)
@@ -103,11 +105,11 @@ export function playIgnite(): void {
 
   spark.connect(sparkTone)
   sparkTone.connect(sparkGain)
-  sparkGain.connect(current.destination)
+  sparkGain.connect(gameOut())
   rise.connect(riseGain)
-  riseGain.connect(current.destination)
+  riseGain.connect(gameOut())
   bloom.connect(bloomGain)
-  bloomGain.connect(current.destination)
+  bloomGain.connect(gameOut())
   spark.start(now)
   rise.start(now)
   bloom.start(now)
@@ -135,7 +137,7 @@ function coinClick(current: AudioContext, when: number) {
   gain.gain.exponentialRampToValueAtTime(0.001, when + seconds)
   noise.connect(filter)
   filter.connect(gain)
-  gain.connect(current.destination)
+  gain.connect(gameOut())
   noise.start(when)
   noise.stop(when + seconds)
 }
@@ -155,7 +157,7 @@ function coinNote(current: AudioContext, when: number, frequency: number, second
   gain.gain.exponentialRampToValueAtTime(0.001, when + seconds)
   osc.connect(filter)
   filter.connect(gain)
-  gain.connect(current.destination)
+  gain.connect(gameOut())
   osc.start(when)
   osc.stop(when + seconds)
 }
@@ -208,10 +210,10 @@ export function playCrash(): void {
 
   noise.connect(crackle)
   crackle.connect(noiseGain)
-  noiseGain.connect(current.destination)
+  noiseGain.connect(gameOut())
   zap.connect(zapTone)
   zapTone.connect(zapGain)
-  zapGain.connect(current.destination)
+  zapGain.connect(gameOut())
   noise.start(now)
   zap.start(now)
   noise.stop(now + seconds)
@@ -227,7 +229,7 @@ function endNote(current: AudioContext, when: number, frequency: number, seconds
   gain.gain.exponentialRampToValueAtTime(peak, when + 0.03)
   gain.gain.exponentialRampToValueAtTime(0.001, when + seconds)
   osc.connect(gain)
-  gain.connect(current.destination)
+  gain.connect(gameOut())
   osc.start(when)
   osc.stop(when + seconds)
 }
@@ -261,7 +263,7 @@ export function startSpaceAmbience(): void {
   const master = current.createGain()
   master.gain.setValueAtTime(0, now)
   master.gain.linearRampToValueAtTime(0.4, now + 1.6)
-  master.connect(current.destination)
+  master.connect(gameOut())
 
   const pad = current.createGain()
   pad.gain.value = 0.86

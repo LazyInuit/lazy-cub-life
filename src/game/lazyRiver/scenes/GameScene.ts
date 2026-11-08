@@ -1543,6 +1543,15 @@ export class GameScene extends Phaser.Scene {
     this.game.events.emit(RUN_OVER, result);
   }
 
+  /** True while a run is on screen and moving (not paused), so the replay records it. */
+  isReplayLive(): boolean {
+    return this.phase === 'play' || this.phase === 'dying';
+  }
+
+  liveScore(): number {
+    return this.points + Math.floor(this.distance);
+  }
+
   private burst(x: number, y: number, tint: number, count: number, speed: number): void {
     let spawned = 0;
     for (const particle of this.particles) {

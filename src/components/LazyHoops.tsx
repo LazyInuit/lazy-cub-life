@@ -48,8 +48,9 @@ import { RunEnergy } from './EnergyBar'
 import { PowerBonusNote } from './PowerBonusNote'
 import type { RunBonus } from '../game/useCub'
 import { GamesButton, HomeButton } from './HomeButton'
-import { useScorecardShare } from './ShareScorecard'
+import { ReplayButton, useScorecardShare } from './ShareScorecard'
 import { hasScorecard, scorecardFor } from '../game/scorecardGames'
+import { captureReplay, finishReplay, startReplay, useDiscardReplayOnLeave } from '../game/replay'
 
 type Mode = 'home' | 'play' | 'over'
 type Phase = 'ready' | 'flight' | 'move'
@@ -226,6 +227,7 @@ function hudFrom(live: Live): Hud {
 
 export function LazyHoops({ username, best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const share = useScorecardShare()
+  useDiscardReplayOnLeave()
   const [mode, setMode] = useState<Mode>('home')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
@@ -290,6 +292,7 @@ export function LazyHoops({ username, best, weekBest, onBest, onDailyStart, onDa
     modeRef.current = 'over'
     stopHoopsBgm()
     const score = live.score
+    finishReplay(scorecardFor('hoops', username, score))
     const neuBest = score > bestRef.current
     if (neuBest) {
       bestRef.current = score
@@ -524,6 +527,8 @@ export function LazyHoops({ username, best, weekBest, onBest, onDailyStart, onDa
       }
       syncScene()
       court.render()
+      // WebGL keeps no copy of the frame, so the replay reads it straight after the render.
+      if (live.playing && !live.over) captureReplay(canvas)
       if (live.paused || live.over) {
         running = false
         cancelAnimationFrame(raf)
@@ -649,6 +654,7 @@ export function LazyHoops({ username, best, weekBest, onBest, onDailyStart, onDa
     }
     startHoopsBgm()
     startRef.current()
+    startReplay({ title: 'Lazy Hoops', username: username?.trim() || 'Lazy Cub Player', getScore: () => liveRef.current.score })
   }
 
   const leave = (go: () => void) => {
@@ -798,6 +804,7 @@ export function LazyHoops({ username, best, weekBest, onBest, onDailyStart, onDa
             <button type="button" className="hoops-btn" onClick={playAgain} disabled={energy < PLAY_ENERGY_COST}>
               Play Again
             </button>
+            <ReplayButton className="hoops-btn" onOpen={() => share.open(scorecardFor('hoops', username, summary.score), { replay: true })} />
             {hasScorecard('hoops') ? (
               <button type="button" className="hoops-btn share-x-btn" onClick={() => share.open(scorecardFor('hoops', username, summary.score))}>
                 Share to X
@@ -808,8 +815,9 @@ export function LazyHoops({ username, best, weekBest, onBest, onDailyStart, onDa
             </button>
           </div>
         ) : null}
-        {share.modal}
       </div>
+      {/* Outside the stage, which cancels touch drags for swiping, so the share screen can scroll. */}
+      {share.modal}
     </section>
   )
 }

@@ -1,4 +1,5 @@
 import bgmUrl from '../../assets/baseball/bgm-surf-rock-sluggers.wav'
+import { gameAudio, gameOut } from '../audioBus'
 import type { Quality } from './config'
 import type { HitKind } from './flight'
 import type { PitchType } from './pitch'
@@ -20,13 +21,13 @@ function impulse(ac: AudioContext, seconds: number, decay: number) {
 
 function getRig(): Rig {
   if (rig) return rig
-  const ac = new AudioContext()
+  const ac = gameAudio()
   const out = ac.createDynamicsCompressor()
   out.threshold.value = -12
   out.ratio.value = 4
   out.attack.value = 0.002
   out.release.value = 0.2
-  out.connect(ac.destination)
+  out.connect(gameOut())
   /** Stadium echo for the bat crack and the crowd. */
   const room = ac.createConvolver()
   room.buffer = impulse(ac, 1.6, 3)
@@ -67,7 +68,7 @@ export function startBaseballBgm() {
       if (!bgm.wanted || bgm.source) return
       const gain = r.ac.createGain()
       gain.gain.value = BGM_GAIN
-      gain.connect(r.ac.destination)
+      gain.connect(gameOut())
       const source = r.ac.createBufferSource()
       source.buffer = bgm.buffer
       source.loop = true

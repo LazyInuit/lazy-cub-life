@@ -1,3 +1,5 @@
+import { gameAudio, gameOut } from '../../audioBus';
+
 type Tone = OscillatorType;
 
 export class AudioBus {
@@ -5,9 +7,13 @@ export class AudioBus {
   private noise: AudioBuffer | null = null;
 
   unlock(): void {
-    const Ctx = window.AudioContext ?? window.webkitAudioContext;
-    if (!Ctx) return;
-    if (!this.ctx) this.ctx = new Ctx();
+    if (!this.ctx) {
+      try {
+        this.ctx = gameAudio();
+      } catch {
+        return;
+      }
+    }
     if (this.ctx.state === 'suspended') void this.ctx.resume();
   }
 
@@ -52,7 +58,7 @@ export class AudioBus {
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
         src.connect(filter);
         filter.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(gameOut());
         src.start();
         src.stop(ctx.currentTime + 0.3);
       }
@@ -83,7 +89,7 @@ export class AudioBus {
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
     src.connect(filter);
     filter.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(gameOut());
     src.start();
     src.stop(ctx.currentTime + 0.3);
     this.tone(140, 0.18, 'sawtooth', 0.05, -80);
@@ -103,7 +109,7 @@ export class AudioBus {
     gain.gain.setValueAtTime(volume, t);
     gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(gameOut());
     osc.start(t);
     osc.stop(t + dur + 0.02);
   }

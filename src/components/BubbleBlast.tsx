@@ -34,8 +34,9 @@ import { RunEnergy } from './EnergyBar'
 import { PowerBonusNote } from './PowerBonusNote'
 import type { RunBonus } from '../game/useCub'
 import { GamesButton, HomeButton } from './HomeButton'
-import { useScorecardShare } from './ShareScorecard'
+import { ReplayButton, useScorecardShare } from './ShareScorecard'
 import { hasScorecard, scorecardFor } from '../game/scorecardGames'
+import { captureReplay, finishReplay, startReplay, useDiscardReplayOnLeave } from '../game/replay'
 
 type Mode = 'start' | 'play' | 'over'
 
@@ -92,6 +93,7 @@ function showsDragHint(game: BubbleState) {
 
 export function BubbleBlast({ username, best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const share = useScorecardShare()
+  useDiscardReplayOnLeave()
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [showRules, setShowRules] = useState(false)
@@ -125,6 +127,7 @@ export function BubbleBlast({ username, best, weekBest, onBest, onDailyStart, on
     if (rewarded.current) return
     rewarded.current = true
     const score = game.score
+    finishReplay(scorecardFor('bubble', username, score))
     const neuBest = score > bestRef.current
     if (neuBest) {
       bestRef.current = score
@@ -255,6 +258,7 @@ export function BubbleBlast({ username, best, weekBest, onBest, onDailyStart, on
           const dpr = canvas.width / Math.max(1, sizeRef.current.width)
           ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
           drawBubbleFrame(ctx, game, sizeRef.current.width, sizeRef.current.height, now / 1000)
+          if (!rewarded.current) captureReplay(canvas)
         }
       }
       frame = requestAnimationFrame(tick)
@@ -333,6 +337,7 @@ export function BubbleBlast({ username, best, weekBest, onBest, onDailyStart, on
     setShowRules(false)
     setSummary(null)
     setMode('play')
+    startReplay({ title: 'Bubble Blast', username: username?.trim() || 'Lazy Cub Player', getScore: () => gameRef.current?.score ?? 0 })
   }
 
   const leave = (go: () => void) => {
@@ -468,6 +473,7 @@ export function BubbleBlast({ username, best, weekBest, onBest, onDailyStart, on
             <button type="button" className="bubble-btn" onClick={startRun} disabled={energy < PLAY_ENERGY_COST}>
               Play again
             </button>
+            <ReplayButton className="bubble-btn" onOpen={() => share.open(scorecardFor('bubble', username, summary.score), { replay: true })} />
             {hasScorecard('bubble') ? (
               <button type="button" className="bubble-btn share-x-btn" onClick={() => share.open(scorecardFor('bubble', username, summary.score))}>
                 Share to X

@@ -1,6 +1,7 @@
 import '@fontsource/fredoka/700.css';
 import Phaser from 'phaser';
 import { frameScale } from '../frameScale';
+import { captureReplay } from '../replay';
 import { GAME_HEIGHT, GAME_WIDTH, setGameWidth } from './constants';
 import { BootScene, PLAY_ON_BOOT } from './scenes/BootScene';
 import { GameScene, RUN_OVER } from './scenes/GameScene';
@@ -14,6 +15,8 @@ export interface RiverController {
   play(): void;
   /** Ends the current run now and reports it, for leaving mid-run. */
   endRun(): void;
+  /** The run's score so far. */
+  liveScore(): number;
   destroy(): void;
 }
 
@@ -70,6 +73,11 @@ export async function createLazyRiver(host: HTMLElement, onOver: (result: RunRes
 
   if (import.meta.env.DEV) (window as Window & { __river?: Phaser.Game }).__river = game;
   game.events.on(RUN_OVER, onOver);
+  const scene = () => (game.scene.isActive('game') ? (game.scene.getScene('game') as GameScene) : null);
+  // The canvas is only readable straight after Phaser draws it, so the replay takes its frame here.
+  game.events.on(Phaser.Core.Events.POST_RENDER, () => {
+    if (scene()?.isReplayLive()) captureReplay(game.canvas);
+  });
   game.events.once(Phaser.Core.Events.READY, () => {
     game.canvas.addEventListener('contextmenu', (event) => event.preventDefault());
     game.canvas.style.touchAction = 'none';
@@ -92,8 +100,10 @@ export async function createLazyRiver(host: HTMLElement, onOver: (result: RunRes
       else game.registry.set(PLAY_ON_BOOT, true);
     },
     endRun() {
-      const scene = game.scene.getScene('game') as GameScene | null;
-      if (scene && game.scene.isActive('game')) scene.endRun();
+      scene()?.endRun();
+    },
+    liveScore() {
+      return scene()?.liveScore() ?? 0;
     },
     destroy() {
       resize.disconnect();

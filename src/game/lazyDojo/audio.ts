@@ -1,3 +1,4 @@
+import { gameAudio, gameOut } from '../audioBus'
 import { DOJO_ASSETS } from './assets'
 
 let audio: AudioContext | null = null
@@ -19,7 +20,7 @@ function bgmSlot(): DojoBgmSlot {
 }
 
 function ctx(): AudioContext {
-  if (!audio) audio = new AudioContext()
+  if (!audio) audio = gameAudio()
   return audio
 }
 
@@ -102,7 +103,7 @@ export function startDojoBgm() {
       source.buffer = buffer
       source.loop = true
       source.connect(gain)
-      gain.connect(current.destination)
+      gain.connect(gameOut())
       source.start(0)
       slot.source = source
       slot.gain = gain
@@ -124,7 +125,7 @@ function beep(freq: number, seconds: number, peak: number, type: OscillatorType 
   gain.gain.exponentialRampToValueAtTime(peak, now + 0.02)
   gain.gain.exponentialRampToValueAtTime(0.001, now + seconds)
   osc.connect(gain)
-  gain.connect(current.destination)
+  gain.connect(gameOut())
   osc.start(now)
   osc.stop(now + seconds + 0.02)
 }
@@ -169,7 +170,7 @@ export function playSlash() {
   gain.gain.exponentialRampToValueAtTime(0.001, now + seconds)
   src.connect(filter)
   filter.connect(gain)
-  gain.connect(current.destination)
+  gain.connect(gameOut())
   src.start(now)
   src.stop(now + seconds)
 }
@@ -206,7 +207,7 @@ function playSoftWhoosh(peak: number) {
   gain.gain.exponentialRampToValueAtTime(0.001, now + seconds)
   noise.connect(filter)
   filter.connect(gain)
-  gain.connect(current.destination)
+  gain.connect(gameOut())
   noise.start(now)
   noise.stop(now + seconds)
 }

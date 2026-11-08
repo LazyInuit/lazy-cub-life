@@ -1,5 +1,6 @@
 import softDrumsUrl from '../assets/pride-soft-drums.wav'
 import softFailUrl from '../assets/pride-soft-fail.wav'
+import { gameAudio, gameOut } from './audioBus'
 
 let audio: AudioContext | null = null
 let bed: PrideBed | null = null
@@ -14,7 +15,7 @@ type PrideBed = {
 }
 
 function context(): AudioContext {
-  if (!audio) audio = new AudioContext()
+  if (!audio) audio = gameAudio()
   return audio
 }
 
@@ -65,7 +66,7 @@ export async function startPrideAmbience(): Promise<void> {
   const master = current.createGain()
   master.gain.setValueAtTime(0, now)
   master.gain.linearRampToValueAtTime(0.48, now + 0.9)
-  master.connect(current.destination)
+  master.connect(gameOut())
 
   const source = current.createBufferSource()
   source.buffer = track
@@ -112,6 +113,6 @@ export async function playPrideFail(): Promise<void> {
   const gain = current.createGain()
   gain.gain.value = 0.7
   source.connect(gain)
-  gain.connect(current.destination)
+  gain.connect(gameOut())
   source.start(now)
 }

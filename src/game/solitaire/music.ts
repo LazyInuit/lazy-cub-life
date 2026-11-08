@@ -2,6 +2,7 @@
  * Spellitaire background music: the Arcane Puzzle loop.
  */
 import bgmUrl from '../../assets/solitaire/bgm-arcane-puzzle.wav'
+import { gameAudio, gameOut } from '../audioBus'
 
 /** Background music at 20% volume. */
 const BGM_GAIN = 0.2
@@ -15,15 +16,7 @@ let bgmTicket = 0
 
 function ctx(): AudioContext | null {
   try {
-    if (!audio) {
-      audio = new AudioContext()
-      // Quiet while the app is in the background, back on return.
-      document.addEventListener('visibilitychange', () => {
-        if (!audio) return
-        if (document.hidden) void audio.suspend()
-        else if (bgmSource) void audio.resume()
-      })
-    }
+    if (!audio) audio = gameAudio()
     return audio
   } catch {
     return null
@@ -67,7 +60,7 @@ export function startSpellitaireBgm() {
       source.buffer = bgmBuffer
       source.loop = true
       source.connect(gain)
-      gain.connect(current.destination)
+      gain.connect(gameOut())
       source.start()
       bgmSource = source
       bgmGain = gain

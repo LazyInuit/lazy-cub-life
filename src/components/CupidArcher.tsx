@@ -47,8 +47,9 @@ import { RunEnergy } from './EnergyBar'
 import { PowerBonusNote } from './PowerBonusNote'
 import type { RunBonus } from '../game/useCub'
 import { GamesButton, HomeButton } from './HomeButton'
-import { useScorecardShare } from './ShareScorecard'
+import { ReplayButton, useScorecardShare } from './ShareScorecard'
 import { hasScorecard, scorecardFor } from '../game/scorecardGames'
+import { captureReplay, finishReplay, startReplay, useDiscardReplayOnLeave } from '../game/replay'
 
 type Mode = 'start' | 'play' | 'over'
 
@@ -141,6 +142,7 @@ function LivesHud({ lives }: { lives: number }) {
 
 export function CupidArcher({ username, best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const share = useScorecardShare()
+  useDiscardReplayOnLeave()
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [showHowTo, setShowHowTo] = useState(false)
@@ -187,6 +189,7 @@ export function CupidArcher({ username, best, weekBest, onBest, onDailyStart, on
     modeRef.current = 'over'
     playOver()
     const score = round.score
+    finishReplay(scorecardFor('archer', username, score))
     const neuBest = score > bestRef.current
     if (neuBest) {
       bestRef.current = score
@@ -298,6 +301,7 @@ export function CupidArcher({ username, best, weekBest, onBest, onDailyStart, on
           })
         }
         paint()
+        captureReplay(canvasRef.current)
         if (shot.ended) finishRef.current(round)
       }
       frame = requestAnimationFrame(tick)
@@ -358,6 +362,7 @@ export function CupidArcher({ username, best, weekBest, onBest, onDailyStart, on
     const origin = aimOrigin(w, h)
     setPullHint({ x: origin.x + w * 0.05, y: origin.y })
     setMode('play')
+    startReplay({ title: 'Cupid Archery', username: username?.trim() || 'Lazy Cub Player', getScore: () => roundRef.current?.score ?? 0 })
   }
 
   const leave = (go: () => void) => {
@@ -503,6 +508,7 @@ export function CupidArcher({ username, best, weekBest, onBest, onDailyStart, on
             <button type="button" className="archer-btn" onClick={startRound} disabled={energy < PLAY_ENERGY_COST}>
               Play again
             </button>
+            <ReplayButton className="archer-btn" onOpen={() => share.open(scorecardFor('archer', username, summary.score), { replay: true })} />
             {hasScorecard('archer') ? (
               <button type="button" className="archer-btn share-x-btn" onClick={() => share.open(scorecardFor('archer', username, summary.score))}>
                 Share to X

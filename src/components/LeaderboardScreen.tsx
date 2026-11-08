@@ -22,6 +22,8 @@ import type { WalletPatch } from '../game/wallet'
 import { GamesButton, HomeButton } from './HomeButton'
 import { PlayerProfileCard } from './PlayerProfileCard'
 import { VisitHome } from './VisitHome'
+import { LeaderboardReplayPop, ReplayScoreButton, useLeaderboardClips } from './LeaderboardReplay'
+import type { LeaderboardClip } from '../game/replay/leaderboardClips'
 
 type Props = {
   onHome: () => void
@@ -46,6 +48,9 @@ export function LeaderboardScreen({ onHome, onGames, onSettlePrize, onChallenge 
   const [lastWinners, setLastWinners] = useState<WeeklyWinner[]>([])
   const [profileOpen, setProfileOpen] = useState<{ username: string; mine: boolean } | null>(null)
   const [visiting, setVisiting] = useState<PlayerProfile | null>(null)
+  const [watching, setWatching] = useState<LeaderboardClip | null>(null)
+  // Overall and the Spellitaire total add up many games, so only single-game boards have replays.
+  const clipFor = useLeaderboardClips(game === 'overall' || game === 'solitaire' ? null : game)
   const menuRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const scrollTop = useRef(0)
@@ -275,6 +280,7 @@ export function LeaderboardScreen({ onHome, onGames, onSettlePrize, onChallenge 
         {!loading && !note && rows.length > 0 ? (
           <ol className="leaderboard-list">
             {rows.map((row) => {
+              const clip = clipFor(row)
               const cells = (
                 <>
                   <span className="leaderboard-rank">{row.rank}</span>
@@ -285,18 +291,20 @@ export function LeaderboardScreen({ onHome, onGames, onSettlePrize, onChallenge 
                       {!row.mine && hasProfileCard(row.username) ? <span className="leaderboard-visit">Visit</span> : null}
                     </span>
                   </span>
-                  <span className="leaderboard-score">{row.score.toLocaleString('en-US')}</span>
+                  {clip ? null : <span className="leaderboard-score">{row.score.toLocaleString('en-US')}</span>}
                 </>
               )
+              const replay = clip ? <ReplayScoreButton score={row.score} username={row.username} onWatch={() => setWatching(clip)} /> : null
               if (!hasProfileCard(row.username)) {
                 return (
-                  <li key={row.username} className={rowClass(row)}>
+                  <li key={row.username} className={`${rowClass(row)}${clip ? ' has-replay' : ''}`.trim()}>
                     {cells}
+                    {replay}
                   </li>
                 )
               }
               return (
-                <li key={row.username} className={`${rowClass(row)} has-profile`.trim()}>
+                <li key={row.username} className={`${rowClass(row)} has-profile${clip ? ' has-replay' : ''}`.trim()}>
                   <button
                     type="button"
                     className="leaderboard-row-btn"
@@ -305,6 +313,7 @@ export function LeaderboardScreen({ onHome, onGames, onSettlePrize, onChallenge 
                   >
                     {cells}
                   </button>
+                  {replay}
                 </li>
               )
             })}
@@ -342,6 +351,7 @@ export function LeaderboardScreen({ onHome, onGames, onSettlePrize, onChallenge 
           }
         />
       ) : null}
+      {watching ? <LeaderboardReplayPop clip={watching} onClose={() => setWatching(null)} /> : null}
     </section>
   )
 }

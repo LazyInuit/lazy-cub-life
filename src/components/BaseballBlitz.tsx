@@ -69,8 +69,9 @@ import type { RunBonus } from '../game/useCub'
 import { RunEnergy } from './EnergyBar'
 import { GamesButton, HomeButton } from './HomeButton'
 import { PowerBonusNote } from './PowerBonusNote'
-import { useScorecardShare } from './ShareScorecard'
+import { ReplayButton, useScorecardShare } from './ShareScorecard'
 import { scorecardFor } from '../game/scorecardGames'
+import { captureReplay, discardReplay, finishReplay, startReplay, useDiscardReplayOnLeave } from '../game/replay'
 
 type Phase = 'home' | 'ready' | 'pitch' | 'hit' | 'result' | 'over'
 
@@ -141,6 +142,8 @@ export function BaseballBlitz({ username, best, weekBest, onBest, onDailyStart, 
   /** Bumps each time Cub Cash is earned, replaying the coin flash. */
   const [coinPop, setCoinPop] = useState<number | null>(null)
   const share = useScorecardShare()
+  useDiscardReplayOnLeave()
+  const stadiumRef = useRef<HTMLImageElement | null>(null)
   const [lowEnergy, setLowEnergy] = useState(false)
   const [summary, setSummary] = useState<Summary | null>(null)
   /** True once the current run's score, XP and Cub Cash have been recorded. */
@@ -207,6 +210,7 @@ export function BaseballBlitz({ username, best, weekBest, onBest, onDailyStart, 
     if (rewarded.current) return
     rewarded.current = true
     const { score, cash } = live.current
+    finishReplay(scorecardFor('baseball', username, score))
     const report = reportRef.current
     const newBest = score > bestRef.current
     if (newBest) {
@@ -421,6 +425,8 @@ export function BaseballBlitz({ username, best, weekBest, onBest, onDailyStart, 
       state.realMark = real
       if (!state.frozen) step(dt)
       scene.render()
+      // The canvas is see-through over the stadium picture, so the replay draws the stadium behind it.
+      if (playing()) captureReplay(canvas, stadiumRef.current)
       raf = requestAnimationFrame(frame)
     }
     const start = () => {
@@ -615,6 +621,7 @@ export function BaseballBlitz({ username, best, weekBest, onBest, onDailyStart, 
     setSummary(null)
     reset('ready')
     startBaseballBgm()
+    startReplay({ title: 'Baseball Blitz', username: username?.trim() || 'Lazy Cub Player', getScore: () => live.current.score })
   }
 
   /** Home or Games mid-run ends the run and shows its results first, like Lazy River. */
@@ -655,7 +662,7 @@ export function BaseballBlitz({ username, best, weekBest, onBest, onDailyStart, 
       <div className="bb-stage" ref={stageRef}>
         {box.sideFill ? <div className="bb-fill" style={{ backgroundImage: `url("${stadiumUrl}")` }} aria-hidden /> : null}
         <div className="bb-art" style={artStyle}>
-          <img className="bb-bg" src={stadiumUrl} alt="" draggable={false} />
+          <img ref={stadiumRef} className="bb-bg" src={stadiumUrl} alt="" draggable={false} />
           <canvas ref={canvasRef} className="bb-canvas" />
           {debug ? <canvas ref={debugRef} className="bb-debug" /> : null}
           <div className="bb-board" style={boardStyle} aria-live="polite">
@@ -813,6 +820,13 @@ export function BaseballBlitz({ username, best, weekBest, onBest, onDailyStart, 
                 <img src={coinUrl} alt="" />+{hud.cash}
               </span>
             </p>
+            <PowerBonusNote bonus={powerBonus} />
+            <RunEnergy energy={energy} onShop={onShop} />
+            {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
+            <button type="button" className="bb-btn" onClick={play} disabled={energy < PLAY_ENERGY_COST}>
+              Play Again
+            </button>
+            <ReplayButton className="bb-btn" onOpen={() => share.open(scorecardFor('baseball', username, hud.score), { replay: true })} />
             <button
               type="button"
               className="bb-btn share-x-btn"
@@ -820,13 +834,14 @@ export function BaseballBlitz({ username, best, weekBest, onBest, onDailyStart, 
             >
               Share to X
             </button>
-            <PowerBonusNote bonus={powerBonus} />
-            <RunEnergy energy={energy} onShop={onShop} />
-            {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
-            <button type="button" className="bb-btn" onClick={play} disabled={energy < PLAY_ENERGY_COST}>
-              Play Again
-            </button>
-            <button type="button" className="bb-btn bb-btn-ghost" onClick={() => reset('home')}>
+            <button
+              type="button"
+              className="bb-btn bb-btn-ghost"
+              onClick={() => {
+                discardReplay()
+                reset('home')
+              }}
+            >
               Game Menu
             </button>
             <button type="button" className="bb-btn bb-btn-ghost" onClick={onGames}>

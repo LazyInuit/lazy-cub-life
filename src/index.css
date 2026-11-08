@@ -1442,6 +1442,112 @@ h1 {
   background: rgba(255, 246, 216, 0.12);
 }
 
+/* A top-3 row with a replay: the left opens the profile, the right (score and play mark) the replay. */
+.leaderboard-list li.has-profile.has-replay {
+  display: flex;
+  align-items: stretch;
+}
+
+.leaderboard-list li.has-replay .leaderboard-row-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  grid-template-columns: 32px minmax(0, 1fr);
+}
+
+.leaderboard-list li.has-replay .leaderboard-name-line {
+  min-width: 0;
+}
+
+.leaderboard-list li.has-replay .leaderboard-name-line strong {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* On a narrow row the Visit tag gives way before the name does, and goes when the row is very narrow. */
+.leaderboard-list li.has-replay .leaderboard-visit {
+  flex: 0 100 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.leaderboard-list li.has-replay .leaderboard-player {
+  container-type: inline-size;
+}
+
+@container (max-width: 130px) {
+  .leaderboard-list li.has-replay .leaderboard-visit {
+    display: none;
+  }
+}
+
+.lb-replay-btn {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-left: 2px solid rgba(255, 70, 60, 0.5);
+  background: rgba(224, 21, 29, 0.14);
+  color: #fffaf2;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.lb-replay-btn:active {
+  background: rgba(224, 21, 29, 0.3);
+}
+
+.lb-replay-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 5px;
+  background: #e0151d;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+}
+
+.lb-replay-tri {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 4px 0 4px 6px;
+  border-color: transparent transparent transparent currentColor;
+}
+
+.lb-replay-btn.sol-lb-replay {
+  min-height: 34px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 0.86rem;
+}
+
+.lb-replay-btn.sol-lb-replay .lb-replay-tag {
+  padding: 0 5px;
+  font-size: 9px;
+}
+
+.lb-replay-score {
+  margin: -6px 0 10px;
+  color: #ffd84a;
+  font-size: 1.3rem;
+  font-weight: 900;
+}
+
 .leaderboard-visit {
   flex: none;
   padding: 1px 5px;
@@ -2890,7 +2996,8 @@ h1 {
   grid-template-columns: 1fr 1fr;
 }
 
-.match-screen .pride-results-actions .share-x-btn {
+.match-screen .pride-results-actions .share-x-btn,
+.match-screen .pride-results-actions .replay-red-btn {
   grid-column: 1 / -1;
 }
 
@@ -4700,7 +4807,8 @@ h1 {
 }
 
 .flight-results-actions .cabinet-key:first-child,
-.flight-results-actions .share-x-btn {
+.flight-results-actions .share-x-btn,
+.flight-results-actions .replay-red-btn {
   grid-column: 1 / -1;
 }
 
@@ -12435,6 +12543,30 @@ img.sol-control-icon {
   border: 1.5px solid #ffd060;
 }
 
+/* The results screens' Replay button, red like the leaderboards' REPLAY tag, in every game's button shape. */
+.replay-red-btn.replay-red-btn {
+  background: linear-gradient(180deg, #ff4a3e, #c8141c);
+  color: #fff;
+  border: 1.5px solid #ffb4ad;
+  text-shadow: 0 1px 0 #7d0b10;
+  box-shadow: 0 3px 0 #7d0b10, inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.replay-red-btn.replay-red-btn:active {
+  background: linear-gradient(180deg, #e8352c, #a40d14);
+}
+
+.replay-red-tri {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-right: 0.45em;
+  border-style: solid;
+  border-width: 0.38em 0 0.38em 0.6em;
+  border-color: transparent transparent transparent currentColor;
+  vertical-align: 0.05em;
+}
+
 /* Share to X: the scorecard preview over a results screen. Used by any game screen that is position: relative. */
 .share-pop {
   position: absolute;
@@ -12486,6 +12618,112 @@ img.sol-control-icon {
 }
 
 .share-preview p {
+  margin: 0;
+  font-weight: 800;
+  color: #9fd2ff;
+}
+
+.share-replay {
+  display: grid;
+  place-items: center;
+  margin: 0 0 10px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #000;
+}
+
+.share-replay-video {
+  display: block;
+  width: 100%;
+  max-height: 50vh;
+  max-height: 50dvh;
+  aspect-ratio: 9 / 16;
+  background: #000;
+}
+
+/* Save Image / Save Replay: the file shown big, over the share screen, before anything is saved. */
+.save-pop {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: calc(12px + var(--safe-top)) 12px calc(12px + var(--safe-bottom));
+  background: rgba(2, 8, 24, 0.86);
+}
+
+.save-card {
+  width: min(360px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+  padding: 16px 16px 14px;
+  border: 2px solid #ffd060;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #1c4b8a 0%, #12325f 48%, #0a1c3c 100%);
+  color: #fff4cc;
+  text-align: center;
+}
+
+.save-card h2 {
+  margin: 0 0 10px;
+  color: #ffd84a;
+}
+
+.save-preview {
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #000;
+}
+
+.save-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* Lets a press and hold offer Save to Photos where nothing else can save. */
+  user-select: auto;
+  -webkit-user-select: auto;
+  -webkit-touch-callout: default;
+}
+
+.save-video {
+  display: block;
+  width: 100%;
+  max-height: 55vh;
+  max-height: 55dvh;
+  aspect-ratio: 9 / 16;
+  background: #000;
+}
+
+.save-hint {
+  margin: 10px 0 0;
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #c9dcff;
+}
+
+/* Test server only: why a replay was turned off, or how it was recorded. */
+.replay-dev-note {
+  margin: 6px 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #ff9f9f;
+  text-align: center;
+}
+
+.share-replay-making {
+  aspect-ratio: 9 / 16;
+  max-height: 50vh;
+  max-height: 50dvh;
+  background: rgba(8, 18, 44, 0.7);
+}
+
+.share-replay-making p {
   margin: 0;
   font-weight: 800;
   color: #9fd2ff;

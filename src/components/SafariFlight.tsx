@@ -11,8 +11,9 @@ import { RunEnergy } from './EnergyBar'
 import { PowerBonusNote } from './PowerBonusNote'
 import type { RunBonus } from '../game/useCub'
 import { HomeButton, GamesButton } from './HomeButton'
-import { useScorecardShare } from './ShareScorecard'
+import { ReplayButton, useScorecardShare } from './ShareScorecard'
 import { hasScorecard, scorecardFor } from '../game/scorecardGames'
+import { captureReplay, discardReplay, finishReplay, startReplay, useDiscardReplayOnLeave } from '../game/replay'
 
 type Gate = {
   x: number
@@ -67,6 +68,7 @@ type Props = {
 export function SafariFlight({ username, best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const share = useScorecardShare()
+  useDiscardReplayOnLeave()
   const onRewardRef = useRef(onReward)
   const onBestRef = useRef(onBest)
   const onDailyStartRef = useRef(onDailyStart)
@@ -125,6 +127,7 @@ export function SafariFlight({ username, best, weekBest, onBest, onDailyStart, o
   const settle = (ending: 'pillar' | 'bounds' | 'leave' = 'leave') => {
     const awarded = awardFlight()
     if (!awarded) return
+    finishReplay(scorecardFor('flight', username, awarded.passed))
     if (ending === 'pillar') {
       playCrash()
       playEnd(0.16)
@@ -154,6 +157,7 @@ export function SafariFlight({ username, best, weekBest, onBest, onDailyStart, o
   }, [])
 
   const retry = () => {
+    discardReplay()
     phase.current = 'ready'
     ready.current = true
     y.current = 0
@@ -255,6 +259,7 @@ export function SafariFlight({ username, best, weekBest, onBest, onDailyStart, o
         drawSafari(ctx, w, h, gates.current, (now - startedAt) / 1000)
         const tilt = phase.current === 'play' ? Math.max(-0.6, Math.min(0.7, vel.current / 700)) : -0.15
         drawFlightLion(ctx, cubX, y.current, tilt, Math.min(w, h) / 820)
+        if (phase.current === 'play') captureReplay(canvas)
       }
         frame = requestAnimationFrame(paint)
     }
@@ -290,6 +295,7 @@ export function SafariFlight({ username, best, weekBest, onBest, onDailyStart, o
       coins.current = 0
       setHudScore(0)
       setStarted(true)
+      startReplay({ title: "Kovu's Space Dash", username: username?.trim() || 'Lazy Cub Player', getScore: () => score.current })
     }
     vel.current = FLAP
   }
@@ -440,6 +446,7 @@ export function SafariFlight({ username, best, weekBest, onBest, onDailyStart, o
             <button type="button" className="cabinet-key" onClick={retry} disabled={energy < playEnergyCost('flight')}>
               Retry
             </button>
+            <ReplayButton className="cabinet-key" onOpen={() => share.open(scorecardFor('flight', username, summary.score), { replay: true })} />
             {hasScorecard('flight') ? (
               <button type="button" className="cabinet-key share-x-btn" onClick={() => share.open(scorecardFor('flight', username, summary.score))}>
                 Share to X

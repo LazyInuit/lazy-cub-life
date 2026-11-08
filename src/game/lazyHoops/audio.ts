@@ -1,4 +1,5 @@
 import bgmDoubleLounge from '../../assets/lazy-hoops/audio/bgm-double-lounge.wav'
+import { gameAudio, gameOut } from '../audioBus'
 
 let audio: AudioContext | null = null
 let lastRim = 0
@@ -19,7 +20,7 @@ function bgmSlot(): HoopsBgmSlot {
 }
 
 function context(): AudioContext {
-  if (!audio) audio = new AudioContext()
+  if (!audio) audio = gameAudio()
   return audio
 }
 
@@ -81,7 +82,7 @@ export function startHoopsBgm() {
       source.buffer = buffer
       source.loop = true
       source.connect(gain)
-      gain.connect(current.destination)
+      gain.connect(gameOut())
       source.start(0)
       slot.source = source
       slot.gain = gain
@@ -119,7 +120,7 @@ export function playHoopsSwipe() {
   gain.gain.exponentialRampToValueAtTime(0.001, now + seconds)
   source.connect(filter)
   filter.connect(gain)
-  gain.connect(current.destination)
+  gain.connect(gameOut())
   source.start(now)
   source.stop(now + seconds + 0.02)
 }
@@ -142,7 +143,7 @@ export function playHoopsRim() {
   clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.045)
   click.connect(clickFilter)
   clickFilter.connect(clickGain)
-  clickGain.connect(current.destination)
+  clickGain.connect(gameOut())
   click.start(now)
   click.stop(now + 0.06)
 
@@ -155,7 +156,7 @@ export function playHoopsRim() {
   pingGain.gain.exponentialRampToValueAtTime(0.07, now + 0.006)
   pingGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1)
   ping.connect(pingGain)
-  pingGain.connect(current.destination)
+  pingGain.connect(gameOut())
   ping.start(now)
   ping.stop(now + 0.12)
 }
@@ -174,7 +175,7 @@ function swish(current: AudioContext, now: number) {
   gain.gain.exponentialRampToValueAtTime(0.001, now + seconds)
   source.connect(filter)
   filter.connect(gain)
-  gain.connect(current.destination)
+  gain.connect(gameOut())
   source.start(now)
   source.stop(now + seconds + 0.02)
 }
@@ -188,7 +189,7 @@ function chime(current: AudioContext, when: number, freq: number, seconds: numbe
   gain.gain.exponentialRampToValueAtTime(peak, when + 0.015)
   gain.gain.exponentialRampToValueAtTime(0.001, when + seconds)
   osc.connect(gain)
-  gain.connect(current.destination)
+  gain.connect(gameOut())
   osc.start(when)
   osc.stop(when + seconds + 0.02)
 }
@@ -209,7 +210,7 @@ export function playHoopsBoard() {
   slapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.07)
   slap.connect(slapFilter)
   slapFilter.connect(slapGain)
-  slapGain.connect(current.destination)
+  slapGain.connect(gameOut())
   slap.start(now)
   slap.stop(now + 0.08)
 
@@ -222,7 +223,7 @@ export function playHoopsBoard() {
   thudGain.gain.exponentialRampToValueAtTime(0.14, now + 0.008)
   thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12)
   thud.connect(thudGain)
-  thudGain.connect(current.destination)
+  thudGain.connect(gameOut())
   thud.start(now)
   thud.stop(now + 0.14)
 }

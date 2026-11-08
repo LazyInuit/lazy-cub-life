@@ -9,8 +9,9 @@ import { RunEnergy } from './EnergyBar'
 import { PowerBonusNote } from './PowerBonusNote'
 import type { RunBonus } from '../game/useCub'
 import { GamesButton, HomeButton } from './HomeButton'
-import { useScorecardShare } from './ShareScorecard'
+import { ReplayButton, useScorecardShare } from './ShareScorecard'
 import { hasScorecard, scorecardFor } from '../game/scorecardGames'
+import { finishReplay, startReplay, useDiscardReplayOnLeave } from '../game/replay'
 
 type Mode = 'start' | 'play' | 'over'
 
@@ -48,6 +49,7 @@ const OVER_PANEL_MS = 500
 
 export function LazyRiver({ username, best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const share = useScorecardShare()
+  useDiscardReplayOnLeave()
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [showRules, setShowRules] = useState(false)
@@ -76,6 +78,7 @@ export function LazyRiver({ username, best, weekBest, onBest, onDailyStart, onDa
     if (rewarded.current) return
     rewarded.current = true
     const score = result.score
+    finishReplay(scorecardFor('river', username, score))
     const neuBest = score > bestRef.current
     if (neuBest) {
       bestRef.current = score
@@ -147,6 +150,7 @@ export function LazyRiver({ username, best, weekBest, onBest, onDailyStart, onDa
     setMode('play')
     startRiverBgm()
     river.play()
+    startReplay({ title: 'Lazy River', username: username?.trim() || 'Lazy Cub Player', getScore: () => river.liveScore() })
   }
 
   const leave = (go: () => void) => {
@@ -279,6 +283,7 @@ export function LazyRiver({ username, best, weekBest, onBest, onDailyStart, onDa
             <button type="button" className="river-btn" onClick={startRun} disabled={energy < PLAY_ENERGY_COST}>
               Play again
             </button>
+            <ReplayButton className="river-btn" onOpen={() => share.open(scorecardFor('river', username, summary.score), { replay: true })} />
             {hasScorecard('river') ? (
               <button type="button" className="river-btn share-x-btn" onClick={() => share.open(scorecardFor('river', username, summary.score))}>
                 Share to X

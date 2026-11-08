@@ -20,8 +20,9 @@ import { RunEnergy } from './EnergyBar'
 import { PowerBonusNote } from './PowerBonusNote'
 import type { RunBonus } from '../game/useCub'
 import { GamesButton, HomeButton } from './HomeButton'
-import { useScorecardShare } from './ShareScorecard'
+import { ReplayButton, useScorecardShare } from './ShareScorecard'
 import { hasScorecard, scorecardFor } from '../game/scorecardGames'
+import { captureReplay, discardReplay, finishReplay, startReplay, useDiscardReplayOnLeave } from '../game/replay'
 
 type Mode = 'start' | 'howto' | 'play' | 'pause' | 'over'
 
@@ -49,6 +50,7 @@ type Props = {
 
 export function LazyDojo({ username, best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const share = useScorecardShare()
+  useDiscardReplayOnLeave()
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [hudScore, setHudScore] = useState(0)
@@ -100,6 +102,7 @@ export function LazyDojo({ username, best, weekBest, onBest, onDailyStart, onDai
     modeRef.current = 'over'
     stopDojoBgm()
     const score = engine.score
+    finishReplay(scorecardFor('dojo', username, score))
     const neuBest = score > bestRef.current
     if (neuBest) {
       bestRef.current = score
@@ -178,6 +181,7 @@ export function LazyDojo({ username, best, weekBest, onBest, onDailyStart, onDai
           if (engine.phase === 'ended') finishRunRef.current(engine)
         }
         drawDojoFrame(ctx, engine, bgRef.current, spritesRef.current)
+        if (modeRef.current === 'play') captureReplay(canvas)
         if (engine.score !== hudScoreRef.current) {
           hudScoreRef.current = engine.score
           setHudScore(engine.score)
@@ -266,6 +270,7 @@ export function LazyDojo({ username, best, weekBest, onBest, onDailyStart, onDai
     engineRef.current = createEngine(w, h)
     startDojoBgm()
     setMode('play')
+    startReplay({ title: 'Ninja Cub Dojo', username: username?.trim() || 'Lazy Cub Player', getScore: () => engineRef.current?.score ?? 0 })
   }
 
   useEffect(() => () => stopDojoBgm(), [])
@@ -516,6 +521,7 @@ export function LazyDojo({ username, best, weekBest, onBest, onDailyStart, onDai
             <button type="button" className="dojo-btn" onClick={startTraining} disabled={energy < PLAY_ENERGY_COST}>
               TRAIN AGAIN
             </button>
+            <ReplayButton className="dojo-btn" label="REPLAY" onOpen={() => share.open(scorecardFor('dojo', username, summary.score), { replay: true })} />
             {hasScorecard('dojo') ? (
               <button type="button" className="dojo-btn share-x-btn" onClick={() => share.open(scorecardFor('dojo', username, summary.score))}>
                 SHARE TO X
@@ -526,6 +532,7 @@ export function LazyDojo({ username, best, weekBest, onBest, onDailyStart, onDai
               className="dojo-btn dojo-btn-ghost"
               onClick={() => {
                 playUi()
+                discardReplay()
                 setMode('start')
               }}
             >

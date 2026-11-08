@@ -3,6 +3,7 @@
  * until real effect files exist.
  */
 import bgmUrl from '../../assets/bubble-blast/bgm-tiki-lounge.wav'
+import { gameAudio, gameOut } from '../audioBus'
 import type { BubbleEvent } from './types'
 
 let audio: AudioContext | null = null
@@ -18,7 +19,7 @@ let bgmTicket = 0
 
 function ctx(): AudioContext | null {
   try {
-    if (!audio) audio = new AudioContext()
+    if (!audio) audio = gameAudio()
     return audio
   } catch {
     return null
@@ -63,7 +64,7 @@ export function startBubbleBgm() {
       source.buffer = bgmBuffer
       source.loop = true
       source.connect(gain)
-      gain.connect(current.destination)
+      gain.connect(gameOut())
       source.start()
       bgmSource = source
       bgmGain = gain
@@ -87,7 +88,7 @@ function tone({ freq, dur, type = 'sine', gain = 0.12, slide, delay = 0 }: Tone)
   amp.gain.setValueAtTime(0.0001, start)
   amp.gain.exponentialRampToValueAtTime(gain, start + 0.012)
   amp.gain.exponentialRampToValueAtTime(0.0001, start + dur)
-  osc.connect(amp).connect(ac.destination)
+  osc.connect(amp).connect(gameOut())
   osc.start(start)
   osc.stop(start + dur + 0.02)
 }
