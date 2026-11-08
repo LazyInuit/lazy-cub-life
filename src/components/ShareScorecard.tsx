@@ -3,6 +3,7 @@ import { duckGameAudio } from '../game/audioBus'
 import { useReplayState } from '../game/replay'
 import { canShareFiles, downloadUrl, inAppBrowser, isAndroid, isIos, saveRoute, type SaveRoute } from '../game/saveFile'
 import { renderScorecard, scorecardPost, xPostUrl, type ScorecardSpec } from '../game/scorecard'
+import { countShare, type ShareEvent } from '../game/shareStats'
 
 type Share = {
   spec: ScorecardSpec
@@ -103,6 +104,14 @@ export function useScorecardShare() {
   const [preview, setPreview] = useState<Preview | null>(null)
   const [previewNote, setPreviewNote] = useState<string | null>(null)
   const replay = useReplayState()
+  /** Actions already counted for this scorecard: saving the same image twice counts once. */
+  const counted = useRef(new Set<ShareEvent>())
+
+  const count = (event: ShareEvent) => {
+    if (!share || counted.current.has(event)) return
+    counted.current.add(event)
+    countShare(share.spec.game, event)
+  }
 
   useEffect(() => {
     const url = share?.url
@@ -114,6 +123,7 @@ export function useScorecardShare() {
   const open = (spec: ScorecardSpec | null, options: { replay?: boolean } = {}) => {
     if (!spec) return
     const playReplay = Boolean(options.replay)
+    counted.current = new Set()
     setPreview(null)
     setShare({ spec, status: 'making', playReplay })
     renderScorecard(spec)
@@ -145,6 +155,8 @@ export function useScorecardShare() {
     if (!share) return
     try {
       await navigator.share({ files, text: scorecardPost(share.spec) })
+      if (files.some((file) => file.type.startsWith('image/'))) count('share-image')
+      if (files.some((file) => file.type.startsWith('video/'))) count('share-replay')
       done(`Sent to the app you picked. Check ${what} attached before you post.`)
     } catch (error) {
       if ((error as Error).name !== 'AbortError') done("Your phone couldn't share that. Try Save instead and add it to your post.")
@@ -167,15 +179,18 @@ export function useScorecardShare() {
     const url = kind === 'image' ? share.url : replay.status === 'ready' ? replay.url : null
     if (!file || !url) return
     const route = saveRoute(file)
+    const saved = kind === 'image' ? 'save-image' : 'save-replay'
     if (route === 'share-sheet') {
       try {
         // Only the file, no text: with text attached some apps save a note instead of the picture.
         await navigator.share({ files: [file] })
+        count(saved)
         setPreviewNote(isIos() ? `If you picked Save ${kind === 'image' ? 'Image' : 'Video'}, it's in your Photos.` : 'Done.')
       } catch (error) {
         if ((error as Error).name !== 'AbortError') {
           // The share sheet failed: fall back to a plain download.
           downloadUrl(url, file.name)
+          count(saved)
           setPreviewNote('Saved to your downloads.')
         }
       }
@@ -183,6 +198,7 @@ export function useScorecardShare() {
     }
     if (route === 'download') {
       downloadUrl(url, file.name)
+      count(saved)
       setPreviewNote(
         isAndroid()
           ? 'Saved to your Downloads. It shows in your gallery too.'
@@ -196,6 +212,7 @@ export function useScorecardShare() {
   const openX = () => {
     if (!share) return
     window.open(xPostUrl(scorecardPost(share.spec)), '_blank', 'noopener,noreferrer')
+    count('x-post')
     note('X opened with your post written. Nothing is attached yet: add your saved scorecard or replay before posting.')
   }
 

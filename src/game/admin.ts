@@ -134,6 +134,35 @@ export async function adminDemoStats(): Promise<DemoStats | null> {
   }
 }
 
+export type ShareStatRow = { game: string; event: string; today: number; week: number; all: number }
+
+export type ShareStats = {
+  /** One row for each game and action that has been counted at least once. */
+  rows: ShareStatRow[]
+  /** First day anything was counted. */
+  since: string | null
+}
+
+/** Scorecard and replay saves and shares, or null until share-stats.sql is run. */
+export async function adminShareStats(): Promise<ShareStats | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('admin_share_stats')
+  if (error && missingFunction(error)) return null
+  if (error) throw new Error(error.message)
+  const row = (data && typeof data === 'object' && !Array.isArray(data) ? data : {}) as Record<string, unknown>
+  const num = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? value : Number(value) || 0)
+  return {
+    rows: (Array.isArray(row.rows) ? (row.rows as Record<string, unknown>[]) : []).map((item) => ({
+      game: String(item.game ?? ''),
+      event: String(item.event ?? ''),
+      today: num(item.today),
+      week: num(item.week),
+      all: num(item.all),
+    })),
+    since: typeof row.since === 'string' ? row.since : null,
+  }
+}
+
 /** The dashboard overview, or null until admin-overview.sql is run. */
 export async function adminOverview(): Promise<AdminOverview | null> {
   if (!supabase) return null

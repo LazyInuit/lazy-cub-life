@@ -97,6 +97,7 @@ export function scorecardFor(game: DailyGame, username: string | null, score: nu
   const tier = art ? (art.tier as BadgeTier) : null
   const version = options.version
   return {
+    game,
     title: version ? `${entry.title} ${version.name}` : entry.title,
     level: options.level,
     emoji: entry.emoji,

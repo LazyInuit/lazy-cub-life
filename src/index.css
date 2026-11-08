@@ -8226,6 +8226,39 @@ h1 {
   font-size: 0.74rem;
 }
 
+.admin-shares .admin-table {
+  margin-bottom: 10px;
+}
+
+.admin-row.admin-share-row {
+  grid-template-columns: minmax(0, 1fr) repeat(3, 84px);
+}
+
+.admin-row.admin-share-game-row {
+  grid-template-columns: minmax(0, 1fr) repeat(5, 72px);
+}
+
+.admin-share-row > :not(:first-child),
+.admin-share-game-row > :not(:first-child) {
+  text-align: right;
+}
+
+.admin-share-note {
+  margin: 0 0 14px;
+  font-size: 0.78rem;
+}
+
+@media (max-width: 720px) {
+  .admin-row.admin-share-row {
+    grid-template-columns: minmax(0, 1fr) repeat(3, 56px);
+  }
+
+  .admin-row.admin-share-game-row {
+    grid-template-columns: minmax(0, 1fr) repeat(5, 44px);
+    font-size: 0.78rem;
+  }
+}
+
 @media (max-width: 1000px) {
   .admin-tiles {
     grid-template-columns: repeat(3, minmax(0, 1fr));

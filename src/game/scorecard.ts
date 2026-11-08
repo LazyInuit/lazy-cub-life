@@ -2,6 +2,8 @@ import logoUrl from '../assets/scorecard/logo-long.png'
 
 /** Everything one scorecard shows. Built from a finished run by scorecardFor() in scorecardGames. */
 export type ScorecardSpec = {
+  /** The game's id, such as "river", for the admin share counts. */
+  game: string
   title: string
   /** A difficulty such as "Hard", shown in brackets after "Score" and after the game in the post. */
   level?: string
