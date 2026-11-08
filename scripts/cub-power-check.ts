@@ -154,7 +154,10 @@ check('weekly boost announced once', kinds(boostNews.notices), 'boost')
 check('weekly boost not repeated', kinds(powerNoticesFor(won, boostNews.seen).notices), '')
 
 // The badge scores in the database must match the app's.
-const sql = readFileSync('supabase/cub-power.sql', 'utf8') + readFileSync('supabase/spellitaire-badges.sql', 'utf8')
+const sql =
+  readFileSync('supabase/cub-power.sql', 'utf8') +
+  readFileSync('supabase/spellitaire-badges.sql', 'utf8') +
+  readFileSync('supabase/baseball-badges.sql', 'utf8')
 const rows = [...sql.matchAll(/\('(\w+)', '[^']*(?:''[^']*)*', \d+, (\d+), (\d+), (\d+), (\d+), (\d+)\)/g)]
 const app = achievementLadder({})
 check('every game with badges is in power_games', rows.length, app.length)

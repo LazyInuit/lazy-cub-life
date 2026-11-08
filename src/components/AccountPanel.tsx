@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { ACCOUNT_CREATED_SIGN_IN, changeAccountPassword, usernameChangeNote } from '../game/account'
 import { hasProfileCard, type GameBests } from '../game/profileArt'
 import type { CubController } from '../game/useCub'
+import { ForgotPasswordNote, SUPPORT_URL } from './AccountGate'
 import { AchievementsPanel } from './AchievementsPanel'
 import { CubPowerPanel } from './CubPowerPanel'
 import { PlayerProfileCard } from './PlayerProfileCard'
@@ -363,6 +364,9 @@ export function AccountPanel({ cub, onClose, unseenBadges = 0, localBests, onTou
             <button type="button" className="account-submit" onClick={openSettings}>
               Settings
             </button>
+            <button type="button" className="account-submit" onClick={() => window.open(SUPPORT_URL, '_blank', 'noopener,noreferrer')}>
+              Contact @LazyCubLife on X
+            </button>
             <button
               type="button"
               className="account-submit"
@@ -444,6 +448,7 @@ export function AccountPanel({ cub, onClose, unseenBadges = 0, localBests, onTou
             >
               {mode === 'up' ? 'I already have an account' : 'Create a new account'}
             </button>
+            {mode === 'in' ? <ForgotPasswordNote /> : null}
           </>
         )}
         <button type="button" className="account-switch" onClick={onClose}>

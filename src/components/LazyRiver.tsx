@@ -9,10 +9,14 @@ import { RunEnergy } from './EnergyBar'
 import { PowerBonusNote } from './PowerBonusNote'
 import type { RunBonus } from '../game/useCub'
 import { GamesButton, HomeButton } from './HomeButton'
+import { useScorecardShare } from './ShareScorecard'
+import { hasScorecard, scorecardFor } from '../game/scorecardGames'
 
 type Mode = 'start' | 'play' | 'over'
 
 type Props = {
+  /** Shown on the shared scorecard. */
+  username: string | null
   best: number
   /** Best score this leaderboard week. */
   weekBest: number
@@ -42,7 +46,8 @@ type Summary = RunResult & {
 /** Time to see the cub stop in the water before the results panel opens. */
 const OVER_PANEL_MS = 500
 
-export function LazyRiver({ best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+export function LazyRiver({ username, best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+  const share = useScorecardShare()
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [showRules, setShowRules] = useState(false)
@@ -274,12 +279,18 @@ export function LazyRiver({ best, weekBest, onBest, onDailyStart, onDaily, onRew
             <button type="button" className="river-btn" onClick={startRun} disabled={energy < PLAY_ENERGY_COST}>
               Play again
             </button>
+            {hasScorecard('river') ? (
+              <button type="button" className="river-btn share-x-btn" onClick={() => share.open(scorecardFor('river', username, summary.score))}>
+                Share to X
+              </button>
+            ) : null}
             <button type="button" className="river-btn river-btn-light" onClick={onGames}>
               Return to games
             </button>
           </div>
         </div>
       ) : null}
+      {share.modal}
     </section>
   )
 }

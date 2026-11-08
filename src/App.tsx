@@ -372,6 +372,7 @@ function Game() {
       ) : null}
       {screen === 'flight' ? (
         <SafariFlight
+          username={cub.accountName}
           best={cub.save.flightBest}
           weekBest={weekBest(cub.save, 'flight')}
           onBest={cub.recordFlightBest}
@@ -388,6 +389,7 @@ function Game() {
       ) : null}
       {screen === 'match' ? (
         <TraitMatch
+          username={cub.accountName}
           best={cub.save.matchBest}
           weekBest={weekBest(cub.save, 'match')}
           onBest={cub.recordMatchBest}
@@ -404,6 +406,7 @@ function Game() {
       ) : null}
       {screen === 'dojo' ? (
         <LazyDojo
+          username={cub.accountName}
           best={cub.save.dojoBest}
           weekBest={weekBest(cub.save, 'dojo')}
           onBest={cub.recordDojoBest}
@@ -420,6 +423,7 @@ function Game() {
       ) : null}
       {screen === 'archer' ? (
         <CupidArcher
+          username={cub.accountName}
           best={cub.save.archerBest}
           weekBest={weekBest(cub.save, 'archer')}
           onBest={cub.recordArcherBest}
@@ -436,6 +440,7 @@ function Game() {
       ) : null}
       {screen === 'hoops' ? (
         <LazyHoops
+          username={cub.accountName}
           best={cub.save.hoopsBest}
           weekBest={weekBest(cub.save, 'hoops')}
           onBest={cub.recordHoopsBest}
@@ -452,6 +457,7 @@ function Game() {
       ) : null}
       {screen === 'bubble' ? (
         <BubbleBlast
+          username={cub.accountName}
           best={cub.save.bubbleBest}
           weekBest={weekBest(cub.save, 'bubble')}
           onBest={cub.recordBubbleBest}
@@ -468,6 +474,7 @@ function Game() {
       ) : null}
       {screen === 'river' ? (
         <LazyRiver
+          username={cub.accountName}
           best={cub.save.riverBest}
           weekBest={weekBest(cub.save, 'river')}
           onBest={cub.recordRiverBest}
@@ -484,6 +491,7 @@ function Game() {
       ) : null}
       {screen === 'solitaire' ? (
         <Spellitaire
+          username={cub.accountName}
           bests={spellitaireBests(cub.save)}
           weekBests={spellitaireWeekBests(cub.save)}
           onBest={cub.recordSolitaireBest}
@@ -502,6 +510,7 @@ function Game() {
       ) : null}
       {screen === 'baseball' ? (
         <BaseballBlitz
+          username={cub.accountName}
           best={cub.save.baseballBest}
           weekBest={weekBest(cub.save, 'baseball')}
           onBest={cub.recordBaseballBest}

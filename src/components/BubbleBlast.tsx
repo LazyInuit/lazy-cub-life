@@ -34,10 +34,14 @@ import { RunEnergy } from './EnergyBar'
 import { PowerBonusNote } from './PowerBonusNote'
 import type { RunBonus } from '../game/useCub'
 import { GamesButton, HomeButton } from './HomeButton'
+import { useScorecardShare } from './ShareScorecard'
+import { hasScorecard, scorecardFor } from '../game/scorecardGames'
 
 type Mode = 'start' | 'play' | 'over'
 
 type Props = {
+  /** Shown on the shared scorecard. */
+  username: string | null
   best: number
   /** Best score this leaderboard week. */
   weekBest: number
@@ -86,7 +90,8 @@ function showsDragHint(game: BubbleState) {
   return game.shots === 0 && game.phase !== 'aiming' && game.phase !== 'over'
 }
 
-export function BubbleBlast({ best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+export function BubbleBlast({ username, best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+  const share = useScorecardShare()
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [showRules, setShowRules] = useState(false)
@@ -463,12 +468,18 @@ export function BubbleBlast({ best, weekBest, onBest, onDailyStart, onDaily, onR
             <button type="button" className="bubble-btn" onClick={startRun} disabled={energy < PLAY_ENERGY_COST}>
               Play again
             </button>
+            {hasScorecard('bubble') ? (
+              <button type="button" className="bubble-btn share-x-btn" onClick={() => share.open(scorecardFor('bubble', username, summary.score))}>
+                Share to X
+              </button>
+            ) : null}
             <button type="button" className="bubble-btn bubble-btn-ghost" onClick={onGames}>
               Return to games
             </button>
           </div>
         ) : null}
       </div>
+      {share.modal}
     </section>
   )
 }

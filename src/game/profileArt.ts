@@ -1,4 +1,9 @@
 import pawUrl from '../assets/player-profile/pictures/paw.png'
+import baseballBronzeUrl from '../assets/player-profile/badges/baseball-bronze.png'
+import baseballGoldUrl from '../assets/player-profile/badges/baseball-gold.png'
+import baseballDiamondUrl from '../assets/player-profile/badges/baseball-diamond.png'
+import baseballPlatinumUrl from '../assets/player-profile/badges/baseball-platinum.png'
+import baseballSilverUrl from '../assets/player-profile/badges/baseball-silver.png'
 import archerBronzeUrl from '../assets/player-profile/badges/archer-bronze.png'
 import archerGoldUrl from '../assets/player-profile/badges/archer-gold.png'
 import archerDiamondUrl from '../assets/player-profile/badges/archer-diamond.png'
@@ -94,6 +99,11 @@ export const BADGES = {
   'spellitaire-gold': badge(spellitaireGoldUrl, 'Spellitaire Badge', 'Gold', 'Spellitaire'),
   'spellitaire-platinum': badge(spellitairePlatinumUrl, 'Spellitaire Badge', 'Platinum', 'Spellitaire'),
   'spellitaire-diamond': badge(spellitaireDiamondUrl, 'Spellitaire Badge', 'Diamond', 'Spellitaire'),
+  'baseball-bronze': badge(baseballBronzeUrl, 'Baseball Badge', 'Bronze', 'Baseball Blitz'),
+  'baseball-silver': badge(baseballSilverUrl, 'Baseball Badge', 'Silver', 'Baseball Blitz'),
+  'baseball-gold': badge(baseballGoldUrl, 'Baseball Badge', 'Gold', 'Baseball Blitz'),
+  'baseball-platinum': badge(baseballPlatinumUrl, 'Baseball Badge', 'Platinum', 'Baseball Blitz'),
+  'baseball-diamond': badge(baseballDiamondUrl, 'Baseball Badge', 'Diamond', 'Baseball Blitz'),
 } satisfies Record<string, Badge>
 
 export type ProfilePictureId = keyof typeof PROFILE_PICTURES
@@ -194,6 +204,16 @@ const BADGE_RULES: { game: DailyGame; tiers: BadgeTier[] }[] = [
       { badge: 'spellitaire-diamond', at: 50000 },
     ],
   },
+  {
+    game: 'baseball',
+    tiers: [
+      { badge: 'baseball-bronze', at: 2500 },
+      { badge: 'baseball-silver', at: 5000 },
+      { badge: 'baseball-gold', at: 10000 },
+      { badge: 'baseball-platinum', at: 20000 },
+      { badge: 'baseball-diamond', at: 30000 },
+    ],
+  },
 ]
 
 export type AchievementGame = {
@@ -232,6 +252,16 @@ export function badgeProgress(game: DailyGame, best: number): BadgeProgress | nu
   if (nextIndex < 0) return { top: true, current: rule.tiers[rule.tiers.length - 1].badge }
   const previous = nextIndex > 0 ? rule.tiers[nextIndex - 1] : null
   return { top: false, next: rule.tiers[nextIndex].badge, at: rule.tiers[nextIndex].at, from: previous?.at ?? 0, current: previous?.badge ?? null }
+}
+
+/** The badge one score reaches on its own (not the player's best), or null below Bronze or for a game with no badges. */
+export function badgeForScore(game: DailyGame, score: number): BadgeId | null {
+  return earnedBadges({ [game]: score })[0] ?? null
+}
+
+/** The score a game's first badge needs, or null for a game with no badges. */
+export function firstBadgeAt(game: DailyGame): number | null {
+  return BADGE_RULES.find((rule) => rule.game === game)?.tiers[0]?.at ?? null
 }
 
 /** Higher of two sets of bests, game by game. */

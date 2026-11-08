@@ -11,6 +11,8 @@ import { RunEnergy } from './EnergyBar'
 import { PowerBonusNote } from './PowerBonusNote'
 import type { RunBonus } from '../game/useCub'
 import { HomeButton, GamesButton } from './HomeButton'
+import { useScorecardShare } from './ShareScorecard'
+import { hasScorecard, scorecardFor } from '../game/scorecardGames'
 
 type Gate = {
   x: number
@@ -41,6 +43,8 @@ const GROUND = 46
 const KINDS: Gate['kind'][] = ['tree', 'rock', 'grass', 'green', 'orange', 'blue', 'pink', 'red', 'purple', 'teal']
 
 type Props = {
+  /** Shown on the shared scorecard. */
+  username: string | null
   best: number
   /** Best score this leaderboard week. */
   weekBest: number
@@ -60,8 +64,9 @@ type Props = {
   powerBonus?: RunBonus
 }
 
-export function SafariFlight({ best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+export function SafariFlight({ username, best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const share = useScorecardShare()
   const onRewardRef = useRef(onReward)
   const onBestRef = useRef(onBest)
   const onDailyStartRef = useRef(onDailyStart)
@@ -435,6 +440,11 @@ export function SafariFlight({ best, weekBest, onBest, onDailyStart, onDaily, on
             <button type="button" className="cabinet-key" onClick={retry} disabled={energy < playEnergyCost('flight')}>
               Retry
             </button>
+            {hasScorecard('flight') ? (
+              <button type="button" className="cabinet-key share-x-btn" onClick={() => share.open(scorecardFor('flight', username, summary.score))}>
+                Share to X
+              </button>
+            ) : null}
             <button type="button" className="cabinet-key" onClick={onExit}>
               Back to cub
             </button>
@@ -444,6 +454,7 @@ export function SafariFlight({ best, weekBest, onBest, onDailyStart, onDaily, on
           </div>
         </div>
       ) : null}
+      {share.modal}
     </section>
   )
 }

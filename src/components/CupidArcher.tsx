@@ -47,10 +47,14 @@ import { RunEnergy } from './EnergyBar'
 import { PowerBonusNote } from './PowerBonusNote'
 import type { RunBonus } from '../game/useCub'
 import { GamesButton, HomeButton } from './HomeButton'
+import { useScorecardShare } from './ShareScorecard'
+import { hasScorecard, scorecardFor } from '../game/scorecardGames'
 
 type Mode = 'start' | 'play' | 'over'
 
 type Props = {
+  /** Shown on the shared scorecard. */
+  username: string | null
   best: number
   /** Best score this leaderboard week. */
   weekBest: number
@@ -135,7 +139,8 @@ function LivesHud({ lives }: { lives: number }) {
   )
 }
 
-export function CupidArcher({ best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+export function CupidArcher({ username, best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+  const share = useScorecardShare()
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [showHowTo, setShowHowTo] = useState(false)
@@ -498,12 +503,18 @@ export function CupidArcher({ best, weekBest, onBest, onDailyStart, onDaily, onR
             <button type="button" className="archer-btn" onClick={startRound} disabled={energy < PLAY_ENERGY_COST}>
               Play again
             </button>
+            {hasScorecard('archer') ? (
+              <button type="button" className="archer-btn share-x-btn" onClick={() => share.open(scorecardFor('archer', username, summary.score))}>
+                Share to X
+              </button>
+            ) : null}
             <button type="button" className="archer-btn archer-btn-ghost" onClick={onGames}>
               Back to games
             </button>
           </div>
         ) : null}
       </div>
+      {share.modal}
     </section>
   )
 }

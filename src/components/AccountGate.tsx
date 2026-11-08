@@ -11,14 +11,15 @@ import { defaultSave } from '../game/progress'
 import { writeSave } from '../game/storage'
 import { supabase } from '../game/supabase'
 
-const SUPPORT_URL = 'https://x.com/lazyinuit?s=11&t=Uu1nn2ISeprcwO8HUVWq4A'
+/** Where players get help, including with a forgotten password. */
+export const SUPPORT_URL = 'https://x.com/LazycubLife'
 
 export function ForgotPasswordNote() {
   return (
     <p className="account-forgot">
       Forgot your password? Message{' '}
       <a href={SUPPORT_URL} target="_blank" rel="noopener noreferrer">
-        LazyInuit on X
+        LazyCubLife on X
       </a>
       .
     </p>

@@ -69,6 +69,8 @@ import type { RunBonus } from '../game/useCub'
 import { RunEnergy } from './EnergyBar'
 import { GamesButton, HomeButton } from './HomeButton'
 import { PowerBonusNote } from './PowerBonusNote'
+import { useScorecardShare } from './ShareScorecard'
+import { scorecardFor } from '../game/scorecardGames'
 
 type Phase = 'home' | 'ready' | 'pitch' | 'hit' | 'result' | 'over'
 
@@ -106,6 +108,8 @@ const along = (hands: Vec3, dir: Vec3, s: number): Vec3 => ({
 })
 
 type Props = {
+  /** Shown on the shared scorecard. */
+  username: string | null
   best: number
   /** Best score this leaderboard week. */
   weekBest: number
@@ -124,7 +128,7 @@ type Props = {
 
 type Summary = { best: number; newBest: boolean; xp: number }
 
-export function BaseballBlitz({ best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+export function BaseballBlitz({ username, best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const stageRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const debugRef = useRef<HTMLCanvasElement | null>(null)
@@ -136,6 +140,7 @@ export function BaseballBlitz({ best, weekBest, onBest, onDailyStart, onDaily, o
   const [callout, setCallout] = useState<Callout | null>(null)
   /** Bumps each time Cub Cash is earned, replaying the coin flash. */
   const [coinPop, setCoinPop] = useState<number | null>(null)
+  const share = useScorecardShare()
   const [lowEnergy, setLowEnergy] = useState(false)
   const [summary, setSummary] = useState<Summary | null>(null)
   /** True once the current run's score, XP and Cub Cash have been recorded. */
@@ -508,7 +513,7 @@ export function BaseballBlitz({ best, weekBest, onBest, onDailyStart, onDaily, o
       if (stage.hasPointerCapture(event.pointerId)) stage.releasePointerCapture(event.pointerId)
     }
     const blockTouch = (event: Event) => {
-      if (event.target instanceof Element && event.target.closest('.bb-scroll')) return
+      if (event.target instanceof Element && event.target.closest('.bb-scroll, .share-scroll')) return
       event.preventDefault()
     }
     stage.addEventListener('pointerdown', onDown, { passive: false })
@@ -808,6 +813,13 @@ export function BaseballBlitz({ best, weekBest, onBest, onDailyStart, onDaily, o
                 <img src={coinUrl} alt="" />+{hud.cash}
               </span>
             </p>
+            <button
+              type="button"
+              className="bb-btn share-x-btn"
+              onClick={() => share.open(scorecardFor('baseball', username, hud.score))}
+            >
+              Share to X
+            </button>
             <PowerBonusNote bonus={powerBonus} />
             <RunEnergy energy={energy} onShop={onShop} />
             {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
@@ -822,6 +834,7 @@ export function BaseballBlitz({ best, weekBest, onBest, onDailyStart, onDaily, o
             </button>
           </div>
         ) : null}
+        {share.modal}
       </div>
     </section>
   )

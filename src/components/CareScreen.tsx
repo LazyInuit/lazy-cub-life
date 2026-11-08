@@ -407,116 +407,118 @@ export function CareScreen({
 
   if (gamesOpen) {
     return (
-      <section className="game-screen game-picks-screen">
-        <header className="top">
-          <HomeButton className="game-home" onClick={() => setGamesOpen(false)} />
-          <h1>Select a game</h1>
-        </header>
-        <LeaderboardOpenButton onOpen={() => setBoardOpen(true)} />
+      <>
+        <section className="game-screen game-picks-screen">
+          <header className="top">
+            <HomeButton className="game-home" onClick={() => setGamesOpen(false)} />
+            <h1>Select a game</h1>
+          </header>
+          <LeaderboardOpenButton onOpen={() => setBoardOpen(true)} />
+          <div className="game-picks">
+            <button
+              type="button"
+              className="game-pick"
+              onPointerDown={flashSilverPress}
+              onPointerUp={clearSilverPressGlow}
+              onPointerCancel={clearSilverPressGlow}
+              onClick={() => tryGame('baseball', onBaseball)}
+            >
+              <GameThumb game="baseball" sash />
+              <span>Baseball Blitz</span>
+            </button>
+            <button
+              type="button"
+              className="game-pick"
+              onPointerDown={flashSilverPress}
+              onPointerUp={clearSilverPressGlow}
+              onPointerCancel={clearSilverPressGlow}
+              onClick={() => tryGame('solitaire', onSolitaire)}
+            >
+              <GameThumb game="solitaire" sash />
+              <span>Spellitaire</span>
+            </button>
+            <button
+              type="button"
+              className="game-pick"
+              onPointerDown={flashSilverPress}
+              onPointerUp={clearSilverPressGlow}
+              onPointerCancel={clearSilverPressGlow}
+              onClick={() => tryGame('river', onRiver)}
+            >
+              <GameThumb game="river" sash />
+              <span>Lazy River</span>
+            </button>
+            <button
+              type="button"
+              className="game-pick"
+              onPointerDown={flashSilverPress}
+              onPointerUp={clearSilverPressGlow}
+              onPointerCancel={clearSilverPressGlow}
+              onClick={() => tryGame('bubble', onBubble)}
+            >
+              <GameThumb game="bubble" sash />
+              <span>Bubble Blast</span>
+            </button>
+            <button
+              type="button"
+              className="game-pick"
+              onPointerDown={flashSilverPress}
+              onPointerUp={clearSilverPressGlow}
+              onPointerCancel={clearSilverPressGlow}
+              onClick={() => tryGame('flight', onFlight)}
+            >
+              <GameThumb game="flight" />
+              <span>Kovu's Space Dash</span>
+            </button>
+            <button
+              type="button"
+              className="game-pick"
+              onPointerDown={flashSilverPress}
+              onPointerUp={clearSilverPressGlow}
+              onPointerCancel={clearSilverPressGlow}
+              onClick={() => tryGame('hoops', onHoops)}
+            >
+              <GameThumb game="hoops" />
+              <span>Lazy Hoops</span>
+            </button>
+            <button
+              type="button"
+              className="game-pick"
+              onPointerDown={flashSilverPress}
+              onPointerUp={clearSilverPressGlow}
+              onPointerCancel={clearSilverPressGlow}
+              onClick={() => tryGame('dojo', onDojo)}
+            >
+              <GameThumb game="dojo" />
+              <span>Ninja Cub Dojo</span>
+            </button>
+            <button
+              type="button"
+              className="game-pick"
+              onPointerDown={flashSilverPress}
+              onPointerUp={clearSilverPressGlow}
+              onPointerCancel={clearSilverPressGlow}
+              onClick={() => tryGame('archer', onArcher)}
+            >
+              <GameThumb game="archer" />
+              <span>Cupid Archery</span>
+            </button>
+            <button
+              type="button"
+              className="game-pick"
+              onPointerDown={flashSilverPress}
+              onPointerUp={clearSilverPressGlow}
+              onPointerCancel={clearSilverPressGlow}
+              onClick={() => tryGame('match', onMatch)}
+            >
+              <GameThumb game="match" />
+              <span>Pride Pairs</span>
+            </button>
+          </div>
+          {gamesTourOn && energyWarn == null ? <GameTour kind="games" demo={demo} onDone={() => setGamesTourOn(false)} /> : null}
+        </section>
         {energyPop}
-        <div className="game-picks">
-          <button
-            type="button"
-            className="game-pick"
-            onPointerDown={flashSilverPress}
-            onPointerUp={clearSilverPressGlow}
-            onPointerCancel={clearSilverPressGlow}
-            onClick={() => tryGame('baseball', onBaseball)}
-          >
-            <GameThumb game="baseball" sash />
-            <span>Baseball Blitz</span>
-          </button>
-          <button
-            type="button"
-            className="game-pick"
-            onPointerDown={flashSilverPress}
-            onPointerUp={clearSilverPressGlow}
-            onPointerCancel={clearSilverPressGlow}
-            onClick={() => tryGame('solitaire', onSolitaire)}
-          >
-            <GameThumb game="solitaire" sash />
-            <span>Spellitaire</span>
-          </button>
-          <button
-            type="button"
-            className="game-pick"
-            onPointerDown={flashSilverPress}
-            onPointerUp={clearSilverPressGlow}
-            onPointerCancel={clearSilverPressGlow}
-            onClick={() => tryGame('river', onRiver)}
-          >
-            <GameThumb game="river" sash />
-            <span>Lazy River</span>
-          </button>
-          <button
-            type="button"
-            className="game-pick"
-            onPointerDown={flashSilverPress}
-            onPointerUp={clearSilverPressGlow}
-            onPointerCancel={clearSilverPressGlow}
-            onClick={() => tryGame('bubble', onBubble)}
-          >
-            <GameThumb game="bubble" sash />
-            <span>Bubble Blast</span>
-          </button>
-          <button
-            type="button"
-            className="game-pick"
-            onPointerDown={flashSilverPress}
-            onPointerUp={clearSilverPressGlow}
-            onPointerCancel={clearSilverPressGlow}
-            onClick={() => tryGame('flight', onFlight)}
-          >
-            <GameThumb game="flight" />
-            <span>Kovu's Space Dash</span>
-          </button>
-          <button
-            type="button"
-            className="game-pick"
-            onPointerDown={flashSilverPress}
-            onPointerUp={clearSilverPressGlow}
-            onPointerCancel={clearSilverPressGlow}
-            onClick={() => tryGame('hoops', onHoops)}
-          >
-            <GameThumb game="hoops" />
-            <span>Lazy Hoops</span>
-          </button>
-          <button
-            type="button"
-            className="game-pick"
-            onPointerDown={flashSilverPress}
-            onPointerUp={clearSilverPressGlow}
-            onPointerCancel={clearSilverPressGlow}
-            onClick={() => tryGame('dojo', onDojo)}
-          >
-            <GameThumb game="dojo" />
-            <span>Ninja Cub Dojo</span>
-          </button>
-          <button
-            type="button"
-            className="game-pick"
-            onPointerDown={flashSilverPress}
-            onPointerUp={clearSilverPressGlow}
-            onPointerCancel={clearSilverPressGlow}
-            onClick={() => tryGame('archer', onArcher)}
-          >
-            <GameThumb game="archer" />
-            <span>Cupid Archery</span>
-          </button>
-          <button
-            type="button"
-            className="game-pick"
-            onPointerDown={flashSilverPress}
-            onPointerUp={clearSilverPressGlow}
-            onPointerCancel={clearSilverPressGlow}
-            onClick={() => tryGame('match', onMatch)}
-          >
-            <GameThumb game="match" />
-            <span>Pride Pairs</span>
-          </button>
-        </div>
-        {gamesTourOn && energyWarn == null ? <GameTour kind="games" demo={demo} onDone={() => setGamesTourOn(false)} /> : null}
-      </section>
+      </>
     )
   }
 

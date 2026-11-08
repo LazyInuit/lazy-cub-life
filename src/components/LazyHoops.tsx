@@ -48,6 +48,8 @@ import { RunEnergy } from './EnergyBar'
 import { PowerBonusNote } from './PowerBonusNote'
 import type { RunBonus } from '../game/useCub'
 import { GamesButton, HomeButton } from './HomeButton'
+import { useScorecardShare } from './ShareScorecard'
+import { hasScorecard, scorecardFor } from '../game/scorecardGames'
 
 type Mode = 'home' | 'play' | 'over'
 type Phase = 'ready' | 'flight' | 'move'
@@ -116,6 +118,8 @@ type Summary = {
 }
 
 type Props = {
+  /** Shown on the shared scorecard. */
+  username: string | null
   best: number
   /** Best score this leaderboard week. */
   weekBest: number
@@ -220,7 +224,8 @@ function hudFrom(live: Live): Hud {
   }
 }
 
-export function LazyHoops({ best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+export function LazyHoops({ username, best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+  const share = useScorecardShare()
   const [mode, setMode] = useState<Mode>('home')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
@@ -793,11 +798,17 @@ export function LazyHoops({ best, weekBest, onBest, onDailyStart, onDaily, onRew
             <button type="button" className="hoops-btn" onClick={playAgain} disabled={energy < PLAY_ENERGY_COST}>
               Play Again
             </button>
+            {hasScorecard('hoops') ? (
+              <button type="button" className="hoops-btn share-x-btn" onClick={() => share.open(scorecardFor('hoops', username, summary.score))}>
+                Share to X
+              </button>
+            ) : null}
             <button type="button" className="hoops-btn hoops-btn-ghost" onClick={onGames}>
               Return to Games
             </button>
           </div>
         ) : null}
+        {share.modal}
       </div>
     </section>
   )

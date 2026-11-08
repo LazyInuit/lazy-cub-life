@@ -23,6 +23,8 @@ import type { NeedKey } from '../game/types'
 import type { RunBonus } from '../game/useCub'
 import { LowEnergyNote, RunEnergy } from './EnergyBar'
 import { GamesButton, HomeButton } from './HomeButton'
+import { useScorecardShare } from './ShareScorecard'
+import { hasScorecard, scorecardFor } from '../game/scorecardGames'
 import { LeaderboardOpenButton } from './LeaderboardOpenButton'
 import { PowerBonusNote } from './PowerBonusNote'
 import { CardTable } from './solitaire/CardTable'
@@ -36,6 +38,8 @@ type Phase = 'start' | 'play' | 'won' | 'over'
 type StartStep = 'modes' | 'level' | 'rules' | 'board'
 
 type Props = {
+  /** Shown on the shared scorecard. */
+  username: string | null
   /** Best score for each mode and difficulty. */
   bests: Record<SpellitaireKey, number>
   /** Best score this leaderboard week for each mode and difficulty. */
@@ -65,6 +69,7 @@ type Table = { mode: SpellMode; game: SpellGame }
 type Summary = KlondikeRewards & {
   best: number
   neuBest: boolean
+  mode: SpellMode
   /** Such as "Flipflop Hard". */
   label: string
   /** The leaderboard key the game was scored under. */
@@ -171,7 +176,8 @@ function ControlButton({
 }
 
 /** Spellitaire: a choice of solitaire modes, each with Easy and Hard. Placeholder looks for any artwork not yet added. */
-export function Spellitaire({ bests, weekBests, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus, seed, startMode, startDifficulty }: Props) {
+export function Spellitaire({ username, bests, weekBests, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus, seed, startMode, startDifficulty }: Props) {
+  const share = useScorecardShare()
   const [phase, setPhase] = useState<Phase>('start')
   const landscape = useSolitaireLandscape()
   const [step, setStep] = useState<StartStep>(startMode ? 'level' : 'modes')
@@ -233,6 +239,7 @@ export function Spellitaire({ bests, weekBests, onBest, onDailyStart, onDaily, o
           ...rewards,
           best: bestRef.current[key] ?? 0,
           neuBest,
+          mode: played.mode,
           label: `${modeInfo(played.mode).name} ${levelName(level)}`,
           key,
           seconds: playedSeconds,
@@ -658,6 +665,19 @@ export function Spellitaire({ bests, weekBests, onBest, onDailyStart, onDaily, o
             <button type="button" className="sol-btn" onClick={() => begin(newSeed())} disabled={energy < PLAY_ENERGY_COST}>
               Play again
             </button>
+            {summary && hasScorecard('solitaire') ? (
+              <button
+                type="button"
+                className="sol-btn share-x-btn"
+                onClick={() => {
+                  const total = Object.values(bestRef.current).reduce((sum, best) => sum + best, 0)
+                  const version = { id: summary.mode, name: modeInfo(summary.mode).name }
+                  share.open(scorecardFor('solitaire', username, summary.score, { badgeScore: total, version }))
+                }}
+              >
+                Share to X
+              </button>
+            ) : null}
             <button type="button" className="sol-btn sol-btn-light" onClick={chooseAnother}>
               Choose another game
             </button>
@@ -665,6 +685,7 @@ export function Spellitaire({ bests, weekBests, onBest, onDailyStart, onDaily, o
               Return to games
             </button>
           </div>
+          {share.modal}
         </div>
       ) : null}
     </section>

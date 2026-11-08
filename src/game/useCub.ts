@@ -527,6 +527,8 @@ export function useCub() {
       delete pendingBests.current[game]
       return
     }
+    // Spellitaire's total climbs on almost every win across its modes, so it only pops up for a badge.
+    if (game === 'solitaire') return
     if (after > before && badgeProgress(game, after)) pendingBests.current[game] = after
   }, [])
 

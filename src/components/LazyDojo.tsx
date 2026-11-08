@@ -20,10 +20,14 @@ import { RunEnergy } from './EnergyBar'
 import { PowerBonusNote } from './PowerBonusNote'
 import type { RunBonus } from '../game/useCub'
 import { GamesButton, HomeButton } from './HomeButton'
+import { useScorecardShare } from './ShareScorecard'
+import { hasScorecard, scorecardFor } from '../game/scorecardGames'
 
 type Mode = 'start' | 'howto' | 'play' | 'pause' | 'over'
 
 type Props = {
+  /** Shown on the shared scorecard. */
+  username: string | null
   best: number
   /** Best score this leaderboard week. */
   weekBest: number
@@ -43,7 +47,8 @@ type Props = {
   powerBonus?: RunBonus
 }
 
-export function LazyDojo({ best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+export function LazyDojo({ username, best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+  const share = useScorecardShare()
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [hudScore, setHudScore] = useState(0)
@@ -511,6 +516,11 @@ export function LazyDojo({ best, weekBest, onBest, onDailyStart, onDaily, onRewa
             <button type="button" className="dojo-btn" onClick={startTraining} disabled={energy < PLAY_ENERGY_COST}>
               TRAIN AGAIN
             </button>
+            {hasScorecard('dojo') ? (
+              <button type="button" className="dojo-btn share-x-btn" onClick={() => share.open(scorecardFor('dojo', username, summary.score))}>
+                SHARE TO X
+              </button>
+            ) : null}
             <button
               type="button"
               className="dojo-btn dojo-btn-ghost"
@@ -524,6 +534,7 @@ export function LazyDojo({ best, weekBest, onBest, onDailyStart, onDaily, onRewa
           </div>
         ) : null}
       </div>
+      {share.modal}
     </section>
   )
 }

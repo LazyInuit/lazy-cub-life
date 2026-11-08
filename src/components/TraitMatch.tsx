@@ -10,6 +10,8 @@ import { RunEnergy } from './EnergyBar'
 import { PowerBonusNote } from './PowerBonusNote'
 import type { RunBonus } from '../game/useCub'
 import { HomeButton, GamesButton } from './HomeButton'
+import { useScorecardShare } from './ShareScorecard'
+import { hasScorecard, scorecardFor } from '../game/scorecardGames'
 
 type BodyTrait = { id: string; label: string }
 
@@ -66,6 +68,8 @@ function coinsForBoards(boards: number) {
 }
 
 type Props = {
+  /** Shown on the shared scorecard. */
+  username: string | null
   best: number
   /** Best score this leaderboard week. */
   weekBest: number
@@ -136,7 +140,8 @@ function MatchBust({ body }: { body: string }) {
   )
 }
 
-export function TraitMatch({ best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+export function TraitMatch({ username, best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
+  const share = useScorecardShare()
   const [pairs, setPairs] = useState(2)
   const [cards, setCards] = useState<Card[]>(() => deal(2))
   const [left, setLeft] = useState(() => secondsForPairs(2))
@@ -561,9 +566,15 @@ export function TraitMatch({ best, weekBest, onBest, onDailyStart, onDaily, onRe
             <button type="button" className="pride-results-btn" onClick={onExit}>
               Back to cub
             </button>
+            {hasScorecard('match') ? (
+              <button type="button" className="pride-results-btn share-x-btn" onClick={() => share.open(scorecardFor('match', username, score))}>
+                Share to X
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}
+      {share.modal}
     </section>
   )
 }
