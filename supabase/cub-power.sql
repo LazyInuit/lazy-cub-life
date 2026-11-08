@@ -33,7 +33,7 @@ revoke all on public.power_games from anon, authenticated;
 -- Running this again keeps each game's released flag.
 insert into public.power_games (game, title, sort, bronze, silver, gold, platinum, diamond) values
   ('flight', 'Kovu''s Space Dash', 1, 20, 50, 100, 150, 250),
-  ('match', 'Pride Pairs', 2, 130, 150, 180, 200, 220),
+  ('match', 'Pride Pairs', 2, 130, 150, 180, 200, 210),
   ('archer', 'Cupid Archery', 3, 2500, 5000, 15000, 30000, 60000),
   ('dojo', 'Ninja Cub Dojo', 4, 5000, 10000, 25000, 50000, 100000),
   ('hoops', 'Lazy Hoops', 5, 5000, 15000, 40000, 80000, 120000),

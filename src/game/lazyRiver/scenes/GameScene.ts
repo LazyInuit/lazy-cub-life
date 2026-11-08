@@ -1552,6 +1552,47 @@ export class GameScene extends Phaser.Scene {
     return this.points + Math.floor(this.distance);
   }
 
+  /**
+   * The replay's copy of the score bar. The game's own bar starts right of the page's Home and Games
+   * buttons, which a replay does not show, so the replay covers it with one across the full width,
+   * its three stats spaced evenly. `area` is where the game canvas sits in the replay frame.
+   */
+  paintReplayHud(ctx: CanvasRenderingContext2D, area: { x: number; y: number; w: number; h: number }): void {
+    const k = area.w / GAME_WIDTH;
+    const css = this.cssScale();
+    const top = NAV_CSS.top * css;
+    const height = NAV_CSS.size * css;
+    const left = NAV_CSS.left * css;
+    const right = GAME_WIDTH - NAV_CSS.left * css;
+    const col = (right - left) / 3;
+    ctx.beginPath();
+    ctx.roundRect(area.x + left * k, area.y + top * k, (right - left) * k, height * k, 18 * k);
+    ctx.fillStyle = '#0c3142';
+    ctx.fill();
+    ctx.lineWidth = 4 * k;
+    ctx.strokeStyle = 'rgba(27, 40, 48, 0.9)';
+    ctx.stroke();
+    const statTop = top + Math.max(4, (height - 52) / 2);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const stats = [
+      [this.scoreLabel, this.scoreValue],
+      [this.distLabel, this.distValue],
+      [this.coinLabel, this.coinValue],
+    ] as const;
+    stats.forEach(([label, value], i) => {
+      const x = area.x + (left + col * (i + 0.5)) * k;
+      for (const [text, y] of [
+        [label, statTop],
+        [value, statTop + 20],
+      ] as const) {
+        ctx.font = `bold ${parseFloat(String(text.style.fontSize)) * k}px ${text.style.fontFamily}`;
+        ctx.fillStyle = text.style.color;
+        ctx.fillText(text.text, x, area.y + y * k);
+      }
+    });
+  }
+
   private burst(x: number, y: number, tint: number, count: number, speed: number): void {
     let spawned = 0;
     for (const particle of this.particles) {

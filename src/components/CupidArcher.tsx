@@ -49,7 +49,8 @@ import type { RunBonus } from '../game/useCub'
 import { GamesButton, HomeButton } from './HomeButton'
 import { ReplayButton, useScorecardShare } from './ShareScorecard'
 import { hasScorecard, scorecardFor } from '../game/scorecardGames'
-import { captureReplay, finishReplay, startReplay, useDiscardReplayOnLeave } from '../game/replay'
+import { finishReplay, startReplay, useDiscardReplayOnLeave } from '../game/replay'
+import { captureScreen } from '../game/replay/screenPaint'
 
 type Mode = 'start' | 'play' | 'over'
 
@@ -143,6 +144,8 @@ function LivesHud({ lives }: { lives: number }) {
 export function CupidArcher({ username, best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const share = useScorecardShare()
   useDiscardReplayOnLeave()
+  const screenRef = useRef<HTMLElement>(null)
+  const barRef = useRef<HTMLElement>(null)
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [showHowTo, setShowHowTo] = useState(false)
@@ -301,7 +304,13 @@ export function CupidArcher({ username, best, weekBest, onBest, onDailyStart, on
           })
         }
         paint()
-        captureReplay(canvasRef.current)
+        captureScreen({
+          screen: screenRef.current,
+          bar: barRef.current,
+          canvas: canvasRef.current,
+          screenColour: '#87b8e8',
+          barColours: ['#b8d8f2', '#9ec6ea', '#f2c2cf'],
+        })
         if (shot.ended) finishRef.current(round)
       }
       frame = requestAnimationFrame(tick)
@@ -377,8 +386,8 @@ export function CupidArcher({ username, best, weekBest, onBest, onDailyStart, on
   }
 
   return (
-    <section className="game-screen archer-screen">
-      <header className="archer-top">
+    <section className="game-screen archer-screen" ref={screenRef}>
+      <header className="archer-top" ref={barRef}>
         <div className="archer-nav">
           <HomeButton className="game-home" onClick={() => leave(onExit)} />
           <GamesButton className="game-home game-games" onClick={() => leave(onGames)} />

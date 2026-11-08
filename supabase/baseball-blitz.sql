@@ -1,7 +1,7 @@
 -- Safe to run again. Run after spellitaire-modes.sql, daily-extra-roll.sql and pvp-challenges.sql.
 -- Adds Baseball Blitz ('baseball') everywhere a game is checked by name:
 --   leaderboard scores and boards (also readable by demo players),
---   daily task scores, the new daily challenge (Earn 500 points), the bonus roll and the extra roll
+--   daily task scores, the new daily challenge (Earn 2000 points), the bonus roll and the extra roll
 --   (which now needs all 9 challenges), Cub Cash from games, coin history labels, admin activity time,
 --   and player vs player challenges.
 -- Each function below is its latest version (from spellitaire-modes.sql, spellitaire.sql,
@@ -300,11 +300,11 @@ begin
     ('hoops-5000', 'hoops', 5000),
     ('archer-2000', 'archer', 2000),
     ('dojo-5000', 'dojo', 5000),
-    ('pairs-60', 'match', 60),
+    ('pairs-60', 'match', 100),
     ('bubble-3000', 'bubble', 3000),
     ('river-3000', 'river', 3000),
     ('solitaire-win', 'solitaire', 1),
-    ('baseball-500', 'baseball', 500)
+    ('baseball-500', 'baseball', 2000)
   ) as tasks(id, game, goal)
   where tasks.id = p_task;
   board := public.ensure_daily(uid);
@@ -374,11 +374,11 @@ begin
     ('hoops', 5000),
     ('archer', 2000),
     ('dojo', 5000),
-    ('match', 60),
+    ('match', 100),
     ('bubble', 3000),
     ('river', 3000),
     ('solitaire', 1),
-    ('baseball', 500)
+    ('baseball', 2000)
   ) as tasks(game, goal)
   where coalesce((board.scores->>tasks.game)::integer, 0) >= tasks.goal;
   if ready < 3 then
@@ -486,11 +486,11 @@ begin
     ('hoops', 5000),
     ('archer', 2000),
     ('dojo', 5000),
-    ('match', 60),
+    ('match', 100),
     ('bubble', 3000),
     ('river', 3000),
     ('solitaire', 1),
-    ('baseball', 500)
+    ('baseball', 2000)
   ) as tasks(game, goal);
   if ready < total then
     return jsonb_build_object('ok', false, 'cubCash', balance, 'daily', public.daily_json(board));

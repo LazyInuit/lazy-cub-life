@@ -110,8 +110,8 @@ export const DAILY_TASKS: DailyTask[] = [
     id: 'pairs-60',
     game: 'match',
     gameLabel: 'Pride Pairs',
-    detail: 'Earn 60 points',
-    goal: 60,
+    detail: 'Earn 100 points',
+    goal: 100,
     reward: 10,
   },
   {
@@ -142,8 +142,8 @@ export const DAILY_TASKS: DailyTask[] = [
     id: 'baseball-500',
     game: 'baseball',
     gameLabel: 'Baseball Blitz',
-    detail: 'Earn 500 points',
-    goal: 500,
+    detail: 'Earn 2000 points',
+    goal: 2000,
     reward: 10,
   },
 ]

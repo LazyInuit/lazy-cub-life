@@ -140,7 +140,7 @@ const BADGE_RULES: { game: DailyGame; tiers: BadgeTier[] }[] = [
       { badge: 'pride-silver', at: 150 },
       { badge: 'pride-gold', at: 180 },
       { badge: 'pride-platinum', at: 200 },
-      { badge: 'pride-diamond', at: 220 },
+      { badge: 'pride-diamond', at: 210 },
     ],
   },
   {

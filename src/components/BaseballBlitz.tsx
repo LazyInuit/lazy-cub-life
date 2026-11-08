@@ -72,6 +72,92 @@ import { PowerBonusNote } from './PowerBonusNote'
 import { ReplayButton, useScorecardShare } from './ShareScorecard'
 import { scorecardFor } from '../game/scorecardGames'
 import { captureReplay, discardReplay, finishReplay, startReplay, useDiscardReplayOnLeave } from '../game/replay'
+import type { ReplayOverlay } from '../game/replay/recorder'
+
+/**
+ * The replay's copy of what sits over the stadium as page elements rather than in the 3D canvas: the
+ * scoreboard (score, strikes, Cub Cash) and the hit callouts, placed where they show on screen.
+ */
+function boardOverlay(art: HTMLElement): ReplayOverlay {
+  return (ctx, area) => {
+    const box = art.getBoundingClientRect()
+    if (box.width < 1 || art.offsetWidth < 1) return
+    // Page pixels to frame pixels; font sizes are read unscaled, so they also need the page's own scale.
+    const s = area.w / box.width
+    const pageScale = box.width / art.offsetWidth
+    const place = (r: { left: number; top: number; width: number; height: number }) => ({
+      x: area.x + (r.left - box.left) * s,
+      y: area.y + (r.top - box.top) * s,
+      w: r.width * s,
+      h: r.height * s,
+    })
+    /** Draws the text directly in `el`, `grow` times its page size (for callouts mid-animation). */
+    const text = (el: Element, glow: string | null, grow = 1) => {
+      const cs = getComputedStyle(el)
+      for (const node of el.childNodes) {
+        if (node.nodeType !== Node.TEXT_NODE || !node.textContent?.trim()) continue
+        const range = document.createRange()
+        range.selectNodeContents(node)
+        const b = place(range.getBoundingClientRect())
+        const raw = node.textContent.trim()
+        const words = cs.textTransform === 'uppercase' ? raw.toUpperCase() : raw
+        ctx.font = `${cs.fontWeight} ${parseFloat(cs.fontSize) * pageScale * s * grow}px ${cs.fontFamily}`
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        const stroke = parseFloat(cs.getPropertyValue('-webkit-text-stroke-width')) || 0
+        if (stroke > 0) {
+          ctx.lineJoin = 'round'
+          ctx.lineWidth = stroke * 2 * pageScale * s * grow
+          ctx.strokeStyle = cs.getPropertyValue('-webkit-text-stroke-color') || '#142350'
+          ctx.strokeText(words, b.x + b.w / 2, b.y + b.h / 2)
+        }
+        if (glow) {
+          ctx.shadowColor = glow
+          ctx.shadowBlur = 10 * s
+        }
+        ctx.fillStyle = cs.color
+        ctx.fillText(words, b.x + b.w / 2, b.y + b.h / 2)
+        ctx.shadowBlur = 0
+      }
+    }
+    for (const label of art.querySelectorAll('.bb-cell > span:first-child')) text(label, null)
+    for (const value of art.querySelectorAll('.bb-cell > strong')) text(value, 'rgba(255, 196, 40, 0.75)')
+    for (const dot of art.querySelectorAll('.bb-strikes i')) {
+      const b = place(dot.getBoundingClientRect())
+      const on = dot.classList.contains('on')
+      ctx.beginPath()
+      ctx.arc(b.x + b.w / 2, b.y + b.h / 2, b.w / 2, 0, Math.PI * 2)
+      if (on) {
+        ctx.shadowColor = 'rgba(255, 60, 40, 0.85)'
+        ctx.shadowBlur = 8 * s
+      }
+      ctx.fillStyle = on ? '#ff3b2e' : 'rgba(40, 10, 20, 0.45)'
+      ctx.fill()
+      ctx.shadowBlur = 0
+      ctx.lineWidth = b.w * 0.13
+      ctx.strokeStyle = on ? '#ffd0c4' : 'rgba(255, 120, 100, 0.6)'
+      ctx.stroke()
+    }
+    const callout = art.querySelector<HTMLElement>('.bb-callout')
+    if (callout && callout.offsetWidth > 0) {
+      ctx.globalAlpha = parseFloat(getComputedStyle(callout).opacity) || 0
+      // The pop-in animation scales the callout; its box shows by how much.
+      const grow = callout.getBoundingClientRect().width / (callout.offsetWidth * pageScale)
+      const sub = callout.querySelector('span')
+      if (sub) {
+        const b = place(sub.getBoundingClientRect())
+        ctx.beginPath()
+        ctx.roundRect(b.x, b.y, b.w, b.h, b.h / 2)
+        ctx.fillStyle = 'rgba(8, 18, 44, 0.72)'
+        ctx.fill()
+        text(sub, null, grow)
+      }
+      const title = callout.querySelector('strong')
+      if (title) text(title, null, grow)
+      ctx.globalAlpha = 1
+    }
+  }
+}
 
 type Phase = 'home' | 'ready' | 'pitch' | 'hit' | 'result' | 'over'
 
@@ -144,6 +230,7 @@ export function BaseballBlitz({ username, best, weekBest, onBest, onDailyStart, 
   const share = useScorecardShare()
   useDiscardReplayOnLeave()
   const stadiumRef = useRef<HTMLImageElement | null>(null)
+  const artRef = useRef<HTMLDivElement | null>(null)
   const [lowEnergy, setLowEnergy] = useState(false)
   const [summary, setSummary] = useState<Summary | null>(null)
   /** True once the current run's score, XP and Cub Cash have been recorded. */
@@ -426,7 +513,7 @@ export function BaseballBlitz({ username, best, weekBest, onBest, onDailyStart, 
       if (!state.frozen) step(dt)
       scene.render()
       // The canvas is see-through over the stadium picture, so the replay draws the stadium behind it.
-      if (playing()) captureReplay(canvas, stadiumRef.current)
+      if (playing()) captureReplay(canvas, stadiumRef.current, artRef.current ? boardOverlay(artRef.current) : undefined)
       raf = requestAnimationFrame(frame)
     }
     const start = () => {
@@ -661,7 +748,7 @@ export function BaseballBlitz({ username, best, weekBest, onBest, onDailyStart, 
     <section className="game-screen bb-screen">
       <div className="bb-stage" ref={stageRef}>
         {box.sideFill ? <div className="bb-fill" style={{ backgroundImage: `url("${stadiumUrl}")` }} aria-hidden /> : null}
-        <div className="bb-art" style={artStyle}>
+        <div className="bb-art" style={artStyle} ref={artRef}>
           <img ref={stadiumRef} className="bb-bg" src={stadiumUrl} alt="" draggable={false} />
           <canvas ref={canvasRef} className="bb-canvas" />
           {debug ? <canvas ref={debugRef} className="bb-debug" /> : null}

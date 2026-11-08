@@ -13,7 +13,8 @@ import type { RunBonus } from '../game/useCub'
 import { HomeButton, GamesButton } from './HomeButton'
 import { ReplayButton, useScorecardShare } from './ShareScorecard'
 import { hasScorecard, scorecardFor } from '../game/scorecardGames'
-import { captureReplay, discardReplay, finishReplay, startReplay, useDiscardReplayOnLeave } from '../game/replay'
+import { discardReplay, finishReplay, startReplay, useDiscardReplayOnLeave } from '../game/replay'
+import { captureScreen } from '../game/replay/screenPaint'
 
 type Gate = {
   x: number
@@ -69,6 +70,8 @@ export function SafariFlight({ username, best, weekBest, onBest, onDailyStart, o
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const share = useScorecardShare()
   useDiscardReplayOnLeave()
+  const screenRef = useRef<HTMLElement>(null)
+  const barRef = useRef<HTMLElement>(null)
   const onRewardRef = useRef(onReward)
   const onBestRef = useRef(onBest)
   const onDailyStartRef = useRef(onDailyStart)
@@ -259,7 +262,17 @@ export function SafariFlight({ username, best, weekBest, onBest, onDailyStart, o
         drawSafari(ctx, w, h, gates.current, (now - startedAt) / 1000)
         const tilt = phase.current === 'play' ? Math.max(-0.6, Math.min(0.7, vel.current / 700)) : -0.15
         drawFlightLion(ctx, cubX, y.current, tilt, Math.min(w, h) / 820)
-        if (phase.current === 'play') captureReplay(canvas)
+        if (phase.current === 'play') {
+          captureScreen({
+            screen: screenRef.current,
+            bar: barRef.current,
+            canvas,
+            screenColour: '#07091a',
+            barColours: ['#161c44', '#07091a'],
+            barRadius: 14,
+            barEdge: 'rgba(126, 240, 255, 0.55)',
+          })
+        }
       }
         frame = requestAnimationFrame(paint)
     }
@@ -335,8 +348,8 @@ export function SafariFlight({ username, best, weekBest, onBest, onDailyStart, o
   }
 
   return (
-    <section className="game-screen flight">
-      <header className="arcade-bar">
+    <section className="game-screen flight" ref={screenRef}>
+      <header className="arcade-bar" ref={barRef}>
         <div className="arcade-nav">
           <HomeButton
             className="game-home"

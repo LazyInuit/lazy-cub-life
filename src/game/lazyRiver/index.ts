@@ -76,7 +76,8 @@ export async function createLazyRiver(host: HTMLElement, onOver: (result: RunRes
   const scene = () => (game.scene.isActive('game') ? (game.scene.getScene('game') as GameScene) : null);
   // The canvas is only readable straight after Phaser draws it, so the replay takes its frame here.
   game.events.on(Phaser.Core.Events.POST_RENDER, () => {
-    if (scene()?.isReplayLive()) captureReplay(game.canvas);
+    const live = scene();
+    if (live?.isReplayLive()) captureReplay(game.canvas, null, (ctx, area) => live.paintReplayHud(ctx, area));
   });
   game.events.once(Phaser.Core.Events.READY, () => {
     game.canvas.addEventListener('contextmenu', (event) => event.preventDefault());

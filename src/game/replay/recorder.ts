@@ -178,7 +178,7 @@ class Recording {
 
   private lastFrameWall = -Infinity
 
-  capture(source: CanvasImageSource & { width: number; height: number }, background?: CanvasImageSource | null) {
+  capture(source: CanvasImageSource & { width: number; height: number }, background?: CanvasImageSource | null, overlay?: ReplayOverlay) {
     if (this.stopped || !this.worker) return
     const now = performance.now()
     this.tick(now)
@@ -193,7 +193,7 @@ class Recording {
     this.backlog = 0
     this.lastFrameWall = now
     const began = performance.now()
-    this.compose(source, background)
+    this.compose(source, background, overlay)
     const key = this.clock - this.lastKeyAt >= 1
     const timestamp = Math.round(this.clock * 1e6)
     const duration = Math.round(1e6 / this.fps)
@@ -246,7 +246,7 @@ class Recording {
     return `${this.fps} fps, ${this.captureMs.toFixed(1)} ms a frame${paint}, ${this.framesSent} frames, ${this.framesSkipped} skipped; audio tap ${this.tapState}, ${this.blocksHeard} blocks${rate ? ` at ${rate} Hz` : ''}`
   }
 
-  private compose(source: CanvasImageSource & { width: number; height: number }, background?: CanvasImageSource | null) {
+  private compose(source: CanvasImageSource & { width: number; height: number }, background?: CanvasImageSource | null, overlay?: ReplayOverlay) {
     const ctx = this.ctx
     const areaH = HEIGHT - STRIP
     ctx.fillStyle = '#0b1530'
@@ -260,6 +260,15 @@ class Recording {
     const y = (areaH - h) / 2
     if (background) ctx.drawImage(background, x, y, w, h)
     ctx.drawImage(source, x, y, w, h)
+    if (overlay) {
+      ctx.save()
+      try {
+        overlay(ctx, { x, y, w, h })
+      } catch {
+        // A failed overlay leaves the frame without it.
+      }
+      ctx.restore()
+    }
     this.drawStrip()
   }
 
@@ -470,10 +479,20 @@ export function startReplay(options: ReplayStart) {
 }
 
 /** Call right after the game draws a frame. Cheap when not recording, and never throws. */
-export function captureReplay(source: (CanvasImageSource & { width: number; height: number }) | null | undefined, background?: CanvasImageSource | null) {
+/**
+ * Draws page elements a game shows over its canvas (such as a scoreboard) onto the replay frame, where
+ * `area` is where the game canvas was drawn.
+ */
+export type ReplayOverlay = (ctx: CanvasRenderingContext2D, area: { x: number; y: number; w: number; h: number }) => void
+
+export function captureReplay(
+  source: (CanvasImageSource & { width: number; height: number }) | null | undefined,
+  background?: CanvasImageSource | null,
+  overlay?: ReplayOverlay,
+) {
   if (!current || !source) return
   try {
-    current.capture(source, background)
+    current.capture(source, background, overlay)
   } catch (error) {
     current.fail(`capture failed: ${(error as Error).message}`)
     current = null

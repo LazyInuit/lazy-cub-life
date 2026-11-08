@@ -22,7 +22,8 @@ import type { RunBonus } from '../game/useCub'
 import { GamesButton, HomeButton } from './HomeButton'
 import { ReplayButton, useScorecardShare } from './ShareScorecard'
 import { hasScorecard, scorecardFor } from '../game/scorecardGames'
-import { captureReplay, discardReplay, finishReplay, startReplay, useDiscardReplayOnLeave } from '../game/replay'
+import { discardReplay, finishReplay, startReplay, useDiscardReplayOnLeave } from '../game/replay'
+import { captureScreen } from '../game/replay/screenPaint'
 
 type Mode = 'start' | 'howto' | 'play' | 'pause' | 'over'
 
@@ -51,6 +52,8 @@ type Props = {
 export function LazyDojo({ username, best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const share = useScorecardShare()
   useDiscardReplayOnLeave()
+  const screenRef = useRef<HTMLElement>(null)
+  const barRef = useRef<HTMLElement>(null)
   const [mode, setMode] = useState<Mode>('start')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [hudScore, setHudScore] = useState(0)
@@ -181,7 +184,15 @@ export function LazyDojo({ username, best, weekBest, onBest, onDailyStart, onDai
           if (engine.phase === 'ended') finishRunRef.current(engine)
         }
         drawDojoFrame(ctx, engine, bgRef.current, spritesRef.current)
-        if (modeRef.current === 'play') captureReplay(canvas)
+        if (modeRef.current === 'play') {
+          captureScreen({
+            screen: screenRef.current,
+            bar: barRef.current,
+            canvas,
+            screenColour: '#1b2e1c',
+            barColours: ['#1b2e1c'],
+          })
+        }
         if (engine.score !== hudScoreRef.current) {
           hudScoreRef.current = engine.score
           setHudScore(engine.score)
@@ -286,8 +297,8 @@ export function LazyDojo({ username, best, weekBest, onBest, onDailyStart, onDai
   }
 
   return (
-    <section className="game-screen dojo-screen">
-      <header className="dojo-top">
+    <section className="game-screen dojo-screen" ref={screenRef}>
+      <header className="dojo-top" ref={barRef}>
         <div className="dojo-nav">
           <HomeButton className="game-home" onClick={() => leave(onExit)} />
           <GamesButton className="game-home game-games" onClick={() => leave(onGames)} />

@@ -50,7 +50,8 @@ import type { RunBonus } from '../game/useCub'
 import { GamesButton, HomeButton } from './HomeButton'
 import { ReplayButton, useScorecardShare } from './ShareScorecard'
 import { hasScorecard, scorecardFor } from '../game/scorecardGames'
-import { captureReplay, finishReplay, startReplay, useDiscardReplayOnLeave } from '../game/replay'
+import { finishReplay, startReplay, useDiscardReplayOnLeave } from '../game/replay'
+import { captureScreen } from '../game/replay/screenPaint'
 
 type Mode = 'home' | 'play' | 'over'
 type Phase = 'ready' | 'flight' | 'move'
@@ -228,6 +229,8 @@ function hudFrom(live: Live): Hud {
 export function LazyHoops({ username, best, weekBest, onBest, onDailyStart, onDaily, onReward, onCoins, onExit, onGames, energy, onShop, powerBonus }: Props) {
   const share = useScorecardShare()
   useDiscardReplayOnLeave()
+  const screenRef = useRef<HTMLElement>(null)
+  const barRef = useRef<HTMLElement>(null)
   const [mode, setMode] = useState<Mode>('home')
   const [lowEnergy, setLowEnergy] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
@@ -527,8 +530,17 @@ export function LazyHoops({ username, best, weekBest, onBest, onDailyStart, onDa
       }
       syncScene()
       court.render()
-      // WebGL keeps no copy of the frame, so the replay reads it straight after the render.
-      if (live.playing && !live.over) captureReplay(canvas)
+      // WebGL keeps no copy of the frame, so the replay reads it straight after the render, with the score bar.
+      if (live.playing && !live.over) {
+        captureScreen({
+          screen: screenRef.current,
+          bar: barRef.current,
+          canvas,
+          screenColour: '#1a2233',
+          barColours: ['#2c241c', '#1a1816'],
+          overlays: '.hoops-toast, .hoops-coin',
+        })
+      }
       if (live.paused || live.over) {
         running = false
         cancelAnimationFrame(raf)
@@ -670,8 +682,8 @@ export function LazyHoops({ username, best, weekBest, onBest, onDailyStart, onDa
   const shownBest = Math.max(bestRef.current, hud.score)
 
   return (
-    <section className="game-screen hoops-screen">
-      <header className="hoops-top">
+    <section className="game-screen hoops-screen" ref={screenRef}>
+      <header className="hoops-top" ref={barRef}>
         <div className="hoops-nav">
           <HomeButton className="game-home" onClick={() => leave(onExit)} />
           <GamesButton className="game-home game-games" onClick={() => leave(onGames)} />
