@@ -9,7 +9,7 @@ export default defineConfig({
     strictPort: false,
     watch: {
       // Windows locks large design assets during edit → Vite watcher EBUSY crash
-      ignored: ['**/Cub Games/**'],
+      ignored: ['**/Art/**'],
     },
   },
 })
