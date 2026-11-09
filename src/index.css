@@ -2882,6 +2882,8 @@ h1 {
   right: 10px;
   bottom: calc(10px + var(--safe-bottom));
   z-index: 5;
+  max-height: calc(100% - 20px - var(--safe-top) - var(--safe-bottom));
+  overflow-y: auto;
   margin: 0;
   padding: 14px 14px 12px;
   border-radius: 18px;
@@ -2990,15 +2992,6 @@ h1 {
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
-}
-
-.match-screen .pride-results.lost .pride-results-actions {
-  grid-template-columns: 1fr 1fr;
-}
-
-.match-screen .pride-results-actions .share-x-btn,
-.match-screen .pride-results-actions .replay-red-btn {
-  grid-column: 1 / -1;
 }
 
 .match-screen .pride-results-btn {
