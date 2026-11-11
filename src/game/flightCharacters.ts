@@ -1,5 +1,5 @@
 import kovuUrl from '../assets/space-dash/crown-cub.png'
-import binkyUrl from '../assets/space-dash/binky.png'
+import blinkyUrl from '../assets/space-dash/blinky.png'
 import pinkyUrl from '../assets/space-dash/pinky.png'
 import speedUrl from '../assets/space-dash/speed.png'
 
@@ -10,7 +10,7 @@ import speedUrl from '../assets/space-dash/speed.png'
  */
 export const FLIGHT_CHARACTERS = [
   { id: 'kovu', name: 'Kovu', src: kovuUrl, size: 1, pickup: 'coin' },
-  { id: 'binky', name: 'Binky', src: binkyUrl, size: 0.83, pickup: 'egg' },
+  { id: 'blinky', name: 'Blinky', src: blinkyUrl, size: 0.83, pickup: 'egg' },
   { id: 'pinky', name: 'Pinky', src: pinkyUrl, size: 0.86, pickup: 'egg' },
   { id: 'speed', name: 'Speed', src: speedUrl, size: 0.86, pickup: 'egg' },
 ] as const
@@ -21,7 +21,9 @@ export type FlightCharacterId = FlightCharacter['id']
 const KEY = 'lazy-cub-flight-character'
 
 export function flightCharacter(id: string | null | undefined): FlightCharacter {
-  return FLIGHT_CHARACTERS.find((character) => character.id === id) ?? FLIGHT_CHARACTERS[0]
+  // Blinky was briefly saved as "binky".
+  const wanted = id === 'binky' ? 'blinky' : id
+  return FLIGHT_CHARACTERS.find((character) => character.id === wanted) ?? FLIGHT_CHARACTERS[0]
 }
 
 /** The flyer this device picked last, or Kovu. */
