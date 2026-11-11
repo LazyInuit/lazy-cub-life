@@ -12,8 +12,19 @@ const bungalowNight = new Image()
 bungalowNight.src = bungalowNightUrl
 const cubSprite = new Image()
 cubSprite.src = cubUrl
-const flightCub = new Image()
-flightCub.src = crownUrl
+const flightSprites = new Map<string, HTMLImageElement>()
+
+/** One loaded image per Space Dash flyer, made on first use. */
+export function flightSprite(src: string) {
+  let image = flightSprites.get(src)
+  if (!image) {
+    image = new Image()
+    image.src = src
+    flightSprites.set(src, image)
+  }
+  return image
+}
+flightSprite(crownUrl)
 
 export type CubFrame = {
   appearance: CubAppearance
@@ -165,14 +176,16 @@ function spriteBox(heightPx: number): { w: number; h: number } {
   return { w: heightPx * aspect, h: heightPx }
 }
 
-/** Crown flyer. This sprite is only used in Galactic Dash. */
+/** The Space Dash flyer: Kovu in his crown unless `src` picks another character. */
 export function drawFlightLion(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   tilt: number,
   scale: number,
+  src: string = crownUrl,
 ) {
+  const flightCub = flightSprite(src)
   if (!readyImage(flightCub)) return
   const height = 105 * scale
   const width = height * (flightCub.naturalWidth / flightCub.naturalHeight)

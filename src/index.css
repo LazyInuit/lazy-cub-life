@@ -4775,6 +4775,51 @@ h1 {
   background: transparent;
 }
 
+.flight-character-current {
+  display: block;
+  width: 132px;
+  margin: 2px auto 0;
+  filter: drop-shadow(0 0 8px rgba(126, 240, 255, 0.35));
+}
+
+.flight-characters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.flight-character {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px 6px;
+  border: 1.5px solid rgba(126, 240, 255, 0.35);
+  border-radius: 12px;
+  background: rgba(126, 240, 255, 0.06);
+  color: #d7f7ff;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.flight-character img {
+  width: 100%;
+  aspect-ratio: 1024 / 653;
+  object-fit: contain;
+}
+
+.flight-character.on {
+  border-color: #f0c14a;
+  background: rgba(240, 193, 74, 0.16);
+  box-shadow: 0 0 12px rgba(240, 193, 74, 0.45);
+  color: #f0c14a;
+}
+
+.flight-character:active {
+  transform: translateY(1px);
+}
+
 .flight-how {
   margin: 0;
   padding: 0 0 0 16px;

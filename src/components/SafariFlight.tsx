@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import lionPawUrl from '../assets/lion-paw-ui.png'
 import coinUrl from '../assets/lazy-dojo/sprites/bonuses/kovu-coin.png'
-import { drawFlightLion } from '../game/drawCub'
+import eggUrl from '../assets/space-dash/egg.png'
+import { drawFlightLion, flightSprite } from '../game/drawCub'
+import { FLIGHT_CHARACTERS, saveFlightCharacter, savedFlightCharacter, type FlightCharacter } from '../game/flightCharacters'
 import { canvasRatio, layoutSize } from '../game/frameScale'
 import { PLAY_NEED_COST, moodFromScore, playEnergyCost } from '../game/progress'
 import { playCoin, playCrash, playEnd, playFlap, playIgnite, resumeFlightAudio, startSpaceAmbience, stopSpaceAmbience } from '../game/flightAudio'
@@ -33,6 +35,10 @@ const COIN_PICK = 36
 const RESULTS_LOCK_MS = 2000
 const flightCoin = new Image()
 flightCoin.src = coinUrl
+const flightEgg = new Image()
+flightEgg.src = eggUrl
+
+type Pickup = FlightCharacter['pickup']
 
 const GRAVITY = 1450
 const FLAP = -430
@@ -103,7 +109,16 @@ export function SafariFlight({ username, best, weekBest, onBest, onDailyStart, o
   const [lowEnergy, setLowEnergy] = useState(false)
   /** The start panel, shown when the game opens until the first flight begins. */
   const [introOpen, setIntroOpen] = useState(true)
-  const [showHowTo, setShowHowTo] = useState(false)
+  const [panel, setPanel] = useState<'start' | 'how' | 'character'>('start')
+  const [character, setCharacter] = useState<FlightCharacter>(savedFlightCharacter)
+  const characterRef = useRef(character)
+  characterRef.current = character
+
+  const pickCharacter = (next: FlightCharacter) => {
+    flightSprite(next.src)
+    setCharacter(next)
+    saveFlightCharacter(next.id)
+  }
 
   const awardFlight = () => {
     if (rewarded.current || phase.current !== 'play') return null
@@ -259,9 +274,9 @@ export function SafariFlight({ username, best, weekBest, onBest, onDailyStart, o
       const ctx = canvas.getContext('2d')
       if (ctx && w > 0 && h > 0) {
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-        drawSafari(ctx, w, h, gates.current, (now - startedAt) / 1000)
+        drawSafari(ctx, w, h, gates.current, (now - startedAt) / 1000, characterRef.current.pickup)
         const tilt = phase.current === 'play' ? Math.max(-0.6, Math.min(0.7, vel.current / 700)) : -0.15
-        drawFlightLion(ctx, cubX, y.current, tilt, Math.min(w, h) / 820)
+        drawFlightLion(ctx, cubX, y.current, tilt, (Math.min(w, h) / 820) * characterRef.current.size, characterRef.current.src)
         if (phase.current === 'play') {
           captureScreen({
             screen: screenRef.current,
@@ -379,7 +394,7 @@ export function SafariFlight({ username, best, weekBest, onBest, onDailyStart, o
           </p>
         </div>
         <p className="arcade-help">
-          {summary ? (summary.stopped ? 'Run stopped.' : 'The cub crashed!') : lowEnergy ? 'Sleep or visit the shop to recover energy.' : started ? 'Tap to flap through the gaps.' : 'Tap to fly.'}
+          {summary ? (summary.stopped ? 'Run stopped.' : `${character.name} crashed!`) : lowEnergy ? 'Sleep or visit the shop to recover energy.' : started ? 'Tap to flap through the gaps.' : 'Tap to fly.'}
         </p>
       </header>
       <div className="flight-stage">
@@ -397,23 +412,50 @@ export function SafariFlight({ username, best, weekBest, onBest, onDailyStart, o
         ) : null}
         {introOpen && !summary ? (
           <div className="flight-intro">
-            {showHowTo ? (
+            {panel === 'character' ? (
               <div className="flight-panel">
                 <div className="flight-panel-head">
-                  <button type="button" className="flight-panel-back" onClick={() => setShowHowTo(false)}>
+                  <button type="button" className="flight-panel-back" onClick={() => setPanel('start')}>
+                    ‹ Back
+                  </button>
+                  <h2>Select Character</h2>
+                </div>
+                <div className="flight-characters" role="radiogroup" aria-label="Character">
+                  {FLIGHT_CHARACTERS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={option.id === character.id}
+                      className={`flight-character${option.id === character.id ? ' on' : ''}`}
+                      onClick={() => pickCharacter(option)}
+                    >
+                      <img src={option.src} alt="" style={{ transform: `scale(${option.size})` }} />
+                      <span>{option.name}</span>
+                    </button>
+                  ))}
+                </div>
+                <button type="button" className="cabinet-key flight-panel-btn" onClick={() => setPanel('start')}>
+                  Done
+                </button>
+              </div>
+            ) : panel === 'how' ? (
+              <div className="flight-panel">
+                <div className="flight-panel-head">
+                  <button type="button" className="flight-panel-back" onClick={() => setPanel('start')}>
                     ‹ Back
                   </button>
                   <h2>How to Play</h2>
                 </div>
                 <ul className="flight-how">
                   <li>
-                    <strong>Fly:</strong> tap the screen (or press Space) to flap. Kovu falls when you stop.
+                    <strong>Fly:</strong> tap the screen (or press Space) to flap. {character.name} falls when you stop.
                   </li>
                   <li>
                     <strong>Score:</strong> fly through the gaps between the pillars. Each gap cleared is 1 point.
                   </li>
                   <li>
-                    <strong>Cub Cash:</strong> grab the coin in every 10th gap for {COIN_VALUE} Cub Cash.
+                    <strong>Cub Cash:</strong> grab the {character.pickup} in every 10th gap for {COIN_VALUE} Cub Cash.
                   </li>
                   <li>
                     <strong>Crash:</strong> hitting a pillar, the top or the ground ends the run.
@@ -431,10 +473,19 @@ export function SafariFlight({ username, best, weekBest, onBest, onDailyStart, o
                 <p className="flight-best">Best Score {Math.max(best, hudScore)}</p>
                 <p className="flight-best week-best">Weekly Best {weekBest}</p>
                 {lowEnergy ? <p className="energy-note">Sleep or visit the shop to recover energy.</p> : null}
+                <img
+                  className="flight-character-current"
+                  src={character.src}
+                  alt={`Flying as ${character.name}`}
+                  style={{ transform: `scale(${character.size})` }}
+                />
                 <button type="button" className="cabinet-key flight-panel-btn" onClick={flap}>
                   Play
                 </button>
-                <button type="button" className="cabinet-key flight-panel-btn flight-panel-btn-light" onClick={() => setShowHowTo(true)}>
+                <button type="button" className="cabinet-key flight-panel-btn flight-panel-btn-light" onClick={() => setPanel('character')}>
+                  Select Character
+                </button>
+                <button type="button" className="cabinet-key flight-panel-btn flight-panel-btn-light" onClick={() => setPanel('how')}>
                   How to Play
                 </button>
               </div>
@@ -490,6 +541,7 @@ function drawSafari(
   height: number,
   gates: Gate[],
   time: number,
+  pickup: Pickup,
 ) {
   const sky = ctx.createLinearGradient(0, 0, width * 0.2, height)
   sky.addColorStop(0, '#07091a')
@@ -528,7 +580,7 @@ function drawSafari(
   ctx.ellipse(planetX, planetY, 46, 12, -0.45, 0, Math.PI * 2)
   ctx.fill()
 
-  for (const gate of gates) drawGate(ctx, gate, height, time)
+  for (const gate of gates) drawGate(ctx, gate, height, time, pickup)
 
   ctx.fillStyle = '#161226'
   ctx.fillRect(0, height - GROUND, width, GROUND)
@@ -549,7 +601,7 @@ function gateAccent(kind: Gate['kind']): string {
   return '#7ef0ff'
 }
 
-function drawGate(ctx: CanvasRenderingContext2D, gate: Gate, height: number, time: number) {
+function drawGate(ctx: CanvasRenderingContext2D, gate: Gate, height: number, time: number, pickup: Pickup) {
   const topH = gate.gapY
   const bottomY = gate.gapY + GAP
   const bottomH = height - GROUND - bottomY
@@ -557,19 +609,22 @@ function drawGate(ctx: CanvasRenderingContext2D, gate: Gate, height: number, tim
   const pulse = 0.72 + Math.sin(time * 4 + gate.x * 0.02) * 0.28
   if (topH > 0) drawPylon(ctx, gate.x, -24, topH + 24, accent, pulse, 'down', gate.scored)
   if (bottomH > 0) drawPylon(ctx, gate.x, bottomY, bottomH + 24, accent, pulse, 'up', gate.scored)
-  if (gate.coin && !gate.coinTaken) drawCoin(ctx, gate.x + GATE_W / 2, gate.gapY + GAP / 2, time)
+  if (gate.coin && !gate.coinTaken) drawCoin(ctx, gate.x + GATE_W / 2, gate.gapY + GAP / 2, time, pickup)
 }
 
-function drawCoin(ctx: CanvasRenderingContext2D, x: number, y: number, time: number) {
+function drawCoin(ctx: CanvasRenderingContext2D, x: number, y: number, time: number, pickup: Pickup) {
   const bob = Math.sin(time * 5) * 3
   const size = 40
+  const image = pickup === 'egg' ? flightEgg : flightCoin
+  const glow = pickup === 'egg' ? '#e070ff' : '#f0c14a'
   ctx.save()
-  ctx.shadowColor = '#f0c14a'
+  ctx.shadowColor = glow
   ctx.shadowBlur = 16
-  if (flightCoin.complete && flightCoin.naturalWidth > 0) {
-    ctx.drawImage(flightCoin, x - size / 2, y - size / 2 + bob, size, size)
+  if (image.complete && image.naturalWidth > 0) {
+    const width = size * (image.naturalWidth / image.naturalHeight)
+    ctx.drawImage(image, x - width / 2, y - size / 2 + bob, width, size)
   } else {
-    ctx.fillStyle = '#f0c14a'
+    ctx.fillStyle = glow
     ctx.beginPath()
     ctx.arc(x, y + bob, size / 2, 0, Math.PI * 2)
     ctx.fill()
