@@ -3,6 +3,7 @@ import { signInAccount, signOutAccount, usernameFromUser } from '../game/account
 import {
   adjustCoins,
   adminReady,
+  adminSpecialCharacters,
   fillEnergy,
   listPlayers,
   playerActivity,
@@ -10,6 +11,7 @@ import {
   playerHistory,
   setPlayerBan,
   setPlayerPassword,
+  setSpecialCharacter,
   type AdminPlayer,
   type LedgerEntry,
   type PlayerSort,
@@ -22,7 +24,9 @@ import { AdminDemo } from './AdminDemo'
 import { AdminOverview, formatPlayTime } from './AdminOverview'
 import { AdminShares } from './AdminShares'
 import { levelFromXp } from '../game/progress'
+import { SPECIAL_CHARACTERS } from '../game/specialCharacters'
 import { supabase } from '../game/supabase'
+import { SPECIAL_CHARACTER_IDS, type SpecialCharacterId } from '../game/types'
 
 type Gate = 'loading' | 'signed-out' | 'missing' | 'player' | 'admin'
 type PlayerTab = 'overview' | 'coins' | 'actions'
@@ -99,6 +103,8 @@ export function AdminScreen() {
   const [tab, setTab] = useState<PlayerTab>('overview')
   const [refreshKey, setRefreshKey] = useState(0)
   const [copied, setCopied] = useState(false)
+  /** Special characters the selected player may wear. Null until special-characters.sql is run. */
+  const [specials, setSpecials] = useState<SpecialCharacterId[] | null | 'loading'>('loading')
 
   const refreshGate = async () => {
     if (!supabase) {
@@ -187,6 +193,23 @@ export function AdminScreen() {
       })
       .catch((reason: unknown) => {
         if (!cancel) setError(reason instanceof Error ? reason.message : 'Could not load history')
+      })
+    return () => {
+      cancel = true
+    }
+  }, [selected?.id])
+
+  useEffect(() => {
+    if (!selected) return
+    const playerId = selected.id
+    let cancel = false
+    setSpecials('loading')
+    void adminSpecialCharacters(playerId)
+      .then((list) => {
+        if (!cancel) setSpecials(list)
+      })
+      .catch((reason: unknown) => {
+        if (!cancel) setError(reason instanceof Error ? reason.message : 'Could not load special characters')
       })
     return () => {
       cancel = true
@@ -314,6 +337,22 @@ export function AdminScreen() {
       setMessage(banned ? `${selected.username} is banned.` : `${selected.username} can play again.`)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Could not update the ban')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const changeSpecial = async (id: SpecialCharacterId, allowed: boolean) => {
+    if (!selected) return
+    setBusy(true)
+    setError(null)
+    setMessage(null)
+    try {
+      setSpecials(await setSpecialCharacter(selected.id, id, allowed))
+      const name = SPECIAL_CHARACTERS[id].name
+      setMessage(allowed ? `${selected.username} can now wear ${name}.` : `${selected.username} can no longer wear ${name}.`)
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Could not change special characters')
     } finally {
       setBusy(false)
     }
@@ -636,6 +675,37 @@ where email = '${signedInAs ?? 'yourname'}@users.lazycub.life';`}
                     <button type="button" disabled={busy} onClick={() => void savePassword()}>
                       Set password
                     </button>
+                  </div>
+
+                  <div className="admin-group">
+                    <h3>Special characters</h3>
+                    <p className="admin-muted">Allowed players see these in the wardrobe as a Body style. Everyone sees them when visiting.</p>
+                    {specials === 'loading' ? <p className="admin-muted">Loading…</p> : null}
+                    {specials === null ? (
+                      <p className="admin-muted">
+                        Run <code>supabase/special-characters.sql</code> to turn this on.
+                      </p>
+                    ) : null}
+                    {Array.isArray(specials)
+                      ? SPECIAL_CHARACTER_IDS.map((id) => {
+                          const character = SPECIAL_CHARACTERS[id]
+                          const allowed = specials.includes(id)
+                          return (
+                            <div key={id} className="admin-special">
+                              <img src={character.src} alt="" />
+                              <span>
+                                <strong>{character.name}</strong>
+                                <span className="admin-muted">
+                                  {character.age === 'young' ? 'Young' : 'Old'} cub · {allowed ? 'Allowed' : 'Not allowed'}
+                                </span>
+                              </span>
+                              <button type="button" disabled={busy} onClick={() => void changeSpecial(id, !allowed)}>
+                                {allowed ? 'Remove' : 'Allow'}
+                              </button>
+                            </div>
+                          )
+                        })
+                      : null}
                   </div>
 
                   <div className="admin-group admin-danger">

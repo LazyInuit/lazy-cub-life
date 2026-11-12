@@ -4,7 +4,7 @@ import { profilePhotoUrl } from './profilePhoto'
 import { sanitizeSave } from './progress'
 import { SPELLITAIRE_KEYS, type SpellitaireKey } from './solitaire/keys'
 import { supabase } from './supabase'
-import type { CubSave } from './types'
+import { isSpecialCharacterId, type CubSave, type SpecialCharacterId } from './types'
 
 export const LEADERBOARD_PAGE = 20
 
@@ -207,6 +207,8 @@ export type PlayerProfile = {
   photoUrl: string | null
   /** Only the parts of the save a visit draws: outfits, owned traits, and the pumpkin. */
   room: CubSave
+  /** The special character they wear, only when an admin still allows it. */
+  special: SpecialCharacterId | null
 }
 
 export async function loadPlayerProfile(username: string): Promise<PlayerProfile> {
@@ -231,6 +233,7 @@ export async function loadPlayerProfile(username: string): Promise<PlayerProfile
     bests?: unknown
     avatar?: unknown
     room?: unknown
+    special?: unknown
   }
   if (typeof entry.username !== 'string' || entry.username === '') throw new Error('Player not found.')
   const xp = Math.max(0, readNumber(entry.xp))
@@ -264,6 +267,7 @@ export async function loadPlayerProfile(username: string): Promise<PlayerProfile
     bests,
     photoUrl,
     room: sanitizeSave({ ...room, version: 1, xp, halloween: room.halloween === true }),
+    special: isSpecialCharacterId(entry.special) ? entry.special : null,
   }
 }
 

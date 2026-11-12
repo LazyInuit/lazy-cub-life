@@ -12,8 +12,9 @@ import { levelProgress } from '../game/progress'
 import { cubCashPillSize, formatCubCash } from '../game/formatCubCash'
 import { isTraitUnlocked, traitPrice, traitXpBonus } from '../game/traitShop'
 import { discountedPrice } from '../game/cubPower'
+import { SPECIAL_CHARACTERS, useSpecialCharacters, wornSpecial } from '../game/specialCharacters'
 import type { CubController } from '../game/useCub'
-import type { OutfitTraits } from '../game/types'
+import type { OutfitTraits, SpecialCharacterId } from '../game/types'
 import { CubStage } from './CubStage'
 import { HouseIcon } from './HomeButton'
 import { LevelInfoPop } from './LevelInfoPop'
@@ -58,10 +59,24 @@ function outfitsFromSave(cub: CubController): Record<CharacterAge, Outfit> {
   }
 }
 
+const SPECIAL_NAMES = new Set<string>(Object.values(SPECIAL_CHARACTERS).map((item) => item.name))
+
+/** What the pager starts on: the saved outfits, with a worn special character showing as the Body. */
+function shownFromSave(cub: CubController, specials: readonly SpecialCharacterId[]): Record<CharacterAge, Outfit> {
+  const shown = outfitsFromSave(cub)
+  if (!cub.save) return shown
+  for (const age of ['old', 'young'] as const) {
+    const special = wornSpecial(cub.save, specials, age)
+    if (special) shown[age].Body = SPECIAL_CHARACTERS[special].name
+  }
+  return shown
+}
+
 export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
+  const specials = useSpecialCharacters()
   const [category, setCategory] = useState<TraitCategory>('Body')
   const [worn, setWorn] = useState<Record<CharacterAge, Outfit>>(() => outfitsFromSave(cub))
-  const [shown, setShown] = useState<Record<CharacterAge, Outfit>>(() => outfitsFromSave(cub))
+  const [shown, setShown] = useState<Record<CharacterAge, Outfit>>(() => shownFromSave(cub, specials))
   const [manifest, setManifest] = useState<Manifest | null>(null)
   const [diceShake, setDiceShake] = useState(false)
   /** The level details pop-up, opened from the level badge. */
@@ -82,6 +97,28 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
       young: cloneOutfit(worn.young),
     })
   }, [worn, setOutfits])
+
+  // The allowed list can arrive after the screen opens. Show a worn special character once it does.
+  useEffect(() => {
+    const current = cub.save
+    if (!current) return
+    setShown((currentShown) => {
+      let next = currentShown
+      for (const traitAge of ['old', 'young'] as const) {
+        const special = wornSpecial(current, specials, traitAge)
+        if (special && next[traitAge].Body !== SPECIAL_CHARACTERS[special].name) {
+          next = { ...next, [traitAge]: { ...next[traitAge], Body: SPECIAL_CHARACTERS[special].name } }
+        }
+      }
+      return next
+    })
+    // Only when the allowed list changes; the pager owns the shown Body after that.
+  }, [specials])
+
+  const specialOn = cub.save ? wornSpecial(cub.save, specials, age) : null
+  useEffect(() => {
+    if (specialOn && category !== 'Body') setCategory('Body')
+  }, [specialOn, category])
 
   useEffect(() => {
     let alive = true
@@ -146,16 +183,24 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
   const xpPct = (progress.into / Math.max(1, progress.next)) * 100
   const ringR = 36
   const ringC = 2 * Math.PI * ringR
-  const styles = manifest?.[category]?.[age] ?? []
+  // Special characters are whole-cub looks, offered as extra Body styles to the players an admin allows.
+  const specialBodies =
+    category === 'Body' ? Object.values(SPECIAL_CHARACTERS).filter((item) => item.age === age && specials.includes(item.id)) : []
+  const specialByName = (name: string) => specialBodies.find((item) => item.name === name) ?? null
+  const styles = [...(manifest?.[category]?.[age] ?? []), ...specialBodies.map((item) => item.name)]
   const label = shown[age][category]
-  const price = traitPrice(age, category, label)
+  const special = specialByName(label)
+  const wornSpecialId = specialOn
+  const price = special ? null : traitPrice(age, category, label)
   const cost = price ?? 0
   const discount = cub.cubPower?.percent ?? 0
   const pay = discount > 0 ? discountedPrice(cost, discount) : cost
   const xpBonus = price === null ? 0 : traitXpBonus(price)
-  const owned = isTraitUnlocked(save, age, category, label)
-  const isStarter = STARTER_OUTFIT[category] === label
-  const isOn = isStarter || (owned && worn[age][category] === label)
+  const owned = special !== null || isTraitUnlocked(save, age, category, label)
+  const isStarter = !special && STARTER_OUTFIT[category] === label
+  const isOn = special ? wornSpecialId === special.id : isStarter || (owned && worn[age][category] === label)
+  const shownOutfit = SPECIAL_NAMES.has(shown[age].Body) ? { ...shown[age], Body: worn[age].Body } : shown[age]
+  const stageSpecial = !diceLook && wornSpecialId && SPECIAL_CHARACTERS[wornSpecialId].name === shown[age].Body ? wornSpecialId : null
 
   const step = (dir: number) => {
     if (styles.length === 0) return
@@ -167,7 +212,14 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
       ...currentShown,
       [age]: { ...currentShown[age], [category]: next },
     }))
+    const nextSpecial = specialByName(next)
+    if (nextSpecial) {
+      cub.setSpecialCharacter(nextSpecial.id)
+      return
+    }
     if (isTraitUnlocked(save, age, category, next)) {
+      // An owned body replaces a special character, the same way it replaces the body worn before.
+      if (category === 'Body' && wornSpecialId) cub.setSpecialCharacter(null)
       setWorn((currentWorn) => ({
         ...currentWorn,
         [age]: { ...currentWorn[age], [category]: next },
@@ -176,6 +228,10 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
   }
 
   const setPower = (nextOn: boolean) => {
+    if (special) {
+      cub.setSpecialCharacter(nextOn ? special.id : null)
+      return
+    }
     if (isStarter) return
     if (!owned) return
     if (nextOn) {
@@ -202,6 +258,7 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
       }
       setBuyHint(null)
       setDiceLook(null)
+      if (category === 'Body' && wornSpecialId) cub.setSpecialCharacter(null)
       setWorn((currentWorn) => ({
         ...currentWorn,
         [age]: { ...currentWorn[age], [category]: label },
@@ -236,8 +293,7 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
   }
 
   const resetOutfit = () => {
-    const home = outfitsFromSave(cub)
-    setShown(home)
+    setShown(shownFromSave(cub, specials))
     setDiceLook(null)
     setBuyHint(null)
   }
@@ -249,8 +305,9 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
         pose="idle"
         mode="wardrobe"
         tryOn={tryOnFromPicks(
-          diceLook ?? (owned && !isStarter && !isOn ? { ...shown[age], [category]: worn[age][category] } : shown[age]),
+          diceLook ?? (owned && !isStarter && !isOn ? { ...shownOutfit, [category]: worn[age][category] } : shownOutfit),
         )}
+        special={stageSpecial}
       />
       <div className="room-ui">
         <div className="age-switch" role="group" aria-label="Character age">
@@ -314,6 +371,7 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
           type="button"
           className="wardrobe-random"
           aria-label="Random outfit"
+          disabled={wornSpecialId !== null}
           onPointerDown={flashPress}
           onAnimationEnd={clearPressGlow}
           onClick={randomize}
@@ -339,6 +397,7 @@ export function WardrobeScreen({ cub, age, onAge, onBack }: Props) {
               aria-label={item}
               aria-selected={category === item}
               className={category === item ? 'on' : ''}
+              disabled={wornSpecialId !== null && item !== 'Body'}
               onClick={() => {
                 setCategory(item)
                 setBuyHint(null)

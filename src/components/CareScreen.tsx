@@ -13,6 +13,7 @@ import challengesBadgeUrl from '../assets/challenges-badge.png'
 import shopFaceUrl from '../assets/home/shop-badge.png'
 import { tryOnFromPicks, type TraitCategory } from '../game/cubTraits'
 import { isTraitUnlocked, sanitizeOwnedOutfit } from '../game/traitShop'
+import { useSpecialCharacters, wornSpecial } from '../game/specialCharacters'
 import { activityArea, setActivityArea } from '../game/activity'
 import { getHomeCharacterAge, setHomeCharacter, type CharacterAge } from '../game/homeScene'
 import {
@@ -213,6 +214,7 @@ export function CareScreen({
   /** Which roll's dice is shaking. */
   const [diceShake, setDiceShake] = useState<'bonus' | 'extra' | null>(null)
   const [age, setAge] = useState<CharacterAge>(() => getHomeCharacterAge())
+  const specials = useSpecialCharacters()
   const save = cub.save
   const [profileRefresh, setProfileRefresh] = useState(0)
   const own = useOwnProfile(cub.accountName, save, profileRefresh)
@@ -794,6 +796,7 @@ export function CareScreen({
         onPet={cub.pet}
         onPumpkinChange={cub.rememberHalloween}
         tryOn={tryOnFromPicks(sanitizeOwnedOutfit(save, age, save.outfits[age]))}
+        special={wornSpecial(save, specials, age)}
       />
       <div className={asleep ? 'room-ui asleep' : 'room-ui'}>
         <div className="age-switch" role="group" aria-label="Character age" data-tour="age">

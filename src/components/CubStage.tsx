@@ -10,7 +10,8 @@ import {
   homeCharacterBox,
 } from '../game/drawCub'
 import { HALLOWEEN_THEME, pumpkinLit, togglePumpkin } from '../game/halloween'
-import { characterLayers, type TryOn } from '../game/cubTraits'
+import { characterLayers, specialCharacterLayers, type TryOn } from '../game/cubTraits'
+import { SPECIAL_CHARACTERS } from '../game/specialCharacters'
 import { canvasRatio, layoutSize } from '../game/frameScale'
 import { artSize, coverPlacement, fitInBox, homeArt, homeItem, slotBox, slotScale } from '../game/homeScene'
 import { playPlantRuffle } from '../game/plantAudio'
@@ -18,7 +19,7 @@ import { playPumpkinLight, playPumpkinOut } from '../game/pumpkinAudio'
 import { startHalloweenBgm, stopHalloweenBgm } from '../game/halloweenBgm'
 import { playTableKnock } from '../game/tableAudio'
 import { playWindowTap } from '../game/windowAudio'
-import type { CubAppearance, CubPose } from '../game/types'
+import type { CubAppearance, CubPose, SpecialCharacterId } from '../game/types'
 
 type Props = {
   appearance: CubAppearance
@@ -28,6 +29,8 @@ type Props = {
   /** Visit draws another player's home: the plain room and their outfit, with no care looks or seasonal items. */
   mode?: 'home' | 'wardrobe' | 'visit'
   tryOn?: TryOn | null
+  /** Draw this special character in place of the layered cub. */
+  special?: SpecialCharacterId | null
   /** Paint the cub on the desk canvas, over the room picture. */
   overPicture?: boolean
   /** Called after the pumpkin is toggled so the choice is saved with the cub. */
@@ -64,7 +67,16 @@ function coverRoom(ctx: CanvasRenderingContext2D, image: CanvasImageSource, stag
   ctx.drawImage(image, placed.x, placed.y, placed.w, placed.h)
 }
 
-export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null, overPicture = false, onPumpkinChange }: Props) {
+export function CubStage({
+  pose,
+  dim = false,
+  onPet,
+  mode = 'home',
+  tryOn = null,
+  special = null,
+  overPicture = false,
+  onPumpkinChange,
+}: Props) {
   const roomRef = useRef<HTMLCanvasElement>(null)
   const viewRef = useRef<HTMLCanvasElement>(null)
   const fxRef = useRef<HTMLCanvasElement>(null)
@@ -72,12 +84,14 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
   const dimRef = useRef(dim)
   const modeRef = useRef(mode)
   const tryOnRef = useRef(tryOn)
+  const specialRef = useRef(special)
   const overPictureRef = useRef(overPicture)
   const [pumpkinOn, setPumpkinOn] = useState(pumpkinLit)
   poseRef.current = pose
   dimRef.current = dim
   modeRef.current = mode
   tryOnRef.current = tryOn
+  specialRef.current = special
   overPictureRef.current = overPicture
 
   useEffect(() => {
@@ -140,15 +154,24 @@ export function CubStage({ pose, dim = false, onPet, mode = 'home', tryOn = null
       const time = (now - started) / 1000
       const overPicture = overPictureRef.current
       const drawCharacter = (ctx: CanvasRenderingContext2D, yExtra = 0) => {
-        const layers = characterLayers(now, tryOnRef.current, { preview: wardrobe, visit: modeRef.current === 'visit' })
+        const special = specialRef.current
+        const looks = { preview: wardrobe, visit: modeRef.current === 'visit' }
+        const layers = special ? specialCharacterLayers(special, now, looks) : characterLayers(now, tryOnRef.current, looks)
         const box = homeCharacterBox(layoutW, layoutH)
         if (!layers.length || !box) return
         const motion = poseMotion(poseRef.current, time)
         ctx.save()
         ctx.translate(box.x + box.w / 2 + motion.x, box.y + box.h + motion.y - wardrobeLift - homeSit + yExtra)
         ctx.rotate((slotScale.character.restRot ?? 0) + motion.rot)
+        const frame = special ? SPECIAL_CHARACTERS[special].frame : null
         for (const layer of layers) {
-          ctx.drawImage(layer, -box.w / 2, -box.h, box.w, box.h)
+          if (frame) {
+            const x = (frame.x / 1400) * box.w
+            const y = ((frame.y + (wardrobe ? frame.wardrobeDrop : 0)) / 1400) * box.h
+            ctx.drawImage(layer, -box.w / 2 + x, -box.h + y, (frame.size / 1400) * box.w, (frame.size / 1400) * box.h)
+          } else {
+            ctx.drawImage(layer, -box.w / 2, -box.h, box.w, box.h)
+          }
         }
         ctx.restore()
       }

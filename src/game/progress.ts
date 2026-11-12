@@ -2,6 +2,7 @@ import {
   DEFAULT_OUTFIT,
   GUEST_APPEARANCE,
   NEED_KEYS,
+  isSpecialCharacterId,
   type CareAction,
   type CubAppearance,
   type CubOutfits,
@@ -356,6 +357,7 @@ export function defaultSave(now = Date.now()): CubSave {
       old: { ...DEFAULT_OUTFIT },
       young: { ...DEFAULT_OUTFIT },
     },
+    specialCharacter: null,
     cubCash: 100,
     unlockedTraits: starterUnlockedKeys(),
     hunger: 72,
@@ -403,6 +405,7 @@ export function sanitizeSave(value: unknown, now = Date.now()): CubSave {
     version: 1,
     appearance: sanitizeAppearance(raw.appearance),
     outfits: sanitizeOutfits(raw.outfits),
+    specialCharacter: isSpecialCharacterId(raw.specialCharacter) ? raw.specialCharacter : null,
     cubCash,
     unlockedTraits:
       raw.wardrobePurchaseReset === WARDROBE_PURCHASE_RESET

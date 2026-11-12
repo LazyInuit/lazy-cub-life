@@ -25,7 +25,8 @@ import youngEarring from '../assets/cub-layers/young/earring.png'
 import youngHeadgear from '../assets/cub-layers/young/headgear.png'
 import youngDirty from '../assets/cub-layers/young/mud2.png'
 import { homeScene } from './homeScene'
-import { DEFAULT_OUTFIT } from './types'
+import { specialImage, type SpecialFace } from './specialCharacters'
+import { DEFAULT_OUTFIT, type SpecialCharacterId } from './types'
 
 /**
  * Back to front, matching the current bust: fur, clothes, face, hair, then
@@ -211,6 +212,28 @@ export function characterLayers(
   }
 
   return layers
+}
+
+/** A special character is one picture, with a face swapped over it for sleep, the tap roar, and low energy. */
+export function specialCharacterLayers(
+  id: SpecialCharacterId,
+  now = performance.now(),
+  opts?: { preview?: boolean; visit?: boolean },
+): HTMLImageElement[] {
+  const visit = Boolean(opts?.visit)
+  const preview = Boolean(opts?.preview) || visit
+  const base = specialImage(id, null)
+  if (!base) return []
+  const face: SpecialFace | null =
+    !preview && eyesClosed
+      ? 'sleep'
+      : (!preview || visit) && now < yellMouthUntil
+        ? 'roar'
+        : !preview && needEnergy < 30
+          ? 'tired'
+          : null
+  const faceImage = face ? specialImage(id, face) : null
+  return faceImage ? [base, faceImage] : [base]
 }
 
 function tryLayer(age: 'old' | 'young', part: TraitSlot, name: string) {

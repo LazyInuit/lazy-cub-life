@@ -7,6 +7,7 @@ import { loadPlayerCubPower, type PlayerProfile } from '../game/leaderboard'
 import { BADGES, earnedBadges, type BadgeId } from '../game/profileArt'
 import { levelProgress } from '../game/progress'
 import { playRoar } from '../game/roarAudio'
+import { SPECIAL_CHARACTERS } from '../game/specialCharacters'
 import { sanitizeOwnedOutfit } from '../game/traitShop'
 import type { CubPose } from '../game/types'
 import challengeBarUrl from '../assets/pvp-challenge-bar.png'
@@ -30,7 +31,8 @@ const PLATE_CHARS = 28
 /** Another player's home: their cubs, level and name only. Nothing here changes either save. */
 export function VisitHome({ profile, onReturn, onChallenge }: Props) {
   const room = profile.room
-  const [age, setAge] = useState<CharacterAge>('old')
+  const special = profile.special
+  const [age, setAge] = useState<CharacterAge>(() => (special ? SPECIAL_CHARACTERS[special].age : 'old'))
   const [pose, setPose] = useState<CubPose>('idle')
   const [shownBadge, setShownBadge] = useState<BadgeId | null>(null)
   const [power, setPower] = useState<CubPower | null>(null)
@@ -90,6 +92,7 @@ export function VisitHome({ profile, onReturn, onChallenge }: Props) {
         mode="visit"
         onPet={pet}
         tryOn={tryOnFromPicks(sanitizeOwnedOutfit(room, age, room.outfits[age]))}
+        special={special && SPECIAL_CHARACTERS[special].age === age ? special : null}
       />
       <div className="badge-cabinet" aria-label={plate}>
         <p className="badge-cabinet-plate" style={{ '--plate-scale': plateScale } as CSSProperties}>

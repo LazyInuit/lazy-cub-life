@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { isSpecialCharacterId, type SpecialCharacterId } from './types'
 import { newNonce } from './wallet'
 
 export type AdminPlayer = {
@@ -331,6 +332,31 @@ export async function setPlayerBan(playerId: string, banned: boolean) {
   if (message.includes('own account')) throw new Error('You cannot ban your own account.')
   if (message.includes('that account is an admin')) throw new Error('That account is an admin.')
   throw new Error(error.message)
+}
+
+function asSpecialList(data: unknown): SpecialCharacterId[] {
+  return Array.isArray(data) ? data.filter(isSpecialCharacterId) : []
+}
+
+/** Special characters this player may wear, or null until special-characters.sql is run. */
+export async function adminSpecialCharacters(playerId: string): Promise<SpecialCharacterId[] | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('admin_special_characters', { p_player: playerId })
+  if (error && missingFunction(error)) return null
+  if (error) throw new Error(error.message)
+  return asSpecialList(data)
+}
+
+export async function setSpecialCharacter(playerId: string, character: SpecialCharacterId, allowed: boolean) {
+  if (!supabase) throw new Error('Accounts are not connected.')
+  const { data, error } = await supabase.rpc('admin_set_special_character', {
+    p_player: playerId,
+    p_character: character,
+    p_allowed: allowed,
+  })
+  if (error && missingFunction(error)) throw new Error('Run supabase/special-characters.sql first.')
+  if (error) throw new Error(error.message)
+  return asSpecialList(data)
 }
 
 export async function setPlayerPassword(playerId: string, password: string) {

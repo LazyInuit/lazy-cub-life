@@ -3325,6 +3325,13 @@ h1 {
   box-shadow: 0 2.94px 0 rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 231, 168, 0.45);
 }
 
+.wardrobe-rail button:disabled,
+.wardrobe-random:disabled {
+  cursor: default;
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+
 .wardrobe-rail img.body {
   width: 35.55px;
   height: 35.55px;
@@ -7794,6 +7801,28 @@ h1 {
 .admin-eth {
   overflow-wrap: anywhere;
   color: #ffe7b0;
+}
+
+.admin-special {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-special img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  object-position: center 30%;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.admin-special > span {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .admin-error {

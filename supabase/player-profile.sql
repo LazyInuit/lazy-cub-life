@@ -4,6 +4,18 @@
 -- single score (for badges), the profile photo, and only the save fields a
 -- visit draws: outfits, owned traits, and the Halloween pumpkin.
 -- Cub Cash, needs, daily tasks and the rest of the save are never returned.
+-- Also the special character they wear, only while special-characters.sql allows it.
+
+-- Same table as special-characters.sql, so either file can run first.
+create table if not exists public.special_characters (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  character text not null,
+  granted_at timestamptz not null default now(),
+  granted_by uuid references auth.users (id) on delete set null,
+  primary key (user_id, character)
+);
+alter table public.special_characters enable row level security;
+revoke all on table public.special_characters from public, anon, authenticated;
 
 -- Profile photos: one small JPEG per player at avatars/<user id>/avatar.jpg.
 -- Anyone can view them. Only that player can add, replace, or delete theirs.
@@ -127,6 +139,13 @@ begin
         'unlockedTraits', coalesce(target.save->'unlockedTraits', '[]'::jsonb),
         'wardrobePurchaseReset', target.save->'wardrobePurchaseReset',
         'halloween', coalesce(target.save->'halloween' = 'true'::jsonb, false)
+      ),
+      'special', (
+        select sc.character
+        from public.special_characters sc
+        where sc.user_id = target.id
+          and sc.character = target.save->>'specialCharacter'
+        limit 1
       )
     )
   );

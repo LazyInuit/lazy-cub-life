@@ -32,6 +32,14 @@ export type CubOutfits = {
   young: OutfitTraits
 }
 
+/** Whole-cub looks an admin allows for selected players. Must match special_characters in supabase/special-characters.sql. */
+export const SPECIAL_CHARACTER_IDS = ['pharaoh'] as const
+export type SpecialCharacterId = (typeof SPECIAL_CHARACTER_IDS)[number]
+
+export function isSpecialCharacterId(value: unknown): value is SpecialCharacterId {
+  return typeof value === 'string' && (SPECIAL_CHARACTER_IDS as readonly string[]).includes(value)
+}
+
 /** Guest cub for now. A later wallet build sets source to "nft" plus tokenId. */
 export type CubAppearance = {
   source: 'guest' | 'nft'
@@ -48,6 +56,8 @@ export type CubSave = {
   version: 1
   appearance: CubAppearance
   outfits: CubOutfits
+  /** The special character this player chose to wear. Only drawn while the server still allows it. */
+  specialCharacter: SpecialCharacterId | null
   /** In-game currency: Cub Cash. */
   cubCash: number
   /** Purchased wardrobe styles as `age:Category:Name` keys. */

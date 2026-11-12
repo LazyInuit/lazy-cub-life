@@ -49,7 +49,7 @@ import {
   type PowerNotice,
 } from './cubPower'
 import { isTraitUnlocked, sanitizeOwnedOutfits, traitKey, traitPrice, traitXpBonus } from './traitShop'
-import type { CareAction, CubOutfits, CubPose, CubSave, NeedKey } from './types'
+import type { CareAction, CubOutfits, CubPose, CubSave, NeedKey, SpecialCharacterId } from './types'
 import type { TraitCategory } from './cubTraits'
 import type { CharacterAge } from './homeScene'
 
@@ -634,6 +634,12 @@ export function useCub() {
     })
   }, [commit])
 
+  const setSpecialCharacter = useCallback((id: SpecialCharacterId | null) => {
+    const current = saveRef.current
+    if (!current || current.specialCharacter === id) return
+    commit({ ...current, specialCharacter: id })
+  }, [commit])
+
   const startDaily = useCallback((game: DailyGame) => {
     const current = saveRef.current
     if (!current) return false
@@ -1089,6 +1095,7 @@ export function useCub() {
     rollDailyBonus,
     rollDailyExtraBonus,
     setOutfits,
+    setSpecialCharacter,
     addCubCash,
     purchaseTrait,
     buyDrink,
