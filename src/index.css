@@ -2,7 +2,7 @@
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   /* The game area's real height, for sizing panels: the screen in Safari, the framed page in the app. */
-  --page-h: 100dvh;
+  --page-h: var(--view-h, 100dvh);
   /* Polished wood for the home top bar: a gloss over the top, fine grain, then the warm wood. */
   --wood-premium:
     linear-gradient(180deg, rgba(255, 248, 226, 0.3) 0%, rgba(255, 240, 200, 0.08) 44%, transparent 52%, rgba(60, 24, 4, 0.22) 100%),
@@ -50,11 +50,11 @@
 
 body {
   margin: 0;
-  min-height: 100dvh;
+  min-height: var(--view-h, 100dvh);
 }
 
 #root {
-  min-height: 100dvh;
+  min-height: var(--view-h, 100dvh);
   display: grid;
   place-items: center;
 }
@@ -86,8 +86,8 @@ html.frame-scaled {
 html.safari-frame,
 html.safari-frame body,
 html.safari-frame #root {
-  height: 100dvh;
-  min-height: 100dvh;
+  height: var(--view-h, 100dvh);
+  min-height: var(--view-h, 100dvh);
   background: #000;
   overflow: hidden;
   overscroll-behavior: none;
@@ -125,13 +125,20 @@ html.safari-frame .trait-roll {
 
 .phone {
   width: min(430px, 100%);
-  height: 100dvh;
+  height: var(--view-h, 100dvh);
   max-height: 920px;
   display: flex;
   flex-direction: column;
   background: #f4e2c6;
   overflow: auto;
   position: relative;
+}
+
+/* Phones taller than 920px fill the screen; capping them left a band at the top. */
+@media (pointer: coarse) and (max-width: 519px) {
+  .phone {
+    max-height: none;
+  }
 }
 
 .boot {
@@ -6347,11 +6354,11 @@ h1 {
 
 @media (min-width: 520px) {
   html:not(.frame-scaled) {
-    --page-h: min(920px, calc(100dvh - 32px));
+    --page-h: min(920px, calc(var(--view-h, 100dvh) - 32px));
   }
 
   .phone {
-    height: min(920px, calc(100dvh - 32px));
+    height: min(920px, calc(var(--view-h, 100dvh) - 32px));
     border-radius: 28px;
     box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
   }
