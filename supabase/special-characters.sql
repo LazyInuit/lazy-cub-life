@@ -54,7 +54,7 @@ as $$
 declare
   admin_id uuid := public.admin_guard();
 begin
-  if p_character is null or p_character not in ('pharaoh') then
+  if p_character is null or p_character not in ('pharaoh', 'galaxy') then
     raise exception 'Unknown special character';
   end if;
   if not exists (select 1 from public.profiles where id = p_player) then

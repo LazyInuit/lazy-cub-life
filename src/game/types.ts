@@ -33,7 +33,7 @@ export type CubOutfits = {
 }
 
 /** Whole-cub looks an admin allows for selected players. Must match special_characters in supabase/special-characters.sql. */
-export const SPECIAL_CHARACTER_IDS = ['pharaoh'] as const
+export const SPECIAL_CHARACTER_IDS = ['pharaoh', 'galaxy'] as const
 export type SpecialCharacterId = (typeof SPECIAL_CHARACTER_IDS)[number]
 
 export function isSpecialCharacterId(value: unknown): value is SpecialCharacterId {

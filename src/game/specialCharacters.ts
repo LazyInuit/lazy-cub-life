@@ -3,6 +3,10 @@ import pharaohBase from '../assets/cub-layers/pharaoh/base.png'
 import pharaohSleep from '../assets/cub-layers/pharaoh/face-sleep.png'
 import pharaohTired from '../assets/cub-layers/pharaoh/face-tired.png'
 import pharaohRoar from '../assets/cub-layers/pharaoh/face-roar.png'
+import galaxyBase from '../assets/cub-layers/galaxy/base.png'
+import galaxySleep from '../assets/cub-layers/galaxy/face-sleep.png'
+import galaxyTired from '../assets/cub-layers/galaxy/face-tired.png'
+import galaxyRoar from '../assets/cub-layers/galaxy/face-roar.png'
 import { isDemo } from './demo'
 import type { CharacterAge } from './homeScene'
 import { supabase } from './supabase'
@@ -33,6 +37,15 @@ export const SPECIAL_CHARACTERS: Record<SpecialCharacterId, SpecialCharacter> = 
     src: pharaohBase,
     faces: { sleep: pharaohSleep, tired: pharaohTired, roar: pharaohRoar },
     frame: { x: 196.5, y: 442.8, size: 952.3, wardrobeDrop: 8 },
+  },
+  // Narrower bust + taller hair than Pharaoh — sized for the old cub slot.
+  galaxy: {
+    id: 'galaxy',
+    name: 'Galaxy',
+    age: 'old',
+    src: galaxyBase,
+    faces: { sleep: galaxySleep, tired: galaxyTired, roar: galaxyRoar },
+    frame: { x: 200, y: 375, size: 1020, wardrobeDrop: 10 },
   },
 }
 
